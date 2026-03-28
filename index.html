@@ -415,9 +415,9 @@
   /* ── SEPARADOR ── */
   .sep { height: 0.5px; background: var(--border); margin: 4px 0; }
 
-  /* ══════════════════════════════════════
+  /* ======================================
      NUEVO PANEL ADMIN
-  ══════════════════════════════════════ */
+  ====================================== */
 
   /* Nav tabs sticky */
   .adm-nav {
@@ -688,9 +688,9 @@
   }
   .enc-pin-note.visible { display: block; }
 
-  /* ══════════════════════════════════════
+  /* ======================================
      PANEL DE TURNO
-  ══════════════════════════════════════ */
+  ====================================== */
   #screen-panel-turno { background: var(--bg); }
 
   .pt-content {
@@ -1328,9 +1328,9 @@
 <!-- TOAST -->
 <div id="toast"></div>
 
-<!-- ════════════════════════════════════════
+<!-- ========================================
      SCREEN: HUB
-════════════════════════════════════════ -->
+======================================== -->
 <div class="screen" id="screen-hub">
   <div class="hub-header">
     <div class="hub-wordmark">◈ Break — Sistema</div>
@@ -1482,9 +1482,9 @@
   </div>
 </div>
 
-<!-- ════════════════════════════════════════
+<!-- ========================================
      SCREEN: SELECTOR TIPO REPORTE
-════════════════════════════════════════ -->
+======================================== -->
 <div class="screen" id="screen-reporte-tipo">
   <div class="topbar">
     <div class="topbar-back" onclick="goTo('hub')">←</div>
@@ -1536,9 +1536,9 @@
   </div>
 </div>
 
-<!-- ════════════════════════════════════════
+<!-- ========================================
      SCREEN: FORM — FALLA EN TIENDA
-════════════════════════════════════════ -->
+======================================== -->
 <div class="screen" id="screen-falla-tienda">
   <div class="topbar">
     <div class="topbar-back" onclick="goTo('reporte-tipo')">←</div>
@@ -1596,9 +1596,9 @@
   </div>
 </div>
 
-<!-- ════════════════════════════════════════
+<!-- ========================================
      SCREEN: FORM — FALLA EDILICIA
-════════════════════════════════════════ -->
+======================================== -->
 <div class="screen" id="screen-edilicio">
   <div class="topbar">
     <div class="topbar-back" onclick="goTo('reporte-tipo')">←</div>
@@ -1654,9 +1654,9 @@
   </div>
 </div>
 
-<!-- ════════════════════════════════════════
+<!-- ========================================
      SCREEN: FORM — ROTOS Y VENCIDOS
-════════════════════════════════════════ -->
+======================================== -->
 <div class="screen" id="screen-rotos-vencidos">
   <div class="topbar">
     <div class="topbar-back" onclick="goTo('reporte-tipo')">←</div>
@@ -1695,9 +1695,9 @@
   </div>
 </div>
 
-<!-- ════════════════════════════════════════
+<!-- ========================================
      SCREEN: FORM — PEDIDO CANCELADO
-════════════════════════════════════════ -->
+======================================== -->
 <div class="screen" id="screen-pedido">
   <div class="topbar">
     <div class="topbar-back" onclick="goTo('reporte-tipo')">←</div>
@@ -1816,9 +1816,9 @@
   </div>
 </div>
 
-<!-- ════════════════════════════════════════
+<!-- ========================================
      SCREEN: FORM — TICKET DE SISTEMA
-════════════════════════════════════════ -->
+======================================== -->
 <div class="screen" id="screen-ticket">
   <div class="topbar">
     <div class="topbar-back" onclick="goTo('reporte-tipo')">←</div>
@@ -1957,9 +1957,9 @@
   </div>
 </div>
 
-<!-- ════════════════════════════════════════
+<!-- ========================================
      SCREEN: SUCCESS
-════════════════════════════════════════ -->
+======================================== -->
 <div class="screen" id="screen-success">
   <div class="topbar">
     <div class="topbar-back" onclick="goTo('hub')">←</div>
@@ -1976,9 +1976,9 @@
   </div>
 </div>
 
-<!-- ════════════════════════════════════════
+<!-- ========================================
      SCREEN: ADMIN PIN
-════════════════════════════════════════ -->
+======================================== -->
 <div class="screen" id="screen-admin-pin">
   <div class="topbar">
     <div class="topbar-back" onclick="goTo('hub')">←</div>
@@ -2015,9 +2015,9 @@
   </div>
 </div>
 
-<!-- ════════════════════════════════════════
+<!-- ========================================
      SCREEN: ADMIN DASHBOARD
-════════════════════════════════════════ -->
+======================================== -->
 <div class="screen" id="screen-admin">
   <div class="topbar">
     <div class="topbar-back" onclick="goTo('hub')">←</div>
@@ -2145,9 +2145,9 @@
 </div>
 
 
-<!-- ════════════════════════════════════════
+<!-- ========================================
      SCREEN: PANEL DE TURNO
-════════════════════════════════════════ -->
+======================================== -->
 <div class="screen" id="screen-panel-turno">
   <div class="topbar">
     <div class="topbar-back" onclick="ptCancelarAlarmas();goTo('hub')">←</div>
@@ -2330,9 +2330,9 @@
             <div class="pt-dif-val" id="pt-dif-val">—</div>
           </div>
 
-          <!-- ══════════════════════════════
+          <!-- ==============================
                CHECKLIST DE CIERRE
-          ══════════════════════════════ -->
+          ============================== -->
           <div class="form-section-title" style="margin-bottom:6px">Checklist de cierre</div>
           <div class="pt-checks-progress" style="margin-bottom:12px">
             <div class="pt-checks-bar-wrap"><div class="pt-checks-bar" id="pt-checks-bar"></div></div>
@@ -2557,9 +2557,9 @@
 </div>
 
 <script>
-// ═══════════════════════════════════════
-// CONFIG — REEMPLAZAR CON TUS VALORES
-// ═══════════════════════════════════════
+// =======================================
+// CONFIG -- REEMPLAZAR CON TUS VALORES
+// =======================================
 const SUPABASE_URL = 'https://oiuualqixcccfhtpcist.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pdXVhbHFpeGNjY2ZodHBjaXN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NzUxNjEsImV4cCI6MjA4OTQ1MTE2MX0.ms4MHVhKDTKfID0WGi05EFPySf350SA66uNi4wPfsOo';
 
@@ -2578,9 +2578,9 @@ const LOCALES = {
   san_telmo:   'Independencia · S. Telmo',
 };
 
-// ═══════════════════════════════════════
+// =======================================
 // STATE
-// ═══════════════════════════════════════
+// =======================================
 let state = {
   empleado_id: null,
   empleado_nombre: null,
@@ -2598,9 +2598,9 @@ let state = {
   adminFilter: '',
 };
 
-// ═══════════════════════════════════════
+// =======================================
 // SUPABASE HELPERS
-// ═══════════════════════════════════════
+// =======================================
 async function sbFetch(path, opts = {}) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
     headers: {
@@ -2624,9 +2624,9 @@ async function getConfig(clave) {
   return data?.[0]?.valor || null;
 }
 
-// ═══════════════════════════════════════
+// =======================================
 // GOOGLE DRIVE UPLOAD
-// ═══════════════════════════════════════
+// =======================================
 async function uploadToDrive(file, formType, localKey) {
   try {
     const clientEmail = await getConfig('drive_client_email');
@@ -2719,9 +2719,9 @@ async function getAccessToken(jwt) {
   return data.access_token;
 }
 
-// ═══════════════════════════════════════
+// =======================================
 // NAVIGATION
-// ═══════════════════════════════════════
+// =======================================
 function goTo(screen) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   const map = {
@@ -2745,7 +2745,7 @@ function goTo(screen) {
 
 function openModule(mod) {
   if (mod === 'admin') {
-    // Ya validado desde el hub — ir directo al dashboard
+    // Ya validado desde el hub -- ir directo al dashboard
     goTo('admin'); loadAdminDashboard(); return;
   }
   if (!state.empleado_id && state.rol !== 'admin') {
@@ -2769,16 +2769,16 @@ function openForm(tipo) {
 }
 
 function updateBadges() {
-  const local = LOCALES[state.local] || '—';
+  const local = LOCALES[state.local] || '--';
   ['badge-local-tipo','badge-ft','badge-ed','badge-rv','badge-ped','badge-tk'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.textContent = local;
   });
 }
 
-// ═══════════════════════════════════════
+// =======================================
 // CHIP SELECTION
-// ═══════════════════════════════════════
+// =======================================
 function selChip(el, group) {
   el.closest('.chip-row').querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
   el.classList.add('selected');
@@ -2789,9 +2789,9 @@ function getChipValue(group) {
   return chip ? chip.textContent.trim() : null;
 }
 
-// ═══════════════════════════════════════
+// =======================================
 // HUB SELECTIONS
-// ═══════════════════════════════════════
+// =======================================
 function selLocal(local, el) {
   state.local = local;
   document.querySelectorAll('.local-chip').forEach(c => c.classList.remove('selected'));
@@ -2822,8 +2822,8 @@ function actualizarTurnosSegunLocal(local) {
   }
 
   if (es2Turnos) {
-    tcManana.textContent = '8am — 5pm';
-    tcTarde.textContent  = '5pm — 3am';
+    tcManana.textContent = '8am -- 5pm';
+    tcTarde.textContent  = '5pm -- 3am';
     tcNoche.style.display = 'none';
     // Resetear si tenía noche
     tcNoche.classList.remove('selected');
@@ -2868,12 +2868,12 @@ function onEmpChange() {
     nameEl.textContent = opt.text;
     metaEl.textContent = 'seleccioná local y turno para continuar';
   } else {
-    nameEl.textContent = '—';
+    nameEl.textContent = '--';
     metaEl.textContent = 'seleccioná tu nombre para empezar';
   }
 }
 
-// ── ADMIN — PIN INPUT EN HUB ─────────────
+// ── ADMIN -- PIN INPUT EN HUB ─────────────
 let admPinInput = '';
 
 function admCheckPinInput(val, submit = false) {
@@ -2954,7 +2954,7 @@ function selRol(rol) {
   state.empleado_id    = null;
   state.empleado_nombre = null;
   state.rol = rol;
-  document.getElementById('hub-emp-name').textContent = '—';
+  document.getElementById('hub-emp-name').textContent = '--';
   document.getElementById('hub-meta').textContent = 'seleccioná tu nombre para empezar';
 
   // Si sale de admin → ocultar cards de admin y resetear input
@@ -2982,7 +2982,7 @@ function selRol(rol) {
   admActualizarCardTurno();
 }
 
-// ── ENCARGADO — LÓGICA DE PIN ────────────
+// ── ENCARGADO -- LÓGICA DE PIN ────────────
 let encPinInput = '';
 let encPinMode = 'login';       // 'login' | 'crear' | 'confirmar'
 let encPinConfirmBuffer = '';
@@ -3100,7 +3100,7 @@ async function encCheckPin() {
         setTimeout(() => { encPinInput = ''; encUpdateDots(); }, 800);
       }
     } else {
-      errEl.textContent = 'Los PINs no coinciden — intentá de nuevo';
+      errEl.textContent = 'Los PINs no coinciden -- intentá de nuevo';
       encPinInput = ''; encPinConfirmBuffer = '';
       encPinMode = 'crear';
       encActualizarLabel();
@@ -3123,9 +3123,9 @@ function selToggle(el, group, val) {
   el.classList.add(val === 'yes' ? 'selected-yes' : 'selected-no');
 }
 
-// ═══════════════════════════════════════
-// FALLA EN TIENDA — subcategorías dinámicas
-// ═══════════════════════════════════════
+// =======================================
+// FALLA EN TIENDA -- subcategorías dinámicas
+// =======================================
 const FT_SUBS = {
   'Organización': ['Productos sin enfriar','Sin exhibir','Lugar incorrecto','Cajas mal ubicadas','Falta bolsas/vasos','Sin reponer en góndolas'],
   'Limpieza': ['Espacio de trabajo','Baño','Góndolas','Caramelera','Heladeras','Piso','Vereda','Otro'],
@@ -3154,9 +3154,9 @@ document.querySelectorAll('#chips-ft-cat .chip').forEach(chip => {
 // Init
 setTimeout(() => document.querySelector('#chips-ft-cat .chip')?.click(), 100);
 
-// ═══════════════════════════════════════
-// ROTOS / VENCIDOS — items dinámicos
-// ═══════════════════════════════════════
+// =======================================
+// ROTOS / VENCIDOS -- items dinámicos
+// =======================================
 function initRVItems() {
   state.rvItemCount = 0;
   document.getElementById('rv-items-container').innerHTML = '';
@@ -3200,9 +3200,9 @@ function addRVItem() {
   container.appendChild(div);
 }
 
-// ═══════════════════════════════════════
-// TICKETS — items dinámicos
-// ═══════════════════════════════════════
+// =======================================
+// TICKETS -- items dinámicos
+// =======================================
 function updateTkTipo(tipo) {
   state.tkTipo = tipo;
   const secs = ['items','stock','precio','nombre','otro'];
@@ -3254,9 +3254,9 @@ function addTkItem() {
   container.appendChild(div);
 }
 
-// ═══════════════════════════════════════
-// PEDIDOS — secciones dinámicas
-// ═══════════════════════════════════════
+// =======================================
+// PEDIDOS -- secciones dinámicas
+// =======================================
 function updatePedTipo(tipo) {
   state.pedTipo = tipo;
   document.getElementById('ped-sec-cancelado').style.display = tipo === 'cancelado' ? 'block' : 'none';
@@ -3264,9 +3264,9 @@ function updatePedTipo(tipo) {
   document.getElementById('ped-sec-otro').style.display = tipo === 'otro' ? 'block' : 'none';
 }
 
-// ═══════════════════════════════════════
+// =======================================
 // PHOTOS
-// ═══════════════════════════════════════
+// =======================================
 function handlePhoto(input, key) {
   const file = input.files[0];
   if (!file) return;
@@ -3277,9 +3277,9 @@ function handlePhoto(input, key) {
   if (area) area.classList.add('has-file');
 }
 
-// ═══════════════════════════════════════
+// =======================================
 // SUBMIT FORMS
-// ═══════════════════════════════════════
+// =======================================
 async function submitForm(tipo) {
   const btn = document.getElementById(`btn-${tipo === 'falla_tienda' ? 'ft' : tipo === 'edilicio' ? 'ed' : tipo === 'rotos_vencidos' ? 'rv' : tipo === 'pedido' ? 'ped' : 'tk'}`);
   btn.classList.add('loading');
@@ -3461,9 +3461,9 @@ function resetFotos(tipo) {
   state.tkItemCount = 0;
 }
 
-// ═══════════════════════════════════════
+// =======================================
 // SUCCESS SCREEN
-// ═══════════════════════════════════════
+// =======================================
 const TIPO_LABELS = {
   falla_tienda: 'Falla en tienda',
   edilicio: 'Falla edilicia',
@@ -3490,9 +3490,9 @@ function showSuccess(tipo) {
   goTo('success');
 }
 
-// ═══════════════════════════════════════
+// =======================================
 // ADMIN PIN
-// ═══════════════════════════════════════
+// =======================================
 let pinInput = '';
 let adminPinValue = null;
 
@@ -3547,9 +3547,9 @@ async function checkPin() {
   }
 }
 
-// ═══════════════════════════════════════
+// =======================================
 // ADMIN DASHBOARD
-// ═══════════════════════════════════════
+// =======================================
 let adminCurrentTab = 'reportes';
 let adminTipoFilter = '';
 let adminLocalFilter = '';
@@ -3628,7 +3628,7 @@ async function admLoadResumen() {
     const saldos = {};
     (entradas||[]).forEach(e => { saldos[e.cid] = (saldos[e.cid]||0) + e.monto; });
 
-    // Suma deudas por local (usando local de la cuenta — campo que puede no existir, usar cierres)
+    // Suma deudas por local (usando local de la cuenta -- campo que puede no existir, usar cierres)
     const grid = document.getElementById('adm-local-grid');
     grid.innerHTML = LOCALES_DATA.map(loc => {
       const cierresLoc = (cierresHoy||[]).filter(c => c.local === loc.key);
@@ -3641,7 +3641,7 @@ async function admLoadResumen() {
         : ultimo.diferencia === 0 ? 'Cuadra ✓'
         : `${ultimo.diferencia > 0 ? 'Sobrante' : 'Faltante'} $${Math.abs(ultimo.diferencia||0).toLocaleString('es-AR')}`;
 
-      let checksOk = '—';
+      let checksOk = '--';
       if (tieneCierre && ultimo.checks_json) {
         try {
           const ch = typeof ultimo.checks_json === 'string'
@@ -3686,10 +3686,10 @@ async function admLoadResumen() {
         </div>`).join('')
       : '<div style="text-align:center;padding:16px;font-family:var(--mono);font-size:11px;color:var(--green)">✓ Sin alertas por ahora</div>';
 
-    // Deudas por local — simplificado (total general)
+    // Deudas por local -- simplificado (total general)
     ['palermo','belgrano','barrio_chino','san_telmo'].forEach(loc => {
       const el = document.getElementById(`admd-${loc}`);
-      if (el) el.textContent = '—'; // requiere campo local en entradas — placeholder
+      if (el) el.textContent = '--'; // requiere campo local en entradas -- placeholder
     });
 
   } catch(e) {
@@ -3751,8 +3751,8 @@ function admRenderCierres() {
     const difClass = dif === 0 ? 'dif-ok' : dif > 0 ? 'dif-alert' : 'dif-alert';
     const difTxt   = dif === 0 ? '✓ Cuadra' : `${dif>0?'Sobrante':'Faltante'} $${Math.abs(dif).toLocaleString('es-AR')}`;
     const difColor = dif === 0 ? 'ok' : dif > 0 ? 'sobrante' : 'faltante';
-    const empNombre = c.cuentas?.nombre || c.empleado_id || '—';
-    const fecha = c.fecha ? new Date(c.fecha+'T12:00:00').toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'}) : '—';
+    const empNombre = c.cuentas?.nombre || c.empleado_id || '--';
+    const fecha = c.fecha ? new Date(c.fecha+'T12:00:00').toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'}) : '--';
     const hora  = c.created_at ? new Date(c.created_at).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}) : '';
 
     // Checks
@@ -3769,7 +3769,7 @@ function admRenderCierres() {
     // Hielos
     const hls = admData.hielosByCierre?.[c.id] || [];
     const hielosHtml = hls.length ? `<div class="adm-hielo-detail">
-      <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.08em">Ciclos de hielo — ${hls.reduce((a,h)=>a+h.bolsas,0)} bolsas totales</div>
+      <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.08em">Ciclos de hielo -- ${hls.reduce((a,h)=>a+h.bolsas,0)} bolsas totales</div>
       ${hls.map((h,i) => {
         const horaH = new Date(h.hora).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
         return `<div class="adm-hielo-row"><span>Ciclo ${i+1}</span><span>${h.bolsas} bolsas</span><span>${horaH}</span></div>`;
@@ -4013,7 +4013,7 @@ function renderAdminStats(reportes) {
   document.getElementById('stat-hoy').textContent  = hoyCount;
   document.getElementById('stat-mes').textContent  = reportes.length;
   document.getElementById('stat-tickets').textContent = tickets;
-  document.getElementById('stat-top').textContent  = topEntry ? topEntry[1] : '—';
+  document.getElementById('stat-top').textContent  = topEntry ? topEntry[1] : '--';
   document.getElementById('stat-top-name').textContent = topEntry ? topEntry[0] : 'sin datos';
 }
 
@@ -4035,10 +4035,10 @@ function renderAdminReports(reportes) {
     const c     = TIPO_COLORS[r.tipo] || TIPO_COLORS.edilicio;
     const label = TIPO_LABELS[r.tipo] || r.tipo;
     const fecha = r.created_at ? new Date(r.created_at).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
-    const emp   = r.cuentas?.nombre || '—';
+    const emp   = r.cuentas?.nombre || '--';
     const resp  = r.responsable?.nombre;
     const local = LOCALES[r.local] || r.local;
-    const desc  = r.subtipo || r.descripcion || '—';
+    const desc  = r.subtipo || r.descripcion || '--';
     const isTicket = r.tipo === 'ticket';
     const fotoLink = r.foto_url
       ? `<a href="${r.foto_url}" target="_blank" style="display:inline-block;margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--blue);text-decoration:none;border:0.5px solid rgba(91,156,246,0.3);padding:3px 10px;border-radius:5px">ver foto en Drive ↗</a>`
@@ -4049,7 +4049,7 @@ function renderAdminReports(reportes) {
       +   '<div class="report-type-badge" style="background:' + c.bg + ';color:' + c.color + '">' + label + '</div>'
       + '</div>'
       + '<div class="report-item-meta">'
-      +   '<span>👤 ' + emp + '</span><span>·</span><span>' + local + '</span><span>·</span><span>' + (r.turno||'—') + '</span><span>·</span><span>' + fecha + '</span>'
+      +   '<span>👤 ' + emp + '</span><span>·</span><span>' + local + '</span><span>·</span><span>' + (r.turno||'--') + '</span><span>·</span><span>' + fecha + '</span>'
       + '</div>'
       + (resp ? '<div style="margin-top:6px;font-size:11px;font-family:var(--mono);color:var(--orange)">⚑ resp: ' + resp + '</div>' : '')
       + fotoLink
@@ -4064,7 +4064,7 @@ function renderAdminResumen(reportes) {
   const porEmp = {};
   reportes.forEach(r => {
     const empId   = r.responsable_id || r.empleado_id;
-    const empName = r.responsable?.nombre || r.cuentas?.nombre || empId || '—';
+    const empName = r.responsable?.nombre || r.cuentas?.nombre || empId || '--';
     if (!empId) return;
     if (!porEmp[empId]) porEmp[empId] = { nombre: empName, total: 0, falla_tienda: 0, edilicio: 0, rotos_vencidos: 0, pedidos_imp: 0, ticket: 0 };
     porEmp[empId].total++;
@@ -4135,9 +4135,9 @@ async function resolveTicket(id, btn) {
   }
 }
 
-// ═══════════════════════════════════════
+// =======================================
 // TOAST
-// ═══════════════════════════════════════
+// =======================================
 let toastTimer;
 function showToast(msg, type = '') {
   const t = document.getElementById('toast');
@@ -4147,9 +4147,9 @@ function showToast(msg, type = '') {
   toastTimer = setTimeout(() => { t.className = ''; }, 2800);
 }
 
-// ═══════════════════════════════════════
+// =======================================
 // INIT
-// ═══════════════════════════════════════
+// =======================================
 async function init() {
   try {
     // Detectar local desde URL param (?local=palermo)
@@ -4209,15 +4209,15 @@ async function init() {
 
   } catch(e) {
     console.error(e);
-    document.getElementById('loading-overlay').querySelector('.loading-text').textContent = 'error de conexión — verificar config';
+    document.getElementById('loading-overlay').querySelector('.loading-text').textContent = 'error de conexión -- verificar config';
   }
 }
 
 init();
 
-// ═══════════════════════════════════════
-// PANEL DE TURNO — LÓGICA COMPLETA
-// ═══════════════════════════════════════
+// =======================================
+// PANEL DE TURNO -- LÓGICA COMPLETA
+// =======================================
 const PT_DENOM = [
   {id:'ptb1000',val:1000},{id:'ptb2000',val:2000},{id:'ptb5000',val:5000},
   {id:'ptb10000',val:10000},{id:'ptb20000',val:20000},{id:'ptb50000',val:50000},
@@ -4264,7 +4264,7 @@ function ptInit() {
   pill.textContent = TURNO_NOM[state.turno] || state.turno;
   pill.className = `pt-turno-pill ${state.turno}`;
 
-  // Admin UI — visible para encargado y admin
+  // Admin UI -- visible para encargado y admin
   const isAdmin = !!state.adminPin;
   const isEncargadoOAdmin = state.rol === 'encargado' || state.rol === 'admin' || isAdmin;
   if (isEncargadoOAdmin) {
@@ -4311,7 +4311,7 @@ function ptRenderSemaforo() {
   }).join('');
 }
 
-// ── TAREAS — CARGA ────────────────────────
+// ── TAREAS -- CARGA ────────────────────────
 async function ptLoadTareas() {
   document.getElementById('pt-loading').style.display = 'flex';
   document.getElementById('pt-tareas-list').style.display = 'none';
@@ -4450,7 +4450,7 @@ function ptRenderDemoTareas() {
   ptRenderTareas();
 }
 
-// ── TAREAS — RENDER ───────────────────────
+// ── TAREAS -- RENDER ───────────────────────
 function ptRenderTareas() {
   const list = document.getElementById('pt-tareas-list');
   const empty = document.getElementById('pt-tareas-empty');
@@ -4517,7 +4517,7 @@ function ptUpdateStats() {
   if (lbl) lbl.textContent = (total-ok)>0 ? `${total-ok} pendiente${total-ok>1?'s':''}` : '✓ Todo listo';
 }
 
-// ── TAREAS — ACCIONES ─────────────────────
+// ── TAREAS -- ACCIONES ─────────────────────
 function ptAbrirObs(instId, nombre) {
   const inst = ptData.instancias.find(i=>i.id===instId);
   if (!inst || inst.estado==='completada') return;
@@ -4697,7 +4697,7 @@ async function ptSaveDef() {
   } catch(e) { showToast('Error al guardar', 'error'); }
 }
 
-// ── CIERRE — CÁLCULO ──────────────────────
+// ── CIERRE -- CÁLCULO ──────────────────────
 function ptRecalcPacas() {
   let totalPacas = 0;
   for (let i = 1; i <= 3; i++) {
@@ -4758,7 +4758,7 @@ function ptRecalc() {
     box.className = 'pt-diferencia pt-dif-neutral';
     lbl.textContent  = 'Diferencia';
     desc.textContent = 'Ingresá el monto del sistema para calcular';
-    val.textContent  = '—';
+    val.textContent  = '--';
   }
 }
 
@@ -4820,7 +4820,7 @@ async function ptCerrar() {
     b10000: parseInt(document.getElementById('ptb10000')?.value)||0,
     b20000: parseInt(document.getElementById('ptb20000')?.value)||0,
     b50000: parseInt(document.getElementById('ptb50000')?.value)||0,
-    m1: 0, m2: 0, m5: 0, m10: 0, m50: 0, // campos legacy — siempre 0
+    m1: 0, m2: 0, m5: 0, m10: 0, m50: 0, // campos legacy -- siempre 0
     total_tarjeta: 0, total_qr: 0, total_rappi: 0, total_pya: 0, total_mp: 0,
     total_efectivo:   totalGeneral,
     total_sistema:    totalSis,
@@ -4909,8 +4909,8 @@ function ptInitChecks() {
   });
   const recRes = document.getElementById('ptck-rec-resultado');
   const recDif = document.getElementById('ptck-rec-dif');
-  if (recRes) { recRes.textContent = '—'; recRes.style.color = 'var(--text3)'; }
-  if (recDif)   recDif.textContent = '—';
+  if (recRes) { recRes.textContent = '--'; recRes.style.color = 'var(--text3)'; }
+  if (recDif)   recDif.textContent = '--';
 
   // Resetear rotos obs
   const rotosObs = document.getElementById('ptck-rotos-obs');
@@ -4990,7 +4990,7 @@ function ptUpdateChecksProgress() {
   }
 }
 
-// ── HIELOS — CICLOS CON BOLSAS ────────────
+// ── HIELOS -- CICLOS CON BOLSAS ────────────
 function ptHieloAgregar() {
   const ahora = new Date();
   ptData.hielosCiclos.push({ bolsas: 1, hora: ahora.toISOString() });
@@ -5023,7 +5023,7 @@ function ptRenderHielos() {
   if (!container) return;
 
   const total = ptData.hielosCiclos.reduce((a,c) => a + (c.bolsas||1), 0);
-  if (sub) sub.textContent = `${ptData.hielosCiclos.length} ciclos — ${total} bolsas totales`;
+  if (sub) sub.textContent = `${ptData.hielosCiclos.length} ciclos -- ${total} bolsas totales`;
 
   if (!ptData.hielosCiclos.length) {
     container.innerHTML = '<div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:8px 0">Presioná "+ Ciclo" para registrar</div>';
@@ -5069,11 +5069,11 @@ function ptRecalcRecargas() {
         difLbl.textContent = 'Sobrante recargas';
       } else {
         difEl.style.color = 'var(--red)';
-        difLbl.textContent = 'Faltante — facturar';
+        difLbl.textContent = 'Faltante -- facturar';
       }
     }
   } else {
-    resEl.textContent = '—'; resEl.style.color = 'var(--text3)';
+    resEl.textContent = '--'; resEl.style.color = 'var(--text3)';
     ptData.recargaCalculada = null;
   }
 }
@@ -5111,7 +5111,7 @@ function ptProgramarAlarmas() {
       const t = setTimeout(() => {
         const instActual = ptData.instancias.find(i => i.id === inst.id);
         if (instActual?.estado === 'completada') return;
-        const notif = new Notification('⏰ Break — Tarea pendiente', {
+        const notif = new Notification('⏰ Break -- Tarea pendiente', {
           body: def.nombre,
           icon: 'https://sage-pithivier-f2a779.netlify.app/favicon.ico',
           tag: `tarea-${inst.id}`,
@@ -5132,7 +5132,7 @@ function ptProgramarAlarmas() {
         const t2 = setTimeout(() => {
           const instActual = ptData.instancias.find(i => i.id === inst.id);
           if (instActual?.estado === 'completada') return;
-          new Notification('🔔 Break — ' + def.nombre, {
+          new Notification('🔔 Break -- ' + def.nombre, {
             body: `Es hora: ${def.hora_inicio}`,
             tag: `tarea-hora-${inst.id}`,
           });
@@ -5156,7 +5156,7 @@ document.querySelectorAll('.pt-modal-overlay').forEach(ov => {
 function pedidosOpen() {
   goTo('pedidos');
   const badge = document.getElementById('badge-pedidos-local');
-  if (badge) badge.textContent = LOCALES[state.local] || '—';
+  if (badge) badge.textContent = LOCALES[state.local] || '--';
   const localToTienda = {palermo:'T', belgrano:'R', barrio_chino:'J', san_telmo:'S'};
   const tiendaKey = state.local ? localToTienda[state.local] : null;
   if (tiendaKey) {
@@ -5167,9 +5167,7 @@ function pedidosOpen() {
 }
 </script>
 
-<!-- ══════════════════════════════════════
-     SCREEN: PEDIDOS
-══════════════════════════════════════ -->
+<!-- SCREEN: PEDIDOS -->
 <style id="pedidos-styles">
 
 :root {
@@ -5761,11 +5759,11 @@ function buildLookup(){
 const TIENDAS={T:'Thames',R:'Roosevelt',J:'Juramento',S:'San Telmo'};
 const TC={T:'var(--accent)',R:'var(--blue)',J:'var(--teal)',S:'var(--amber)'};
 const PROV_INFO={
-  'BA LIQUORS':{dia:'Lunes',contacto:null,pago:'—'},
+  'BA LIQUORS':{dia:'Lunes',contacto:null,pago:'--'},
   'BARRACAS LOGISTICA (CCU)':{dia:'Lunes',contacto:null,pago:'Efectivo / MP'},
   'BE SWEET':{dia:'Miércoles',contacto:null,pago:'Efectivo / MP'},
   'BERLIN':{dia:'Miércoles',contacto:null,pago:'Efectivo / MP'},
-  'BIMBO':{dia:'—',contacto:null,pago:'—'},
+  'BIMBO':{dia:'--',contacto:null,pago:'--'},
   'CERVECERÍA QUILMES':{dia:'Martes',contacto:'APP BEES',pago:'Efectivo / MP'},
   'Coca Cola FEMSA':{dia:'Martes',contacto:'11 3299.0640',pago:'Efectivo / MP'},
   'CUZCO BEBIDAS':{dia:'Viernes',contacto:'11 2636.9100',pago:'Efectivo / MP'},
@@ -5807,8 +5805,8 @@ loadHist();
 // ============================================================
 // UTILS
 // ============================================================
-function fmt(n){return n==null||isNaN(n)?'—':'$'+Math.round(n).toLocaleString('es-AR');}
-function fmtN(n){return n==null||isNaN(n)?'—':Math.round(n).toLocaleString('es-AR');}
+function fmt(n){return n==null||isNaN(n)?'--':'$'+Math.round(n).toLocaleString('es-AR');}
+function fmtN(n){return n==null||isNaN(n)?'--':Math.round(n).toLocaleString('es-AR');}
 function normalize(s){return(s||'').toString().trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
 let _tt;
 function pedShowToast(msg,type=''){
@@ -5877,8 +5875,8 @@ function handleFile(file,type,infoEl,cardEl,chkEl){
   reader.onload=e=>{
     try{
       const wb=XLSX.read(e.target.result,{type:'array'});
-      if(type==='a'){artsData[curTienda]=parseArticulos(wb);infoEl.textContent=`✓ ${file.name} — ${artsData[curTienda].length} artículos`;}
-      else{ventasData[curTienda]=parseVentas(wb);infoEl.textContent=`✓ ${file.name} — ${Object.keys(ventasData[curTienda]).length} con ventas`;}
+      if(type==='a'){artsData[curTienda]=parseArticulos(wb);infoEl.textContent=`✓ ${file.name} -- ${artsData[curTienda].length} artículos`;}
+      else{ventasData[curTienda]=parseVentas(wb);infoEl.textContent=`✓ ${file.name} -- ${Object.keys(ventasData[curTienda]).length} con ventas`;}
       infoEl.classList.add('vis');cardEl.classList.add('has-data');chkEl.style.display='inline';
       checkReady();pedShowToast(`${file.name} cargado`,'success');
     }catch(err){pedShowToast('Error: '+err.message,'error');console.error(err);}
@@ -5888,7 +5886,7 @@ function handleFile(file,type,infoEl,cardEl,chkEl){
 function checkReady(){
   const ok=artsData[curTienda]&&ventasData[curTienda];
   document.getElementById('btn-calc').disabled=!ok;
-  if(ok)document.getElementById('calc-info').textContent='Archivos listos — calculá el pedido';
+  if(ok)document.getElementById('calc-info').textContent='Archivos listos -- calculá el pedido';
 }
 setupDZ('dz-a','fi-a','fi-a-info','card-a','chk-a','a');
 setupDZ('dz-v','fi-v','fi-v-info','card-v','chk-v','v');
@@ -5915,7 +5913,7 @@ document.querySelectorAll('#screen-pedidos [data-tienda]').forEach(btn=>{
 });
 
 // ============================================================
-// CALCULAR PEDIDOS — uses PDB lookup for proveedor & cantCaja
+// CALCULAR PEDIDOS -- uses PDB lookup for proveedor & cantCaja
 // ============================================================
 function calcularPedidos(){
   const arts=artsData[curTienda],ventas=ventasData[curTienda];
@@ -5946,13 +5944,13 @@ function calcularPedidos(){
   pedidoActual[curTienda]=byProv;
   renderPedido(curTienda);
   buildInvRows();  // refresh inventory data
-  document.getElementById('badge-inv').textContent = invRows.length||'—';
+  document.getElementById('badge-inv').textContent = invRows.length||'--';
   document.getElementById('btn-clear').style.display='inline-flex';
   pedShowToast('Pedidos calculados','success');
 }
 
 // ============================================================
-// INVENTARIO — full stock list with semáforo + refuerzo
+// INVENTARIO -- full stock list with semáforo + refuerzo
 // ============================================================
 let invFilter = new Set();   // active status filters
 let invSort   = {col:'stock', dir:'asc'};
@@ -5967,7 +5965,7 @@ function buildInvRows(){
   invRows = arts.map(art=>{
     const v30    = (ventas[art.codigo]||{ventas30:0}).ventas30;
     const pdb    = byCod[art.codigo]||byDesc[normalize(art.desc)];
-    const prov   = pdb ? pdb.p : '—';
+    const prov   = pdb ? pdb.p : '--';
     const cantCaja = pdb ? Math.max(1,pdb.q) : 1;
     const demSem = Math.ceil(v30/30*7);
     const stockMin = Math.ceil(demSem/7*2);
@@ -5983,7 +5981,7 @@ function buildInvRows(){
     // coverage = days of stock
     const coverage = demSem>0 ? (art.stock / demSem * 7) : null;
     return { desc:art.desc, codigo:art.codigo, prov, stock:art.stock, demSem, stockReq, cantCaja, v30, status, coverage, pu:art.costo };
-  }).filter(r=>r.prov!=='—'&&r.prov!=='Sin proveedor'&&r.prov!=='Sin Proveedor'&&r.prov!=='Eliminado');
+  }).filter(r=>r.prov!=='--'&&r.prov!=='Sin proveedor'&&r.prov!=='Sin Proveedor'&&r.prov!=='Eliminado');
 }
 
 function semColorClass(status){
@@ -5994,7 +5992,7 @@ function semaHTML(row){
   const cls = semColorClass(row.status);
   // bar fill %: coverage vs 14 days max scale
   const pct = row.demSem>0 ? Math.min(100, row.stock/row.demSem*100/2) : (row.stock>0?100:0);
-  const label = row.coverage!=null ? `${Math.round(row.coverage)}d` : '—';
+  const label = row.coverage!=null ? `${Math.round(row.coverage)}d` : '--';
   return `<div class="sema-wrap ${cls}">
     <div class="sema-dot"></div>
     <div class="sema-bar-bg"><div class="sema-bar-fill" style="width:${pct.toFixed(0)}%"></div></div>
@@ -6033,7 +6031,7 @@ function renderInventario(){
   </div>`).join('');
 
   // badge
-  document.getElementById('badge-inv').textContent = invRows.length||'—';
+  document.getElementById('badge-inv').textContent = invRows.length||'--';
 
   // populate prov selector
   const provSet = new Set(invRows.map(r=>r.prov).filter(Boolean));
@@ -6191,7 +6189,7 @@ function renderPedido(tienda){
     return`<div class="pb has-items" id="pb_${pk}">
       <div class="ph" onclick="togglePB('${pk}')">
         <div class="chev">▶</div>
-        <div class="ph-left"><div><div class="pn">${prov}</div><div class="pm">${info.dia||'—'} · ${info.pago||'—'}${info.contacto?` · ${info.contacto}`:''}</div></div></div>
+        <div class="ph-left"><div><div class="pn">${prov}</div><div class="pm">${info.dia||'--'} · ${info.pago||'--'}${info.contacto?` · ${info.contacto}`:''}</div></div></div>
         <div class="ps"><span class="pcnt">${items.length} ítems</span><span class="ptot" id="ptot_${pk}">${fmt(tot)}</span></div>
       </div>
       <div class="pbody" id="pbody_${pk}">
@@ -6262,7 +6260,7 @@ function buildWAMsg(prov,items,tiendaNombre){
   const fecha=new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
   const tot=items.reduce((s,i)=>s+i.qty*i.pu,0);
   const info=PROV_INFO[prov]||{};
-  let m=`*PEDIDO ${prov}*\n📍 ${tiendaNombre} — ${fecha}\n─────────────────────\n`;
+  let m=`*PEDIDO ${prov}*\n📍 ${tiendaNombre} -- ${fecha}\n─────────────────────\n`;
   items.forEach(i=>{m+=`• ${i.desc}\n  ${fmtN(i.qty)} unid${i.pu>0?` · ${fmt(i.pu)} c/u`:''}\n`;});
   m+=`─────────────────────\n`;
   if(tot>0)m+=`💰 *Total estimado: ${fmt(tot)}*\n`;
@@ -6318,7 +6316,7 @@ function limpiarTodo(){
   document.getElementById('btn-calc').disabled=true;
   document.getElementById('calc-info').textContent='Cargá los dos archivos para calcular';
   invRows=[]; invSel.clear(); invFilter.clear();
-  document.getElementById('badge-inv').textContent='—';
+  document.getElementById('badge-inv').textContent='--';
   pedShowToast('Datos limpiados','success');
 }
 
@@ -6344,7 +6342,7 @@ function updateBadge(){
 }
 
 // ============================================================
-// renderAll — master render dispatcher
+// renderAll -- master render dispatcher
 // ============================================================
 function renderAll(){
   renderEnviados();
@@ -6391,7 +6389,7 @@ function renderEnviados(){
     let confirmHTML='';
     if(h.confirm){
       if(h.confirm.type==='ok'){
-        confirmHTML=`<div class="confirm-section"><div class="alert-ok">✓ Pedido recibido correctamente — confirmado</div></div>`;
+        confirmHTML=`<div class="confirm-section"><div class="alert-ok">✓ Pedido recibido correctamente -- confirmado</div></div>`;
       } else {
         const diffs=h.confirm.diffs||[];
         confirmHTML=`<div class="confirm-section"><div class="alert-dif"><div class="alert-dif-title">⚠ Recibido con diferencias</div>${diffs.map(d=>`<div class="alert-dif-row">${d}</div>`).join('')}</div></div>`;
@@ -6494,13 +6492,13 @@ function renderProcesados(){
   if(!data.length){cont.innerHTML=`<div class="empty"><div class="empty-icon">✅</div><div class="empty-title">Sin pedidos procesados</div><div class="empty-sub">Los pedidos completamente procesados aparecerán acá</div></div>`;return;}
   cont.innerHTML=data.map(h=>{
     const ri=HIST.indexOf(h);
-    const fechaProc=h.fechaProcesado?new Date(h.fechaProcesado).toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'short'}):'—';
+    const fechaProc=h.fechaProcesado?new Date(h.fechaProcesado).toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'short'}):'--';
     return`<div class="hcard status-recibido-ok" id="hcard_${ri}">
       ${cardHeader(ri,h)}
       <div class="hbody" id="hbody_${ri}">
         <div style="padding:14px 18px;display:flex;align-items:center;gap:10px">
           <div style="flex:1">
-            <div class="alert-ok" style="margin:0">✓ Todos los pasos completados — ${fechaProc}</div>
+            <div class="alert-ok" style="margin:0">✓ Todos los pasos completados -- ${fechaProc}</div>
           </div>
         </div>
         <div style="display:flex;justify-content:flex-end;padding:10px 18px;background:var(--bg3);border-top:1px solid var(--line)">
@@ -6536,10 +6534,10 @@ function confirmarRecepcion(idx){
   });
   if(diffs.length===0){
     h.status='en-proceso';h.confirm={type:'ok'};
-    pedShowToast('✓ Sin diferencias — pedido movido a En proceso','success');
+    pedShowToast('✓ Sin diferencias -- pedido movido a En proceso','success');
   } else {
     h.status='en-proceso';h.confirm={type:'dif',diffs};
-    pedShowToast('⚠ Diferencias registradas — pedido movido a En proceso','error');
+    pedShowToast('⚠ Diferencias registradas -- pedido movido a En proceso','error');
   }
   saveHist();renderAll();
   // auto-switch to En proceso tab
@@ -6629,10 +6627,10 @@ function renderProvDB(){
     document.getElementById('pdb-tbody').innerHTML=display.map(e=>{
     const globalIdx=PDB.indexOf(e);
     return`<tr>
-      <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)">${e.c||'—'}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)">${e.c||'--'}</td>
       <td style="font-weight:600;color:var(--text)">${e.d}</td>
       <td style="font-size:11px;color:var(--text3)">${e.r}</td>
-      <td><span class="prov-tag">${e.p||'—'}</span></td>
+      <td><span class="prov-tag">${e.p||'--'}</span></td>
       <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)">${e.u}</td>
       <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);text-align:right">${e.q}</td>
       <td style="text-align:right"><button class="btn-s" style="font-size:11px;padding:4px 10px;white-space:nowrap" onclick="openEditRow(${globalIdx})">✎ Editar</button></td>
