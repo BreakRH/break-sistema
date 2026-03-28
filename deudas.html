@@ -376,10 +376,11 @@ const HEADERS = {
 };
 
 // ══════════════════════════════════════════════
-// LOCAL CONTEXT — recibido del hub via postMessage
-// Si se abre directo (sin hub), currentLocal = null → muestra todo
+// LOCAL CONTEXT
+// Prioridad 1: ?local= en la URL (seteado por el hub al abrir el iframe)
+// Prioridad 2: postMessage del hub (fallback)
+// Sin local: muestra todo (abierto directo por URL)
 // ══════════════════════════════════════════════
-let currentLocal = null; // ej: 'barrio_chino'
 const LOCAL_NAMES = {
   palermo:     'Thames · Palermo',
   belgrano:    'Roosevelt · Belgrano',
@@ -387,10 +388,11 @@ const LOCAL_NAMES = {
   san_telmo:   'Independencia · S. Telmo',
 };
 
-// Escuchar contexto del hub
+let currentLocal = new URLSearchParams(window.location.search).get('local') || null;
+
 window.addEventListener('message', function(e) {
-  if (e.data && e.data.type === 'break-context') {
-    currentLocal = e.data.local || null;
+  if (e.data && e.data.type === 'break-context' && e.data.local) {
+    currentLocal = e.data.local;
     applyLocalContext();
   }
 });
@@ -406,7 +408,6 @@ function applyLocalContext() {
 
 function goBackToHub() {
   try { window.parent.postMessage({ type: 'break-goback' }, '*'); } catch(e) {}
-  // Si se abrió solo (sin iframe), no hace nada
 }
 
 // ══════════════════════════════════════════════
@@ -430,44 +431,33 @@ async function sbDelete(table, params) {
 
 // ══════════════════════════════════════════════
 // STATE
+// cuentas  → todos los empleados, sin filtro por local
+// entradas → se filtra por store = currentLocal en la vista
+//            pero se guardan TODAS para el total consolidado del admin
 // ══════════════════════════════════════════════
-let state = { pin: '1234', cuentas: [], entradas: [] };
+let state = { pin: '1234', cuentas: [], entradas: [], entradasLocal: [] };
 let currentUser = null, currentUserId = null, currentRole = null;
 let modalId = null, signo = 1;
+let adminVerTodo = false; // toggle del admin: ver local actual vs todos los locales
 
 // ══════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════
 async function init() {
   try {
-    const [cuentasAll, entradasAll, cfg] = await Promise.all([
+    const [cuentas, entradas, cfg] = await Promise.all([
       sbGet('cuentas', 'order=tipo,nombre'),
       sbGet('entradas', 'order=created_at.asc'),
       sbGet('config', 'clave=eq.pin')
     ]);
 
-    // ── FILTRO POR LOCAL ──────────────────────────────────────
-    // Si currentLocal está seteado, mostramos solo las cuentas
-    // que tengan local = currentLocal, O que no tengan local
-    // asignado (datos legacy). Excepción: si alguna cuenta tiene
-    // un local DISTINTO, la ocultamos.
-    //
-    // Si currentLocal es null (abierto directamente), mostramos todo.
-    let cuentas = cuentasAll || [];
-    if (currentLocal) {
-      const hayConLocal = cuentas.some(c => c.local && c.local !== '');
-      if (hayConLocal) {
-        // BD ya tiene campo local: filtrar
-        cuentas = cuentas.filter(c => !c.local || c.local === '' || c.local === currentLocal);
-      }
-      // Si ninguna tiene local seteado → datos legacy, mostramos todo
-    }
+    state.cuentas  = cuentas  || [];
+    state.entradas = entradas || []; // TODAS las entradas (para total consolidado)
 
-    const idSet = new Set(cuentas.map(c => c.id));
+    // entradasLocal = solo las del local actual (para vista filtrada)
+    state.entradasLocal = filtrarEntradasPorLocal(state.entradas);
 
-    state.cuentas  = cuentas;
-    state.entradas = (entradasAll || []).filter(e => idSet.has(e.cid));
-    state.pin      = cfg && cfg[0] ? cfg[0].valor : '1234';
+    state.pin = cfg && cfg[0] ? cfg[0].valor : '1234';
 
     populateSelects();
     updateSplashTotal();
@@ -481,14 +471,36 @@ async function init() {
 }
 init();
 
+// Filtra entradas por store = currentLocal.
+// Si currentLocal es null → devuelve todas (sin filtro).
+// Si ninguna entrada tiene store seteado → devuelve todas (datos legacy).
+function filtrarEntradasPorLocal(entradas) {
+  if (!currentLocal) return entradas;
+  const hayConStore = entradas.some(e => e.store && e.store !== '');
+  if (!hayConStore) return entradas; // legacy: sin campo store, mostrar todo
+  return entradas.filter(e => !e.store || e.store === '' || e.store === currentLocal);
+}
+
 // ══════════════════════════════════════════════
 // UTILS
 // ══════════════════════════════════════════════
 function fmt(n)  { return '$' + Math.abs(Math.round(n)).toLocaleString('es-AR'); }
 function now()   { const d = new Date(), p = x => String(x).padStart(2,'0'); return `${p(d.getDate())}/${p(d.getMonth()+1)}/${String(d.getFullYear()).slice(2)} ${p(d.getHours())}:${p(d.getMinutes())}`; }
 function ini(n)  { return n.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase(); }
-function saldo(id) { return state.entradas.filter(e => e.cid === id).reduce((a, e) => a + e.monto, 0); }
-function saldoGlobal() { return state.cuentas.reduce((a, c) => a + saldo(c.id), 0); }
+
+// saldo de un empleado — usa entradasLocal (filtradas por local) o todas según modo admin
+function saldo(id, usarTodas = false) {
+  const pool = usarTodas ? state.entradas : state.entradasLocal;
+  return pool.filter(e => e.cid === id).reduce((a, e) => a + e.monto, 0);
+}
+// saldo global de la vista actual
+function saldoGlobal() {
+  return state.cuentas.reduce((a, c) => a + saldo(c.id, adminVerTodo), 0);
+}
+// saldo total consolidado de un empleado (todos los locales)
+function saldoTotal(id) {
+  return state.entradas.filter(e => e.cid === id).reduce((a, e) => a + e.monto, 0);
+}
 
 function showToast(msg, err = false) {
   const t = document.getElementById('toast');
@@ -505,7 +517,9 @@ function showLoading(msg = 'Guardando...') {
 function hideLoading() { document.getElementById('loading-overlay').classList.add('hidden'); }
 
 function updateSplashTotal() {
-  const t = saldoGlobal();
+  // Splash muestra el total del local actual
+  const pool = state.entradasLocal;
+  const t = state.cuentas.reduce((a, c) => a + pool.filter(e => e.cid === c.id).reduce((x, e) => x + e.monto, 0), 0);
   const el = document.getElementById('splash-total-val');
   if (!el) return;
   el.textContent = fmt(t);
@@ -554,6 +568,7 @@ function loginAdmin() {
   }
   document.getElementById('pin-err').style.display = 'none';
   currentUser = 'Administración'; currentRole = 'admin';
+  adminVerTodo = false;
   enterApp();
 }
 
@@ -576,25 +591,21 @@ function enterApp() {
 async function logout() {
   showLoading('Actualizando...');
   try {
-    const [cuentasAll, entradasAll, cfg] = await Promise.all([
+    const [cuentas, entradas, cfg] = await Promise.all([
       sbGet('cuentas', 'order=tipo,nombre'),
       sbGet('entradas', 'order=created_at.asc'),
       sbGet('config', 'clave=eq.pin')
     ]);
-    let cuentas = cuentasAll || [];
-    if (currentLocal) {
-      const hayConLocal = cuentas.some(c => c.local && c.local !== '');
-      if (hayConLocal) cuentas = cuentas.filter(c => !c.local || c.local === '' || c.local === currentLocal);
-    }
-    const idSet = new Set(cuentas.map(c => c.id));
-    state.cuentas  = cuentas;
-    state.entradas = (entradasAll || []).filter(e => idSet.has(e.cid));
-    state.pin      = cfg && cfg[0] ? cfg[0].valor : '1234';
+    state.cuentas       = cuentas  || [];
+    state.entradas      = entradas || [];
+    state.entradasLocal = filtrarEntradasPorLocal(state.entradas);
+    state.pin           = cfg && cfg[0] ? cfg[0].valor : '1234';
     populateSelects();
     updateSplashTotal();
   } catch(e) { console.error(e); }
   hideLoading();
   currentUser = currentUserId = currentRole = null;
+  adminVerTodo = false;
   document.getElementById('splash').style.display = 'flex';
   document.getElementById('app').style.display = 'none';
   document.getElementById('admin-pin').value = '';
@@ -604,16 +615,19 @@ async function logout() {
 
 // ══════════════════════════════════════════════
 // VISTA EMPLEADO / GASTO
+// Usa entradasLocal → el empleado ve solo los cargos de la tienda actual
 // ══════════════════════════════════════════════
 function renderEmp() {
-  const s = saldo(currentUserId);
+  const s = saldo(currentUserId); // usa entradasLocal
   const el = document.getElementById('emp-saldo-display');
   el.textContent = fmt(s);
   el.className = 'saldo-hero-amount' + (s === 0 ? ' zero' : '');
   const isGasto = currentRole === 'gasto';
   document.getElementById('emp-name-display').textContent = currentUser;
   document.getElementById('emp-name-display').style.color = isGasto ? 'var(--blue)' : 'var(--muted)';
-  document.getElementById('saldo-hero-note').textContent = isGasto ? 'gasto general · solo lectura' : 'saldo deudor · solo lectura';
+  document.getElementById('saldo-hero-note').textContent = isGasto
+    ? 'gasto general · solo lectura'
+    : (currentLocal ? 'saldo en ' + (LOCAL_NAMES[currentLocal] || currentLocal) + ' · solo lectura' : 'saldo deudor · solo lectura');
   document.getElementById('inp-turno-row').style.display = isGasto ? 'none' : '';
   document.getElementById('form-card-title').textContent = isGasto ? 'Nuevo gasto' : 'Nueva deuda';
   document.getElementById('btn-submit-deuda').textContent = isGasto ? 'Registrar gasto →' : 'Registrar deuda →';
@@ -622,20 +636,21 @@ function renderEmp() {
 }
 
 function renderEmpHistorial() {
-  const list = state.entradas.filter(e => e.cid === currentUserId).slice().reverse();
+  const list = state.entradasLocal.filter(e => e.cid === currentUserId).slice().reverse();
   document.getElementById('emp-historial').innerHTML = list.length
     ? list.map(entryHTML).join('')
-    : '<p style="color:var(--muted);font-size:13px;font-family:var(--mono);padding:8px 0">Sin movimientos registrados.</p>';
+    : '<p style="color:var(--muted);font-size:13px;font-family:var(--mono);padding:8px 0">Sin movimientos en esta tienda.</p>';
 }
 
 function entryHTML(e) {
   const pos = e.monto > 0;
   const badge = e.admin ? 'badge-admin' : (pos ? 'badge-cargo' : 'badge-desc');
   const label = e.admin ? 'admin' : (pos ? 'cargo' : 'descuento');
+  const storeName = e.store ? (LOCAL_NAMES[e.store] || e.store) : '';
   return `<div class="entry-item">
     <div class="entry-left">
       <div class="entry-desc">${e.desc}</div>
-      <div class="entry-meta">${e.fecha || ''}${e.turno ? ' · ' + e.turno : ''}<span class="entry-badge ${badge}">${label}</span></div>
+      <div class="entry-meta">${e.fecha || ''}${e.turno ? ' · ' + e.turno : ''}${storeName ? ' · ' + storeName : ''}<span class="entry-badge ${badge}">${label}</span></div>
     </div>
     <div class="entry-amount ${pos ? 'pos' : 'neg'}">${pos ? '+' : '−'}${fmt(e.monto)}</div>
   </div>`;
@@ -648,10 +663,20 @@ async function submitDeuda() {
   if (!desc)            { showToast('Completá la descripción', true); return; }
   if (!monto || monto <= 0) { showToast('El monto debe ser mayor a 0', true); return; }
   showLoading();
-  const entrada = { cid: currentUserId, desc, monto: Math.round(monto), turno, fecha: now(), admin: false };
+  // Guardar store = currentLocal para identificar de qué tienda es el cargo
+  const entrada = {
+    cid: currentUserId,
+    desc,
+    monto: Math.round(monto),
+    turno,
+    fecha: now(),
+    admin: false,
+    store: currentLocal || null
+  };
   const res = await sbPost('entradas', entrada);
   if (res && res[0]) {
     state.entradas.push(res[0]);
+    state.entradasLocal = filtrarEntradasPorLocal(state.entradas);
     document.getElementById('inp-desc').value = '';
     document.getElementById('inp-monto').value = '';
     renderEmp(); updateTopbarTotal();
@@ -670,48 +695,85 @@ function switchEmpTab(tab, btn) {
 
 // ══════════════════════════════════════════════
 // VISTA ADMIN
+// Toggle: ver local actual / ver todos los locales (total consolidado)
 // ══════════════════════════════════════════════
 function renderAdmin() {
   renderAdminStats(); renderAdminGrid(); renderAdminLog(); renderConfigList(); updateTopbarTotal();
 }
 
+function toggleAdminVista() {
+  adminVerTodo = !adminVerTodo;
+  const btn = document.getElementById('btn-toggle-vista');
+  if (btn) {
+    btn.textContent = adminVerTodo
+      ? '← Ver solo ' + (LOCAL_NAMES[currentLocal] || 'este local')
+      : '🌐 Ver todos los locales';
+    btn.style.borderColor = adminVerTodo ? 'var(--accent)' : 'var(--border2)';
+    btn.style.color = adminVerTodo ? 'var(--accent)' : 'var(--muted)';
+  }
+  renderAdminStats(); renderAdminGrid(); renderAdminLog(); updateTopbarTotal();
+}
+
 function renderAdminStats() {
-  const totalPos  = state.entradas.reduce((a, e) => a + (e.monto > 0 ? e.monto : 0), 0);
-  const totalNeg  = state.entradas.reduce((a, e) => a + (e.monto < 0 ? Math.abs(e.monto) : 0), 0);
-  const gastoNeto = state.cuentas.filter(c => c.tipo === 'gasto').reduce((a, c) => a + saldo(c.id), 0);
+  const pool      = adminVerTodo ? state.entradas : state.entradasLocal;
+  const totalPos  = pool.reduce((a, e) => a + (e.monto > 0 ? e.monto : 0), 0);
+  const totalNeg  = pool.reduce((a, e) => a + (e.monto < 0 ? Math.abs(e.monto) : 0), 0);
+  const gastoNeto = state.cuentas.filter(c => c.tipo === 'gasto')
+    .reduce((a, c) => a + pool.filter(e => e.cid === c.id).reduce((x, e) => x + e.monto, 0), 0);
+  const totalLabel = adminVerTodo ? 'Saldo total (todos)' : 'Saldo ' + (LOCAL_NAMES[currentLocal]?.split('·')[0].trim() || 'tienda');
   document.getElementById('admin-stats').innerHTML = `
-    <div class="stat-card"><div class="stat-label">Saldo total tienda</div><div class="stat-val red">${fmt(saldoGlobal())}</div></div>
+    <div class="stat-card"><div class="stat-label">${totalLabel}</div><div class="stat-val red">${fmt(saldoGlobal())}</div></div>
     <div class="stat-card"><div class="stat-label">Gastos generales</div><div class="stat-val blue">${fmt(gastoNeto)}</div></div>
     <div class="stat-card"><div class="stat-label">Total cobrado</div><div class="stat-val green">${fmt(totalNeg)}</div></div>`;
 }
 
 function cuentaRowHTML(c) {
-  const s = saldo(c.id), cnt = state.entradas.filter(e => e.cid === c.id).length, isG = c.tipo === 'gasto';
+  const pool  = adminVerTodo ? state.entradas : state.entradasLocal;
+  const s     = pool.filter(e => e.cid === c.id).reduce((a, e) => a + e.monto, 0);
+  const sAll  = saldoTotal(c.id); // siempre el total consolidado
+  const cnt   = pool.filter(e => e.cid === c.id).length;
+  const isG   = c.tipo === 'gasto';
+  // Si hay deuda en otros locales, mostrar nota
+  const tieneOtros = !adminVerTodo && sAll !== s;
+  const otrosLabel = tieneOtros
+    ? `<span style="font-size:10px;color:var(--muted);font-family:var(--mono);margin-left:6px">(total: ${fmt(sAll)})</span>`
+    : '';
   return `<div class="emp-row" onclick="openModal('${c.id}')">
     <div class="emp-avatar ${isG ? 'gasto' : ''}">${ini(c.nombre)}</div>
-    <div class="emp-name">${c.nombre}</div>
+    <div class="emp-name">${c.nombre}${otrosLabel}</div>
     <div class="emp-count">${cnt} mov.</div>
     <div class="emp-saldo ${s > 0 ? 'pos' : 'zero'}">${fmt(s)}</div>
   </div>`;
 }
 
 function renderAdminGrid() {
-  const emps   = state.cuentas.filter(c => c.tipo === 'empleado').sort((a, b) => saldo(b.id) - saldo(a.id));
-  const gastos = state.cuentas.filter(c => c.tipo === 'gasto').sort((a, b) => saldo(b.id) - saldo(a.id));
+  const emps   = state.cuentas.filter(c => c.tipo === 'empleado').sort((a, b) => saldo(b.id, adminVerTodo) - saldo(a.id, adminVerTodo));
+  const gastos = state.cuentas.filter(c => c.tipo === 'gasto').sort((a, b) => saldo(b.id, adminVerTodo) - saldo(a.id, adminVerTodo));
+  // Botón toggle solo si hay un local seteado
+  const toggleBtn = currentLocal
+    ? `<button id="btn-toggle-vista" onclick="toggleAdminVista()"
+        style="margin-bottom:14px;background:transparent;border:0.5px solid var(--border2);border-radius:var(--radius);
+               padding:8px 14px;color:var(--muted);font-family:var(--mono);font-size:12px;cursor:pointer;width:100%">
+        🌐 Ver todos los locales
+      </button>`
+    : '';
   document.getElementById('admin-emp-grid').innerHTML =
+    toggleBtn +
     `<div class="section-sep"><span class="section-sep-label tag-emp">Empleados</span><div class="section-sep-line"></div></div>` + emps.map(cuentaRowHTML).join('') +
     `<div class="section-sep" style="margin-top:18px"><span class="section-sep-label tag-gasto">Gastos generales</span><div class="section-sep-line"></div></div>` + gastos.map(cuentaRowHTML).join('');
 }
 
 function renderAdminLog() {
-  const all = [...state.entradas].reverse();
+  const pool = adminVerTodo ? state.entradas : state.entradasLocal;
+  const all  = [...pool].reverse();
   document.getElementById('admin-log-list').innerHTML = all.length
     ? all.map(e => {
         const c = state.cuentas.find(x => x.id === e.cid), nom = c ? c.nombre : e.cid, isG = c && c.tipo === 'gasto', pos = e.monto > 0;
+        const storeName = e.store ? (LOCAL_NAMES[e.store] || e.store) : '';
         return `<div class="entry-item">
           <div class="entry-left">
             <div class="entry-desc"><span class="log-emp ${isG ? 'gasto' : ''}">${nom}</span> — ${e.desc}</div>
-            <div class="entry-meta">${e.fecha || ''}${e.turno ? ' · ' + e.turno : ''}<span class="entry-badge ${e.admin ? 'badge-admin' : (pos ? 'badge-cargo' : 'badge-desc')}">${e.admin ? 'admin' : (pos ? 'cargo' : 'descuento')}</span></div>
+            <div class="entry-meta">${e.fecha || ''}${e.turno ? ' · ' + e.turno : ''}${storeName ? ' · ' + storeName : ''}<span class="entry-badge ${e.admin ? 'badge-admin' : (pos ? 'badge-cargo' : 'badge-desc')}">${e.admin ? 'admin' : (pos ? 'cargo' : 'descuento')}</span></div>
           </div>
           <div class="entry-amount ${pos ? 'pos' : 'neg'}">${pos ? '+' : '−'}${fmt(e.monto)}</div>
         </div>`;
@@ -741,10 +803,8 @@ async function addCuenta(tipo) {
   }
   const id = nombre.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') + '-' + Date.now();
   showLoading();
-  // Si currentLocal está seteado, guardar el campo local en la cuenta nueva
-  const payload = { id, nombre, tipo };
-  if (currentLocal) payload.local = currentLocal;
-  const res = await sbPost('cuentas', payload);
+  // cuentas ya no tiene campo local — el empleado es global
+  const res = await sbPost('cuentas', { id, nombre, tipo });
   if (res && res[0]) {
     state.cuentas.push(res[0]);
     document.getElementById(inputId).value = '';
@@ -787,18 +847,35 @@ function switchAdminTab(tab, btn) {
 
 // ══════════════════════════════════════════════
 // MODAL ADMIN
+// Muestra historial separado por local + total consolidado
 // ══════════════════════════════════════════════
 function openModal(id) {
   modalId = id; signo = 1;
   renderModalBody();
   document.getElementById('modal-backdrop').classList.add('open');
 }
+
 function renderModalBody() {
   const c = state.cuentas.find(x => x.id === modalId); if (!c) return;
-  const s = saldo(modalId);
-  const entradas = state.entradas.filter(e => e.cid === modalId).slice().reverse();
-  document.getElementById('modal-title').innerHTML = `${c.nombre} <span style="font-size:12px;font-weight:400;color:var(--muted);font-family:var(--mono)">— ${fmt(s)}</span>`;
+
+  // Saldo del local actual
+  const sLocal = state.entradasLocal.filter(e => e.cid === modalId).reduce((a, e) => a + e.monto, 0);
+  // Saldo total consolidado (todos los locales)
+  const sTotal = saldoTotal(modalId);
+  const hayOtros = currentLocal && sTotal !== sLocal;
+
+  const entradas = (adminVerTodo ? state.entradas : state.entradasLocal)
+    .filter(e => e.cid === modalId).slice().reverse();
+
+  const localActualLabel = currentLocal ? (LOCAL_NAMES[currentLocal] || currentLocal) : 'Todas las tiendas';
+
+  document.getElementById('modal-title').innerHTML =
+    `${c.nombre} <span style="font-size:12px;font-weight:400;color:var(--muted);font-family:var(--mono)">— ${fmt(sLocal)}</span>`;
+
   document.getElementById('modal-body').innerHTML = `
+    ${hayOtros ? `<div style="background:rgba(232,200,122,0.08);border:0.5px solid rgba(232,200,122,0.2);border-radius:var(--radius);padding:10px 14px;margin-bottom:14px;font-size:12px;font-family:var(--mono);color:var(--accent)">
+      💡 Deuda en ${localActualLabel}: <strong>${fmt(sLocal)}</strong> &nbsp;·&nbsp; Total todos los locales: <strong>${fmt(sTotal)}</strong>
+    </div>` : ''}
     <div style="margin-bottom:1.3rem">
       <div class="card-title" style="margin-bottom:10px">Ajuste de cuenta — solo administración</div>
       <div class="ajuste-form">
@@ -814,29 +891,41 @@ function renderModalBody() {
         <div class="full"><button class="btn btn-primary" onclick="submitAjuste()">Aplicar ajuste →</button></div>
       </div>
     </div>
-    <div class="card-title" style="margin-bottom:8px">Historial completo</div>
+    <div class="card-title" style="margin-bottom:8px">Historial — ${adminVerTodo ? 'todos los locales' : localActualLabel}</div>
     <div class="entry-list">${entradas.length ? entradas.map(entryHTML).join('') : '<p style="color:var(--muted);font-size:13px;font-family:var(--mono)">Sin movimientos.</p>'}</div>`;
 }
+
 function setSigno(s) {
   signo = s;
   document.getElementById('btn-pos').className = 'signo-btn' + (s === 1 ? ' on-pos' : '');
   document.getElementById('btn-neg').className = 'signo-btn' + (s === -1 ? ' on-neg' : '');
 }
+
 async function submitAjuste() {
   const desc  = document.getElementById('m-desc').value.trim();
   const monto = parseFloat(document.getElementById('m-monto').value);
   if (!desc)            { showToast('Completá el concepto', true); return; }
   if (!monto || monto <= 0) { showToast('Monto inválido', true); return; }
   showLoading();
-  const entrada = { cid: modalId, desc, monto: Math.round(monto) * signo, turno: '', fecha: now(), admin: true };
+  const entrada = {
+    cid: modalId,
+    desc,
+    monto: Math.round(monto) * signo,
+    turno: '',
+    fecha: now(),
+    admin: true,
+    store: currentLocal || null
+  };
   const res = await sbPost('entradas', entrada);
   if (res && res[0]) {
     state.entradas.push(res[0]);
+    state.entradasLocal = filtrarEntradasPorLocal(state.entradas);
     renderAdmin(); renderModalBody();
     showToast('Ajuste registrado ✓');
   } else { showToast('Error al guardar', true); }
   hideLoading();
 }
+
 function closeModal(e) { if (e.target === document.getElementById('modal-backdrop')) closeModalDirect(); }
 function closeModalDirect() { document.getElementById('modal-backdrop').classList.remove('open'); modalId = null; }
 </script>
