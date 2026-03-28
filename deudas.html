@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Control de Cuentas — Break</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0e0e0e; --surface: #161616; --surface2: #1f1f1f;
+  --border: rgba(255,255,255,0.08); --border2: rgba(255,255,255,0.14);
+  --text: #f0ede8; --muted: #777;
+  --accent: #e8c87a; --accent-dim: rgba(232,200,122,0.12);
+  --red: #e05555; --red-dim: rgba(224,85,85,0.12);
+  --green: #5dbf8a; --green-dim: rgba(93,191,138,0.12);
+  --blue: #6aabda; --blue-dim: rgba(106,171,218,0.12);
+  --radius: 10px; --radius-lg: 16px;
+  --mono: 'DM Mono', monospace; --display: 'Syne', sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html { font-size: 15px; }
+body { background: var(--bg); color: var(--text); font-family: var(--display); min-height: 100vh; line-height: 1.6; }
+
+/* loading */
+#loading-overlay { position: fixed; inset: 0; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; z-index: 9999; }
+#loading-overlay.hidden { display: none; }
+.spinner { width: 28px; height: 28px; border: 1.5px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { font-size: 12px; color: var(--muted); font-family: var(--mono); }
+
+/* splash */
+#splash { min-height: 100vh; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; gap: 2rem; }
+.logo-block { text-align: center; }
+.logo-label { font-size: 11px; letter-spacing: 0.18em; color: var(--muted); text-transform: uppercase; margin-bottom: 6px; font-family: var(--mono); }
+.logo-title { font-size: 2.2rem; font-weight: 800; line-height: 1.1; }
+.logo-title span { color: var(--accent); }
+.logo-sub { font-size: 13px; color: var(--muted); margin-top: 6px; font-family: var(--mono); }
+.splash-total { margin-top: 14px; background: var(--surface); border: 0.5px solid var(--border2); border-radius: var(--radius-lg); padding: 12px 26px; display: inline-flex; flex-direction: column; align-items: center; gap: 2px; }
+.splash-total-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.16em; color: var(--muted); font-family: var(--mono); }
+.splash-total-val { font-size: 1.9rem; font-weight: 800; font-family: var(--mono); color: var(--red); line-height: 1.1; }
+.splash-total-val.zero { color: var(--green); }
+
+.login-box { width: 100%; max-width: 380px; background: var(--surface); border: 0.5px solid var(--border2); border-radius: var(--radius-lg); padding: 1.8rem; display: flex; flex-direction: column; gap: 1.1rem; }
+.login-box h2 { font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; font-family: var(--mono); }
+.field-group { display: flex; flex-direction: column; gap: 6px; }
+.field-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; font-family: var(--mono); }
+select, input[type="text"], input[type="password"], input[type="number"] {
+  background: var(--bg); border: 0.5px solid var(--border2); border-radius: var(--radius);
+  color: var(--text); font-family: var(--mono); font-size: 14px; padding: 10px 14px;
+  width: 100%; outline: none; transition: border-color 0.15s; appearance: none; -webkit-appearance: none;
+}
+select:focus, input:focus { border-color: var(--accent); }
+select option { background: #111; }
+
+.btn { padding: 11px 20px; border-radius: var(--radius); border: none; font-family: var(--display); font-weight: 700; font-size: 14px; cursor: pointer; transition: opacity 0.15s, transform 0.1s; letter-spacing: 0.02em; width: 100%; }
+.btn:active { transform: scale(0.98); }
+.btn-primary { background: var(--accent); color: #0e0e0e; }
+.btn-primary:hover { opacity: 0.88; }
+.btn-ghost { background: transparent; color: var(--muted); border: 0.5px solid var(--border2); font-size: 13px; padding: 9px 16px; }
+.btn-ghost:hover { color: var(--text); }
+.btn-blue { background: transparent; color: var(--blue); border: 0.5px solid rgba(106,171,218,0.4); font-size: 13px; padding: 9px 16px; }
+.btn-danger { background: var(--red-dim); color: var(--red); border: 0.5px solid var(--red); font-size: 12px; padding: 7px 14px; font-family: var(--mono); border-radius: var(--radius); cursor: pointer; }
+.err-msg { font-size: 12px; color: var(--red); font-family: var(--mono); display: none; }
+
+/* app */
+#app { display: none; min-height: 100vh; flex-direction: column; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 0 20px; border-bottom: 0.5px solid var(--border); position: sticky; top: 0; background: rgba(14,14,14,0.96); backdrop-filter: blur(8px); z-index: 100; min-height: 56px; gap: 12px; }
+.topbar-left { display: flex; flex-direction: column; justify-content: center; padding: 10px 0; gap: 2px; }
+.topbar-brand { font-size: 14px; font-weight: 800; letter-spacing: 0.02em; line-height: 1; }
+.topbar-brand span { color: var(--accent); }
+.topbar-subtitle { font-size: 10px; font-family: var(--mono); color: var(--muted); }
+.topbar-total { font-size: 11px; font-family: var(--mono); color: var(--muted); display: flex; align-items: center; gap: 4px; }
+.topbar-total-val { font-weight: 500; }
+.topbar-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.topbar-user { font-size: 12px; color: var(--muted); font-family: var(--mono); }
+.btn-logout { background: transparent; border: none; color: var(--muted); font-size: 12px; cursor: pointer; font-family: var(--mono); padding: 4px 8px; border-radius: 6px; }
+.btn-logout:hover { color: var(--text); background: var(--surface2); }
+.btn-back { background: var(--surface); border: 0.5px solid var(--border2); border-radius: 8px; color: var(--muted); font-size: 16px; cursor: pointer; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.15s; }
+.btn-back:hover { background: var(--surface2); }
+
+.main-content { flex: 1; padding: 20px 20px 40px; max-width: 760px; margin: 0 auto; width: 100%; }
+.tabs { display: flex; gap: 4px; margin-bottom: 20px; background: var(--surface); border-radius: var(--radius); padding: 4px; border: 0.5px solid var(--border); }
+.tab-btn { flex: 1; padding: 8px 6px; border: none; background: transparent; color: var(--muted); font-family: var(--display); font-weight: 600; font-size: 13px; cursor: pointer; border-radius: 8px; transition: all 0.15s; white-space: nowrap; }
+.tab-btn.active { background: var(--surface2); color: var(--text); }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+.card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.3rem; margin-bottom: 14px; }
+.card-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.16em; color: var(--muted); font-family: var(--mono); margin-bottom: 12px; }
+.section-sep { display: flex; align-items: center; gap: 10px; margin: 18px 0 8px; }
+.section-sep-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.14em; font-family: var(--mono); white-space: nowrap; }
+.section-sep-line { flex: 1; height: 0.5px; background: var(--border); }
+.tag-emp { color: var(--accent); } .tag-gasto { color: var(--blue); }
+
+.saldo-hero { text-align: center; padding: 1.8rem 1rem; background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); margin-bottom: 14px; }
+.saldo-hero-name { font-size: 13px; color: var(--muted); font-family: var(--mono); margin-bottom: 4px; }
+.saldo-hero-amount { font-size: 2.8rem; font-weight: 800; color: var(--red); font-family: var(--mono); line-height: 1; margin-bottom: 8px; }
+.saldo-hero-amount.zero { color: var(--green); }
+.saldo-hero-note { font-size: 11px; color: var(--muted); font-family: var(--mono); }
+
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-grid .full { grid-column: 1 / -1; }
+.lock-note { display: flex; align-items: flex-start; gap: 8px; background: var(--accent-dim); border: 0.5px solid rgba(232,200,122,0.25); border-radius: var(--radius); padding: 10px 14px; font-size: 12px; color: var(--accent); font-family: var(--mono); line-height: 1.5; margin-top: 12px; }
+
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--surface); border: 0.5px solid var(--border2); color: var(--text); padding: 10px 20px; border-radius: var(--radius); font-size: 13px; font-weight: 700; font-family: var(--mono); transition: transform 0.3s cubic-bezier(.34,1.56,.64,1); z-index: 9998; white-space: nowrap; }
+.toast.show { transform: translateX(-50%) translateY(0); }
+.toast.ok { border-color: var(--green); color: var(--green); }
+.toast.err { border-color: var(--red); color: var(--red); }
+
+.entry-list { display: flex; flex-direction: column; }
+.entry-item { display: flex; align-items: flex-start; justify-content: space-between; padding: 11px 0; border-bottom: 0.5px solid var(--border); gap: 12px; }
+.entry-item:last-child { border-bottom: none; }
+.entry-left { flex: 1; min-width: 0; }
+.entry-desc { font-size: 14px; font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.entry-meta { font-size: 11px; color: var(--muted); font-family: var(--mono); margin-top: 2px; }
+.entry-badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-family: var(--mono); font-weight: 500; margin-left: 4px; }
+.badge-cargo { background: var(--red-dim); color: var(--red); }
+.badge-desc  { background: var(--green-dim); color: var(--green); }
+.badge-admin { background: var(--blue-dim); color: var(--blue); }
+.entry-amount { font-family: var(--mono); font-size: 14px; font-weight: 500; flex-shrink: 0; }
+.entry-amount.pos { color: var(--red); } .entry-amount.neg { color: var(--green); }
+
+.emp-grid { display: flex; flex-direction: column; }
+.emp-row { display: flex; align-items: center; gap: 12px; padding: 11px 8px; border-bottom: 0.5px solid var(--border); cursor: pointer; transition: background 0.1s; border-radius: 6px; margin: 0 -8px; }
+.emp-row:last-child { border-bottom: none; }
+.emp-row:hover { background: var(--surface2); }
+.emp-row.static { cursor: default; } .emp-row.static:hover { background: transparent; }
+.emp-avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--accent-dim); border: 0.5px solid rgba(232,200,122,0.3); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: var(--accent); flex-shrink: 0; font-family: var(--mono); }
+.emp-avatar.gasto { background: var(--blue-dim); border-color: rgba(106,171,218,0.3); color: var(--blue); }
+.emp-name { flex: 1; font-size: 14px; font-weight: 600; }
+.emp-count { font-size: 11px; color: var(--muted); font-family: var(--mono); min-width: 48px; text-align: right; }
+.emp-saldo { font-family: var(--mono); font-size: 14px; font-weight: 500; min-width: 88px; text-align: right; }
+.emp-saldo.pos { color: var(--red); } .emp-saldo.zero { color: var(--green); }
+
+.stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+.stat-card { background: var(--surface2); border-radius: var(--radius); padding: 10px 12px; }
+.stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; font-family: var(--mono); margin-bottom: 3px; }
+.stat-val { font-size: 1.25rem; font-weight: 700; font-family: var(--mono); }
+.stat-val.red { color: var(--red); } .stat-val.green { color: var(--green); } .stat-val.blue { color: var(--blue); }
+
+.modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 200; display: none; align-items: flex-end; justify-content: center; }
+.modal-backdrop.open { display: flex; }
+.modal { background: var(--surface); border: 0.5px solid var(--border2); border-radius: var(--radius-lg) var(--radius-lg) 0 0; width: 100%; max-width: 760px; max-height: 90vh; overflow-y: auto; padding: 1.6rem; animation: slideUp 0.22s ease; }
+@keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.3rem; }
+.modal-title { font-size: 1.05rem; font-weight: 700; }
+.modal-close { background: var(--surface2); border: none; color: var(--muted); font-size: 18px; cursor: pointer; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.ajuste-form { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ajuste-form .full { grid-column: 1 / -1; }
+.signo-row { display: flex; gap: 8px; }
+.signo-btn { flex: 1; padding: 9px; border-radius: var(--radius); border: 0.5px solid var(--border2); font-family: var(--mono); font-size: 12px; font-weight: 700; cursor: pointer; background: transparent; color: var(--muted); transition: all 0.15s; }
+.signo-btn.on-pos { background: var(--red-dim); color: var(--red); border-color: var(--red); }
+.signo-btn.on-neg { background: var(--green-dim); color: var(--green); border-color: var(--green); }
+.log-emp { font-family: var(--mono); font-size: 11px; color: var(--accent); }
+.log-emp.gasto { color: var(--blue); }
+
+/* banner de local */
+.local-banner { background: var(--accent-dim); border: 0.5px solid rgba(232,200,122,0.2); border-radius: var(--radius); padding: 8px 14px; font-size: 12px; font-family: var(--mono); color: var(--accent); display: flex; align-items: center; gap: 8px; margin-bottom: 0; }
+
+::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+@media (max-width: 520px) {
+  .form-grid, .ajuste-form { grid-template-columns: 1fr; }
+  .form-grid .full, .ajuste-form .full { grid-column: 1; }
+  .stats-row { grid-template-columns: 1fr 1fr; }
+  .saldo-hero-amount { font-size: 2.2rem; }
+  .main-content { padding: 14px 14px 36px; }
+  .topbar { padding: 0 14px; }
+  .emp-count { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div id="loading-overlay">
+  <div class="spinner"></div>
+  <div class="loading-text">Conectando...</div>
+</div>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="logo-block">
+    <div class="logo-label" id="splash-local-label">Control de Cuentas</div>
+    <div class="logo-title">Control de<br><span>Cuentas</span></div>
+    <div class="logo-sub">Sistema interno · acceso restringido</div>
+    <div class="splash-total">
+      <div class="splash-total-label">Deuda total tienda</div>
+      <div class="splash-total-val" id="splash-total-val">$0</div>
+    </div>
+  </div>
+
+  <div class="login-box">
+    <h2>¿Cómo ingresás?</h2>
+    <div class="field-group">
+      <div class="field-label">Soy empleado/a</div>
+      <select id="emp-select"><option value="">— Elegí tu nombre —</option></select>
+    </div>
+    <button class="btn btn-primary" onclick="loginEmp()">Entrar como empleado</button>
+
+    <div style="border-top:0.5px solid var(--border);padding-top:1rem;display:flex;flex-direction:column;gap:10px;">
+      <div class="field-label" style="color:var(--blue)">Gasto general</div>
+      <select id="gasto-select"><option value="">— Elegí el gasto —</option></select>
+      <button class="btn btn-blue" onclick="loginGasto()">Ingresar gasto</button>
+    </div>
+
+    <div style="border-top:0.5px solid var(--border);padding-top:1rem;display:flex;flex-direction:column;gap:10px;">
+      <div class="field-label">Acceso administración</div>
+      <input type="password" id="admin-pin" placeholder="PIN de administrador"
+        onkeydown="if(event.key==='Enter') loginAdmin()" />
+      <div class="err-msg" id="pin-err">PIN incorrecto.</div>
+      <button class="btn btn-ghost" onclick="loginAdmin()">Entrar como admin</button>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-brand">Break <span>·</span> <span id="topbar-local-name" style="color:var(--accent)">Cuentas</span></div>
+      <div class="topbar-total">deuda total:&nbsp;<span class="topbar-total-val" id="topbar-total">$0</span></div>
+    </div>
+    <div class="topbar-right">
+      <span class="topbar-user" id="topbar-user"></span>
+      <button class="btn-logout" onclick="logout()">Salir</button>
+      <button class="btn-back" onclick="goBackToHub()" title="Volver al hub">←</button>
+    </div>
+  </div>
+
+  <div class="main-content">
+
+    <!-- VISTA EMPLEADO / GASTO -->
+    <div id="view-emp" style="display:none">
+      <div class="saldo-hero">
+        <div class="saldo-hero-name" id="emp-name-display"></div>
+        <div class="saldo-hero-amount" id="emp-saldo-display">$0</div>
+        <div class="saldo-hero-note" id="saldo-hero-note">saldo deudor · solo lectura</div>
+      </div>
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchEmpTab('registrar',this)">Registrar</button>
+        <button class="tab-btn" onclick="switchEmpTab('historial',this)">Mi historial</button>
+      </div>
+      <div id="emp-tab-registrar" class="tab-panel active">
+        <div class="card">
+          <div class="card-title" id="form-card-title">Nueva deuda</div>
+          <div class="form-grid">
+            <div class="field-group full">
+              <div class="field-label">Descripción</div>
+              <input type="text" id="inp-desc" placeholder="ej: Coca Cola 500ml x2..." />
+            </div>
+            <div class="field-group">
+              <div class="field-label">Monto (ARS)</div>
+              <input type="number" id="inp-monto" placeholder="0" min="1" />
+            </div>
+            <div class="field-group" id="inp-turno-row">
+              <div class="field-label">Turno</div>
+              <select id="inp-turno">
+                <option>Mañana</option><option>Tarde</option><option>Noche</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-primary" style="margin-top:14px" id="btn-submit-deuda" onclick="submitDeuda()">
+            Registrar deuda →
+          </button>
+          <div class="lock-note">
+            <span style="font-size:14px;flex-shrink:0">🔒</span>
+            Solo podés sumar. Para descuentos o ajustes, contactá a administración.
+          </div>
+        </div>
+      </div>
+      <div id="emp-tab-historial" class="tab-panel">
+        <div class="card">
+          <div class="card-title">Mis movimientos</div>
+          <div class="entry-list" id="emp-historial"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VISTA ADMIN -->
+    <div id="view-admin" style="display:none">
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchAdminTab('resumen',this)">Resumen</button>
+        <button class="tab-btn" onclick="switchAdminTab('log',this)">Log global</button>
+        <button class="tab-btn" onclick="switchAdminTab('config',this)">Cuentas</button>
+      </div>
+
+      <div id="admin-tab-resumen" class="tab-panel active">
+        <div class="stats-row" id="admin-stats"></div>
+        <div class="card">
+          <div class="card-title">Todas las cuentas — clic para ver detalle</div>
+          <div class="emp-grid" id="admin-emp-grid"></div>
+        </div>
+      </div>
+
+      <div id="admin-tab-log" class="tab-panel">
+        <div class="card">
+          <div class="card-title">Todos los movimientos (más recientes primero)</div>
+          <div class="entry-list" id="admin-log-list"></div>
+        </div>
+      </div>
+
+      <div id="admin-tab-config" class="tab-panel">
+        <div class="card">
+          <div class="card-title">Agregar cuenta de empleado</div>
+          <div class="form-grid">
+            <div class="field-group">
+              <div class="field-label">Nombre</div>
+              <input type="text" id="new-emp-name" placeholder="Nombre del empleado" />
+            </div>
+            <div style="display:flex;align-items:flex-end">
+              <button class="btn btn-primary" style="font-size:13px;padding:10px 16px" onclick="addCuenta('empleado')">Agregar</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Agregar gasto general</div>
+          <div class="form-grid">
+            <div class="field-group">
+              <div class="field-label">Nombre del gasto</div>
+              <input type="text" id="new-gasto-name" placeholder="ej: Ferretería, Librería..." />
+            </div>
+            <div style="display:flex;align-items:flex-end">
+              <button class="btn btn-primary" style="font-size:13px;padding:10px 16px" onclick="addCuenta('gasto')">Agregar</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Cuentas activas</div>
+          <div id="config-list"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Cambiar PIN de administrador</div>
+          <div class="form-grid">
+            <div class="field-group">
+              <div class="field-label">PIN actual</div>
+              <input type="password" id="pin-actual" />
+            </div>
+            <div class="field-group">
+              <div class="field-label">PIN nuevo</div>
+              <input type="password" id="pin-nuevo" />
+            </div>
+            <div class="full">
+              <button class="btn btn-ghost" onclick="cambiarPin()">Actualizar PIN</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-backdrop" id="modal-backdrop" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title"></div>
+      <button class="modal-close" onclick="closeModalDirect()">×</button>
+    </div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════
+// SUPABASE CONFIG
+// ══════════════════════════════════════════════
+const SUPA_URL = 'https://oiuualqixcccfhtpcist.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pdXVhbHFpeGNjY2ZodHBjaXN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NzUxNjEsImV4cCI6MjA4OTQ1MTE2MX0.ms4MHVhKDTKfID0WGi05EFPySf350SA66uNi4wPfsOo';
+const HEADERS = {
+  'apikey': SUPA_KEY,
+  'Authorization': 'Bearer ' + SUPA_KEY,
+  'Content-Type': 'application/json',
+  'Prefer': 'return=representation'
+};
+
+// ══════════════════════════════════════════════
+// LOCAL CONTEXT — recibido del hub via postMessage
+// Si se abre directo (sin hub), currentLocal = null → muestra todo
+// ══════════════════════════════════════════════
+let currentLocal = null; // ej: 'barrio_chino'
+const LOCAL_NAMES = {
+  palermo:     'Thames · Palermo',
+  belgrano:    'Roosevelt · Belgrano',
+  barrio_chino:'Juramento · B. Chino',
+  san_telmo:   'Independencia · S. Telmo',
+};
+
+// Escuchar contexto del hub
+window.addEventListener('message', function(e) {
+  if (e.data && e.data.type === 'break-context') {
+    currentLocal = e.data.local || null;
+    applyLocalContext();
+  }
+});
+
+function applyLocalContext() {
+  if (!currentLocal) return;
+  const name = LOCAL_NAMES[currentLocal] || currentLocal;
+  const lbl = document.getElementById('splash-local-label');
+  if (lbl) lbl.textContent = name;
+  const tnl = document.getElementById('topbar-local-name');
+  if (tnl) tnl.textContent = name.split('·')[0].trim();
+}
+
+function goBackToHub() {
+  try { window.parent.postMessage({ type: 'break-goback' }, '*'); } catch(e) {}
+  // Si se abrió solo (sin iframe), no hace nada
+}
+
+// ══════════════════════════════════════════════
+// SUPABASE HELPERS
+// ══════════════════════════════════════════════
+async function sbGet(table, params = '') {
+  const r = await fetch(`${SUPA_URL}/rest/v1/${table}?${params}`, { headers: HEADERS });
+  return r.json();
+}
+async function sbPost(table, body) {
+  const r = await fetch(`${SUPA_URL}/rest/v1/${table}`, { method: 'POST', headers: HEADERS, body: JSON.stringify(body) });
+  return r.json();
+}
+async function sbPatch(table, params, body) {
+  const r = await fetch(`${SUPA_URL}/rest/v1/${table}?${params}`, { method: 'PATCH', headers: HEADERS, body: JSON.stringify(body) });
+  return r.json();
+}
+async function sbDelete(table, params) {
+  await fetch(`${SUPA_URL}/rest/v1/${table}?${params}`, { method: 'DELETE', headers: HEADERS });
+}
+
+// ══════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════
+let state = { pin: '1234', cuentas: [], entradas: [] };
+let currentUser = null, currentUserId = null, currentRole = null;
+let modalId = null, signo = 1;
+
+// ══════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════
+async function init() {
+  try {
+    const [cuentasAll, entradasAll, cfg] = await Promise.all([
+      sbGet('cuentas', 'order=tipo,nombre'),
+      sbGet('entradas', 'order=created_at.asc'),
+      sbGet('config', 'clave=eq.pin')
+    ]);
+
+    // ── FILTRO POR LOCAL ──────────────────────────────────────
+    // Si currentLocal está seteado, mostramos solo las cuentas
+    // que tengan local = currentLocal, O que no tengan local
+    // asignado (datos legacy). Excepción: si alguna cuenta tiene
+    // un local DISTINTO, la ocultamos.
+    //
+    // Si currentLocal es null (abierto directamente), mostramos todo.
+    let cuentas = cuentasAll || [];
+    if (currentLocal) {
+      const hayConLocal = cuentas.some(c => c.local && c.local !== '');
+      if (hayConLocal) {
+        // BD ya tiene campo local: filtrar
+        cuentas = cuentas.filter(c => !c.local || c.local === '' || c.local === currentLocal);
+      }
+      // Si ninguna tiene local seteado → datos legacy, mostramos todo
+    }
+
+    const idSet = new Set(cuentas.map(c => c.id));
+
+    state.cuentas  = cuentas;
+    state.entradas = (entradasAll || []).filter(e => idSet.has(e.cid));
+    state.pin      = cfg && cfg[0] ? cfg[0].valor : '1234';
+
+    populateSelects();
+    updateSplashTotal();
+    applyLocalContext();
+  } catch (err) {
+    console.error(err);
+    showToast('Error al conectar con Supabase', true);
+  }
+  document.getElementById('loading-overlay').classList.add('hidden');
+  document.getElementById('splash').style.display = 'flex';
+}
+init();
+
+// ══════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════
+function fmt(n)  { return '$' + Math.abs(Math.round(n)).toLocaleString('es-AR'); }
+function now()   { const d = new Date(), p = x => String(x).padStart(2,'0'); return `${p(d.getDate())}/${p(d.getMonth()+1)}/${String(d.getFullYear()).slice(2)} ${p(d.getHours())}:${p(d.getMinutes())}`; }
+function ini(n)  { return n.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase(); }
+function saldo(id) { return state.entradas.filter(e => e.cid === id).reduce((a, e) => a + e.monto, 0); }
+function saldoGlobal() { return state.cuentas.reduce((a, c) => a + saldo(c.id), 0); }
+
+function showToast(msg, err = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (err ? ' err' : ' ok');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+function showLoading(msg = 'Guardando...') {
+  const o = document.getElementById('loading-overlay');
+  o.querySelector('.loading-text').textContent = msg;
+  o.classList.remove('hidden');
+}
+function hideLoading() { document.getElementById('loading-overlay').classList.add('hidden'); }
+
+function updateSplashTotal() {
+  const t = saldoGlobal();
+  const el = document.getElementById('splash-total-val');
+  if (!el) return;
+  el.textContent = fmt(t);
+  el.className = 'splash-total-val' + (t === 0 ? ' zero' : '');
+}
+function updateTopbarTotal() {
+  const t = saldoGlobal();
+  const el = document.getElementById('topbar-total');
+  if (!el) return;
+  el.textContent = fmt(t);
+  el.style.color = t > 0 ? 'var(--red)' : 'var(--green)';
+}
+
+// ══════════════════════════════════════════════
+// SELECTS
+// ══════════════════════════════════════════════
+function populateSelects() {
+  const sel  = document.getElementById('emp-select');
+  const selG = document.getElementById('gasto-select');
+  sel.innerHTML = '<option value="">— Elegí tu nombre —</option>' +
+    state.cuentas.filter(c => c.tipo === 'empleado').map(c => `<option value="${c.id}">${c.nombre}</option>`).join('');
+  selG.innerHTML = '<option value="">— Elegí el gasto —</option>' +
+    state.cuentas.filter(c => c.tipo === 'gasto').map(c => `<option value="${c.id}">${c.nombre}</option>`).join('');
+}
+
+// ══════════════════════════════════════════════
+// AUTH
+// ══════════════════════════════════════════════
+function loginEmp() {
+  const id = document.getElementById('emp-select').value;
+  if (!id) { showToast('Elegí tu nombre primero', true); return; }
+  const c = state.cuentas.find(x => x.id === id);
+  currentUserId = id; currentUser = c.nombre; currentRole = 'emp';
+  enterApp();
+}
+function loginGasto() {
+  const id = document.getElementById('gasto-select').value;
+  if (!id) { showToast('Elegí el gasto primero', true); return; }
+  const c = state.cuentas.find(x => x.id === id);
+  currentUserId = id; currentUser = c.nombre; currentRole = 'gasto';
+  enterApp();
+}
+function loginAdmin() {
+  if (document.getElementById('admin-pin').value !== state.pin) {
+    document.getElementById('pin-err').style.display = 'block'; return;
+  }
+  document.getElementById('pin-err').style.display = 'none';
+  currentUser = 'Administración'; currentRole = 'admin';
+  enterApp();
+}
+
+function enterApp() {
+  document.getElementById('splash').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  document.getElementById('topbar-user').textContent = currentUser;
+  updateTopbarTotal();
+  if (currentRole === 'emp' || currentRole === 'gasto') {
+    document.getElementById('view-emp').style.display = 'block';
+    document.getElementById('view-admin').style.display = 'none';
+    renderEmp();
+  } else {
+    document.getElementById('view-admin').style.display = 'block';
+    document.getElementById('view-emp').style.display = 'none';
+    renderAdmin();
+  }
+}
+
+async function logout() {
+  showLoading('Actualizando...');
+  try {
+    const [cuentasAll, entradasAll, cfg] = await Promise.all([
+      sbGet('cuentas', 'order=tipo,nombre'),
+      sbGet('entradas', 'order=created_at.asc'),
+      sbGet('config', 'clave=eq.pin')
+    ]);
+    let cuentas = cuentasAll || [];
+    if (currentLocal) {
+      const hayConLocal = cuentas.some(c => c.local && c.local !== '');
+      if (hayConLocal) cuentas = cuentas.filter(c => !c.local || c.local === '' || c.local === currentLocal);
+    }
+    const idSet = new Set(cuentas.map(c => c.id));
+    state.cuentas  = cuentas;
+    state.entradas = (entradasAll || []).filter(e => idSet.has(e.cid));
+    state.pin      = cfg && cfg[0] ? cfg[0].valor : '1234';
+    populateSelects();
+    updateSplashTotal();
+  } catch(e) { console.error(e); }
+  hideLoading();
+  currentUser = currentUserId = currentRole = null;
+  document.getElementById('splash').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('admin-pin').value = '';
+  document.getElementById('gasto-select').value = '';
+  document.getElementById('pin-err').style.display = 'none';
+}
+
+// ══════════════════════════════════════════════
+// VISTA EMPLEADO / GASTO
+// ══════════════════════════════════════════════
+function renderEmp() {
+  const s = saldo(currentUserId);
+  const el = document.getElementById('emp-saldo-display');
+  el.textContent = fmt(s);
+  el.className = 'saldo-hero-amount' + (s === 0 ? ' zero' : '');
+  const isGasto = currentRole === 'gasto';
+  document.getElementById('emp-name-display').textContent = currentUser;
+  document.getElementById('emp-name-display').style.color = isGasto ? 'var(--blue)' : 'var(--muted)';
+  document.getElementById('saldo-hero-note').textContent = isGasto ? 'gasto general · solo lectura' : 'saldo deudor · solo lectura';
+  document.getElementById('inp-turno-row').style.display = isGasto ? 'none' : '';
+  document.getElementById('form-card-title').textContent = isGasto ? 'Nuevo gasto' : 'Nueva deuda';
+  document.getElementById('btn-submit-deuda').textContent = isGasto ? 'Registrar gasto →' : 'Registrar deuda →';
+  document.getElementById('inp-desc').placeholder = isGasto ? 'ej: Factura limpieza, compra librería...' : 'ej: Coca Cola 500ml x2, Marlboro Gold...';
+  renderEmpHistorial();
+}
+
+function renderEmpHistorial() {
+  const list = state.entradas.filter(e => e.cid === currentUserId).slice().reverse();
+  document.getElementById('emp-historial').innerHTML = list.length
+    ? list.map(entryHTML).join('')
+    : '<p style="color:var(--muted);font-size:13px;font-family:var(--mono);padding:8px 0">Sin movimientos registrados.</p>';
+}
+
+function entryHTML(e) {
+  const pos = e.monto > 0;
+  const badge = e.admin ? 'badge-admin' : (pos ? 'badge-cargo' : 'badge-desc');
+  const label = e.admin ? 'admin' : (pos ? 'cargo' : 'descuento');
+  return `<div class="entry-item">
+    <div class="entry-left">
+      <div class="entry-desc">${e.desc}</div>
+      <div class="entry-meta">${e.fecha || ''}${e.turno ? ' · ' + e.turno : ''}<span class="entry-badge ${badge}">${label}</span></div>
+    </div>
+    <div class="entry-amount ${pos ? 'pos' : 'neg'}">${pos ? '+' : '−'}${fmt(e.monto)}</div>
+  </div>`;
+}
+
+async function submitDeuda() {
+  const desc  = document.getElementById('inp-desc').value.trim();
+  const monto = parseFloat(document.getElementById('inp-monto').value);
+  const turno = currentRole === 'gasto' ? '' : document.getElementById('inp-turno').value;
+  if (!desc)            { showToast('Completá la descripción', true); return; }
+  if (!monto || monto <= 0) { showToast('El monto debe ser mayor a 0', true); return; }
+  showLoading();
+  const entrada = { cid: currentUserId, desc, monto: Math.round(monto), turno, fecha: now(), admin: false };
+  const res = await sbPost('entradas', entrada);
+  if (res && res[0]) {
+    state.entradas.push(res[0]);
+    document.getElementById('inp-desc').value = '';
+    document.getElementById('inp-monto').value = '';
+    renderEmp(); updateTopbarTotal();
+    showToast(currentRole === 'gasto' ? 'Gasto registrado ✓' : 'Deuda registrada ✓');
+  } else { showToast('Error al guardar. Intentá de nuevo', true); }
+  hideLoading();
+}
+
+function switchEmpTab(tab, btn) {
+  document.querySelectorAll('#view-emp .tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#view-emp .tab-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('emp-tab-' + tab).classList.add('active');
+  if (tab === 'historial') renderEmpHistorial();
+}
+
+// ══════════════════════════════════════════════
+// VISTA ADMIN
+// ══════════════════════════════════════════════
+function renderAdmin() {
+  renderAdminStats(); renderAdminGrid(); renderAdminLog(); renderConfigList(); updateTopbarTotal();
+}
+
+function renderAdminStats() {
+  const totalPos  = state.entradas.reduce((a, e) => a + (e.monto > 0 ? e.monto : 0), 0);
+  const totalNeg  = state.entradas.reduce((a, e) => a + (e.monto < 0 ? Math.abs(e.monto) : 0), 0);
+  const gastoNeto = state.cuentas.filter(c => c.tipo === 'gasto').reduce((a, c) => a + saldo(c.id), 0);
+  document.getElementById('admin-stats').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Saldo total tienda</div><div class="stat-val red">${fmt(saldoGlobal())}</div></div>
+    <div class="stat-card"><div class="stat-label">Gastos generales</div><div class="stat-val blue">${fmt(gastoNeto)}</div></div>
+    <div class="stat-card"><div class="stat-label">Total cobrado</div><div class="stat-val green">${fmt(totalNeg)}</div></div>`;
+}
+
+function cuentaRowHTML(c) {
+  const s = saldo(c.id), cnt = state.entradas.filter(e => e.cid === c.id).length, isG = c.tipo === 'gasto';
+  return `<div class="emp-row" onclick="openModal('${c.id}')">
+    <div class="emp-avatar ${isG ? 'gasto' : ''}">${ini(c.nombre)}</div>
+    <div class="emp-name">${c.nombre}</div>
+    <div class="emp-count">${cnt} mov.</div>
+    <div class="emp-saldo ${s > 0 ? 'pos' : 'zero'}">${fmt(s)}</div>
+  </div>`;
+}
+
+function renderAdminGrid() {
+  const emps   = state.cuentas.filter(c => c.tipo === 'empleado').sort((a, b) => saldo(b.id) - saldo(a.id));
+  const gastos = state.cuentas.filter(c => c.tipo === 'gasto').sort((a, b) => saldo(b.id) - saldo(a.id));
+  document.getElementById('admin-emp-grid').innerHTML =
+    `<div class="section-sep"><span class="section-sep-label tag-emp">Empleados</span><div class="section-sep-line"></div></div>` + emps.map(cuentaRowHTML).join('') +
+    `<div class="section-sep" style="margin-top:18px"><span class="section-sep-label tag-gasto">Gastos generales</span><div class="section-sep-line"></div></div>` + gastos.map(cuentaRowHTML).join('');
+}
+
+function renderAdminLog() {
+  const all = [...state.entradas].reverse();
+  document.getElementById('admin-log-list').innerHTML = all.length
+    ? all.map(e => {
+        const c = state.cuentas.find(x => x.id === e.cid), nom = c ? c.nombre : e.cid, isG = c && c.tipo === 'gasto', pos = e.monto > 0;
+        return `<div class="entry-item">
+          <div class="entry-left">
+            <div class="entry-desc"><span class="log-emp ${isG ? 'gasto' : ''}">${nom}</span> — ${e.desc}</div>
+            <div class="entry-meta">${e.fecha || ''}${e.turno ? ' · ' + e.turno : ''}<span class="entry-badge ${e.admin ? 'badge-admin' : (pos ? 'badge-cargo' : 'badge-desc')}">${e.admin ? 'admin' : (pos ? 'cargo' : 'descuento')}</span></div>
+          </div>
+          <div class="entry-amount ${pos ? 'pos' : 'neg'}">${pos ? '+' : '−'}${fmt(e.monto)}</div>
+        </div>`;
+      }).join('')
+    : '<p style="color:var(--muted);font-size:13px;font-family:var(--mono)">Sin movimientos aún.</p>';
+}
+
+function renderConfigList() {
+  const emps   = state.cuentas.filter(c => c.tipo === 'empleado');
+  const gastos = state.cuentas.filter(c => c.tipo === 'gasto');
+  const rowCfg = (c, isG) => `<div class="emp-row static">
+    <div class="emp-avatar ${isG ? 'gasto' : ''}">${ini(c.nombre)}</div>
+    <div class="emp-name">${c.nombre}</div>
+    <button class="btn-danger" onclick="removeCuenta('${c.id}')">Eliminar</button>
+  </div>`;
+  document.getElementById('config-list').innerHTML =
+    `<div class="section-sep"><span class="section-sep-label tag-emp">Empleados</span><div class="section-sep-line"></div></div>` + emps.map(c => rowCfg(c, false)).join('') +
+    `<div class="section-sep" style="margin-top:14px"><span class="section-sep-label tag-gasto">Gastos generales</span><div class="section-sep-line"></div></div>` + gastos.map(c => rowCfg(c, true)).join('');
+}
+
+async function addCuenta(tipo) {
+  const inputId = tipo === 'empleado' ? 'new-emp-name' : 'new-gasto-name';
+  const nombre  = document.getElementById(inputId).value.trim();
+  if (!nombre) return;
+  if (state.cuentas.find(c => c.nombre.toLowerCase() === nombre.toLowerCase())) {
+    showToast('Ya existe esa cuenta', true); return;
+  }
+  const id = nombre.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') + '-' + Date.now();
+  showLoading();
+  // Si currentLocal está seteado, guardar el campo local en la cuenta nueva
+  const payload = { id, nombre, tipo };
+  if (currentLocal) payload.local = currentLocal;
+  const res = await sbPost('cuentas', payload);
+  if (res && res[0]) {
+    state.cuentas.push(res[0]);
+    document.getElementById(inputId).value = '';
+    renderAdmin(); populateSelects();
+    showToast('Cuenta agregada ✓');
+  } else { showToast('Error al guardar', true); }
+  hideLoading();
+}
+
+async function removeCuenta(id) {
+  const c = state.cuentas.find(x => x.id === id);
+  if (!confirm(`¿Eliminar la cuenta de "${c.nombre}"? Sus movimientos quedan en el historial.`)) return;
+  showLoading('Eliminando...');
+  await sbDelete('cuentas', `id=eq.${id}`);
+  state.cuentas = state.cuentas.filter(x => x.id !== id);
+  renderAdmin(); populateSelects();
+  hideLoading();
+  showToast('Cuenta eliminada ✓');
+}
+
+async function cambiarPin() {
+  const actual = document.getElementById('pin-actual').value;
+  const nuevo  = document.getElementById('pin-nuevo').value;
+  if (actual !== state.pin) { showToast('PIN actual incorrecto', true); return; }
+  if (!nuevo || nuevo.length < 4) { showToast('El PIN debe tener al menos 4 caracteres', true); return; }
+  showLoading();
+  await sbPatch('config', 'clave=eq.pin', { valor: nuevo });
+  state.pin = nuevo;
+  document.getElementById('pin-actual').value = '';
+  document.getElementById('pin-nuevo').value = '';
+  hideLoading(); showToast('PIN actualizado ✓');
+}
+
+function switchAdminTab(tab, btn) {
+  document.querySelectorAll('#view-admin .tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#view-admin .tab-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('admin-tab-' + tab).classList.add('active');
+}
+
+// ══════════════════════════════════════════════
+// MODAL ADMIN
+// ══════════════════════════════════════════════
+function openModal(id) {
+  modalId = id; signo = 1;
+  renderModalBody();
+  document.getElementById('modal-backdrop').classList.add('open');
+}
+function renderModalBody() {
+  const c = state.cuentas.find(x => x.id === modalId); if (!c) return;
+  const s = saldo(modalId);
+  const entradas = state.entradas.filter(e => e.cid === modalId).slice().reverse();
+  document.getElementById('modal-title').innerHTML = `${c.nombre} <span style="font-size:12px;font-weight:400;color:var(--muted);font-family:var(--mono)">— ${fmt(s)}</span>`;
+  document.getElementById('modal-body').innerHTML = `
+    <div style="margin-bottom:1.3rem">
+      <div class="card-title" style="margin-bottom:10px">Ajuste de cuenta — solo administración</div>
+      <div class="ajuste-form">
+        <div class="field-group"><div class="field-label">Concepto</div><input type="text" id="m-desc" placeholder="ej: Descuento sueldo, Factura..." /></div>
+        <div class="field-group"><div class="field-label">Monto (ARS)</div><input type="number" id="m-monto" placeholder="0" min="0" /></div>
+        <div class="field-group full">
+          <div class="field-label">Tipo de movimiento</div>
+          <div class="signo-row">
+            <button id="btn-pos" class="signo-btn on-pos" onclick="setSigno(1)">+ Cargo / deuda</button>
+            <button id="btn-neg" class="signo-btn" onclick="setSigno(-1)">− Descuento / pago</button>
+          </div>
+        </div>
+        <div class="full"><button class="btn btn-primary" onclick="submitAjuste()">Aplicar ajuste →</button></div>
+      </div>
+    </div>
+    <div class="card-title" style="margin-bottom:8px">Historial completo</div>
+    <div class="entry-list">${entradas.length ? entradas.map(entryHTML).join('') : '<p style="color:var(--muted);font-size:13px;font-family:var(--mono)">Sin movimientos.</p>'}</div>`;
+}
+function setSigno(s) {
+  signo = s;
+  document.getElementById('btn-pos').className = 'signo-btn' + (s === 1 ? ' on-pos' : '');
+  document.getElementById('btn-neg').className = 'signo-btn' + (s === -1 ? ' on-neg' : '');
+}
+async function submitAjuste() {
+  const desc  = document.getElementById('m-desc').value.trim();
+  const monto = parseFloat(document.getElementById('m-monto').value);
+  if (!desc)            { showToast('Completá el concepto', true); return; }
+  if (!monto || monto <= 0) { showToast('Monto inválido', true); return; }
+  showLoading();
+  const entrada = { cid: modalId, desc, monto: Math.round(monto) * signo, turno: '', fecha: now(), admin: true };
+  const res = await sbPost('entradas', entrada);
+  if (res && res[0]) {
+    state.entradas.push(res[0]);
+    renderAdmin(); renderModalBody();
+    showToast('Ajuste registrado ✓');
+  } else { showToast('Error al guardar', true); }
+  hideLoading();
+}
+function closeModal(e) { if (e.target === document.getElementById('modal-backdrop')) closeModalDirect(); }
+function closeModalDirect() { document.getElementById('modal-backdrop').classList.remove('open'); modalId = null; }
+</script>
+</body>
+</html>

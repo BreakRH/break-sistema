@@ -2736,6 +2736,7 @@ function goTo(screen) {
     'admin': 'screen-admin',
     'panel-turno': 'screen-panel-turno',
     'pedidos': 'screen-pedidos',
+    'deudas':  'screen-deudas',
   };
   const id = map[screen] || screen;
   const el = document.getElementById(id);
@@ -2753,7 +2754,7 @@ function openModule(mod) {
   if (!state.local)  { showToast('Seleccioná el local', 'error'); return; }
   if (!state.turno)  { showToast('Seleccioná el turno', 'error'); return; }
   if (mod === 'reportes')    { goTo('reporte-tipo'); updateBadges(); return; }
-  if (mod === 'deudas')      { showToast('Módulo en migración al hub', 'error'); return; }
+  if (mod === 'deudas')      { deudasOpen(); return; }
   if (mod === 'panel-turno') { ptInit(); goTo('panel-turno'); return; }
   if (mod === 'pedidos') { pedidosOpen(); return; }
 }
@@ -5152,6 +5153,25 @@ document.querySelectorAll('.pt-modal-overlay').forEach(ov => {
   ov.addEventListener('click', e => { if(e.target===ov) ov.classList.remove('open'); });
 });
 
+// === MODULO DEUDAS ===
+function deudasOpen() {
+  goTo('deudas');
+  const badge = document.getElementById('badge-deudas-local');
+  if (badge) badge.textContent = LOCALES[state.local] || '--';
+  const iframe = document.getElementById('deudas-iframe');
+  const ctx = {
+    type: 'break-context',
+    local: state.local,
+    localName: LOCALES[state.local] || '',
+    turno: state.turno,
+    empleado: state.empleado_nombre
+  };
+  try { iframe.contentWindow.postMessage(ctx, '*'); } catch(e) {}
+  iframe.onload = function() {
+    try { iframe.contentWindow.postMessage(ctx, '*'); } catch(e) {}
+  };
+}
+
 // === MODULO PEDIDOS ===
 function pedidosOpen() {
   goTo('pedidos');
@@ -5176,6 +5196,21 @@ window.addEventListener('message', function(e) {
 });
 
 </script>
+
+<!-- SCREEN: DEUDAS -->
+<div class="screen" id="screen-deudas" style="flex-direction:column">
+  <div class="topbar">
+    <div class="topbar-back" onclick="goTo('hub')">&#8592;</div>
+    <span class="topbar-title">Control de deudas</span>
+    <span class="topbar-badge" id="badge-deudas-local">--</span>
+  </div>
+  <iframe
+    id="deudas-iframe"
+    src="deudas.html"
+    style="flex:1;border:none;width:100%;min-height:0"
+    allow="clipboard-write"
+  ></iframe>
+</div>
 
 <!-- SCREEN: PEDIDOS -->
 <div class="screen" id="screen-pedidos" style="flex-direction:column">
