@@ -1455,8 +1455,7 @@
       <div class="module-desc">tareas · cierre · caja</div>
     </div>
 
-    <div class="module-card" style="--card-accent:var(--purple);--icon-bg:var(--purple-bg)"
-         onclick="openModule('pedidos')">
+    <div class="module-card" style="--card-accent:var(--purple);--icon-bg:var(--purple-bg)" onclick="openModule('pedidos')">
       <div class="module-badge badge-new">nuevo</div>
       <div class="module-icon">📦</div>
       <div class="module-name">Pedidos</div>
@@ -2757,7 +2756,7 @@ function openModule(mod) {
   if (mod === 'reportes')    { goTo('reporte-tipo'); updateBadges(); return; }
   if (mod === 'deudas')      { showToast('Módulo en migración al hub', 'error'); return; }
   if (mod === 'panel-turno') { ptInit(); goTo('panel-turno'); return; }
-  if (mod === 'pedidos')     { pedidosOpen(); return; }
+  if (mod === 'pedidos') { pedidosOpen(); return; }
 }
 
 function openForm(tipo) {
@@ -3809,7 +3808,7 @@ function admCierresFiltro(tipo, val, el) {
   admLoadCierres();
 }
 
-function admRenderCierresAlias() { admLoadCierres(); } // alias para el date input
+function admRenderCierres() { admLoadCierres(); } // alias para el date input
 
 // ── TAB 3: TAREAS ─────────────────────────
 async function admLoadTareas() {
@@ -5154,27 +5153,24 @@ document.querySelectorAll('.pt-modal-overlay').forEach(ov => {
   ov.addEventListener('click', e => { if(e.target===ov) ov.classList.remove('open'); });
 });
 
-// ═══════════════════════════════════════
-// MÓDULO PEDIDOS — iframe bridge
-// ═══════════════════════════════════════
 function pedidosOpen() {
   goTo('pedidos');
   const badge = document.getElementById('badge-pedidos-local');
   if (badge) badge.textContent = LOCALES[state.local] || '—';
-  // Auto-select the matching tienda in the pedidos module
   const localToTienda = {palermo:'T', belgrano:'R', barrio_chino:'J', san_telmo:'S'};
   const tiendaKey = state.local ? localToTienda[state.local] : null;
   if (tiendaKey) {
-    const btn = document.querySelector(\`#screen-pedidos [data-tienda="\${tiendaKey}"]\`);
+    const sel = '#screen-pedidos [data-tienda="' + tiendaKey + '"]';
+    const btn = document.querySelector(sel);
     if (btn) btn.click();
   }
 }
+</script>
 
-<!-- ════════════════════════════════════════
-     SCREEN: MÓDULO PEDIDOS (inline)
-════════════════════════════════════════ -->
-<style>
-/* ── PEDIDOS MODULE STYLES ── */
+<!-- ══════════════════════════════════════
+     SCREEN: PEDIDOS
+══════════════════════════════════════ -->
+<style id="pedidos-styles">
 
 :root {
   --bg:#0e0f0e;--bg2:#161817;--bg3:#1e201e;--bg4:#262826;
@@ -5190,7 +5186,11 @@ function pedidosOpen() {
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh}
-.tabs{display:flex;gap:2px;padding:16px 24px 0;border-bottom:1px solid var(--line);overflow-x:auto;top:0;position:sticky;background:var(--bg);z-index:100}
+.header{border-bottom:1px solid var(--line);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;background:var(--bg);z-index:100}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px;letter-spacing:-.5px}
+.logo-dot{width:8px;height:8px;background:var(--accent);border-radius:50%}
+.hm{font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)}
+.tabs{display:flex;gap:2px;padding:16px 24px 0;border-bottom:1px solid var(--line);overflow-x:auto}
 .tab{padding:8px 16px 12px;font-size:13px;font-weight:600;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:color .15s;user-select:none}
 .tab:hover{color:var(--text2)}
 .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
@@ -5488,15 +5488,18 @@ body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-he
 
 </style>
 
-<div class="screen" id="screen-pedidos" style="flex-direction:column">
+<div class="screen" id="screen-pedidos">
   <div class="topbar">
     <div class="topbar-back" onclick="goTo('hub')">←</div>
     <span class="topbar-title">Pedidos</span>
     <span class="topbar-badge" id="badge-pedidos-local">—</span>
   </div>
   <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column">
-<button class="btn-s" style="font-size:11px;padding:4px 10px" onclick="openProvDB()">📋 Proveedores</button>
-  <div class="hm" id="live-time"></div>
+BREAK<span style="color:var(--text3);font-weight:400;font-size:14px">/ pedidos</span></div>
+  <div style="display:flex;align-items:center;gap:12px">
+    <button class="btn-s" style="font-size:12px;padding:6px 12px" onclick="openProvDB()">📋 Base de proveedores</button>
+    <div class="hm" id="live-time"></div>
+  </div>
 </div>
 
 <div class="tabs">
@@ -5720,9 +5723,6 @@ body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-he
 </div>
 
 <script>
-// ═══════════════════════════════════════
-// MÓDULO PEDIDOS — JS (inline)
-// ═══════════════════════════════════════
 
 // ============================================================
 // PROVEEDORES DATABASE (from PROVEEDORES sheet)
@@ -5817,7 +5817,7 @@ function pedShowToast(msg,type=''){
 }
 function updateTime(){
   const n=new Date(),d=['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
-  const _ltEl=document.getElementById('live-time');if(_ltEl)_ltEl.textContent=`${d[n.getDay()]} ${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;
+  const _lt=document.getElementById('live-time');if(_lt)_lt.textContent=`${d[n.getDay()]} ${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;
 }
 updateTime();setInterval(updateTime,10000);
 
@@ -6837,8 +6837,6 @@ document.querySelectorAll('#screen-pedidos .tab').forEach(tab=>{
 // ============================================================
 updateBadge();
 
-
 </script>
-
 </body>
 </html>
