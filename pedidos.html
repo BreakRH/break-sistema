@@ -625,10 +625,84 @@ const WF_STEPS = [
 let curTienda='T';
 let artsData={}, ventasData={}, pedidoActual={};
 
+// ══════════════════════════════════════════════
+// SUPABASE CONFIG — Pedidos
+// ══════════════════════════════════════════════
+const SB_URL = 'https://oiuualqixcccfhtpcist.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pdXVhbHFpeGNjY2ZodHBjaXN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NzUxNjEsImV4cCI6MjA4OTQ1MTE2MX0.ms4MHVhKDTKfID0WGi05EFPySf350SA66uNi4wPfsOo';
+const SB_HDR = {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=representation'};
+
+async function sbPedGet(params=''){
+  const r=await fetch(`${SB_URL}/rest/v1/pedidos?${params}`,{headers:SB_HDR});
+  return r.json();
+}
+async function sbPedPost(body){
+  const r=await fetch(`${SB_URL}/rest/v1/pedidos`,{method:'POST',headers:SB_HDR,body:JSON.stringify(body)});
+  return r.json();
+}
+async function sbPedPatch(id,body){
+  const r=await fetch(`${SB_URL}/rest/v1/pedidos?id=eq.${id}`,{method:'PATCH',headers:SB_HDR,body:JSON.stringify(body)});
+  return r.json();
+}
+async function sbPedDelete(id){
+  await fetch(`${SB_URL}/rest/v1/pedidos?id=eq.${id}`,{method:'DELETE',headers:SB_HDR});
+}
+
+// HIST en memoria — se carga desde Supabase al init
 let HIST=[];
-function loadHist(){try{const s=localStorage.getItem('break_ped_v2');if(s)HIST=JSON.parse(s);}catch(e){}}
-function saveHist(){try{localStorage.setItem('break_ped_v2',JSON.stringify(HIST));}catch(e){}}
-loadHist();
+let HIST_LOADING=false;
+
+function rowToHist(row){
+  return {
+    _id: row.id,
+    id: row.id,
+    tienda: row.tienda,
+    tiendaNombre: row.tienda_nombre,
+    proveedor: row.proveedor,
+    fecha: row.fecha,
+    items: row.items||[],
+    total: row.total||0,
+    status: row.status||'enviado',
+    pago: row.pago||'',
+    contacto: row.contacto||'',
+    wfSteps: row.wf_steps||{},
+    confirm: row.confirm||null,
+    fechaProcesado: row.fecha_procesado||null,
+  };
+}
+
+function histToRow(h){
+  return {
+    id: h._id||h.id||String(Date.now()),
+    tienda: h.tienda,
+    tienda_nombre: h.tiendaNombre,
+    proveedor: h.proveedor,
+    fecha: h.fecha,
+    items: h.items,
+    total: h.total,
+    status: h.status,
+    pago: h.pago||'',
+    contacto: h.contacto||'',
+    wf_steps: h.wfSteps||{},
+    confirm: h.confirm||null,
+    fecha_procesado: h.fechaProcesado||null,
+  };
+}
+
+async function loadHist(){
+  HIST_LOADING=true;
+  try{
+    const rows=await sbPedGet('order=created_at.desc');
+    HIST=(rows||[]).map(rowToHist);
+  }catch(e){console.error('loadHist error',e);}
+  HIST_LOADING=false;
+}
+
+// saveHist ahora es no-op: cada mutación llama a su función específica
+function saveHist(){}
+
+// Cargar al inicio de forma asíncrona y luego re-renderizar
+loadHist().then(()=>{updateBadge();});
 
 // ============================================================
 // UTILS
@@ -1107,7 +1181,7 @@ function copyWA(pk,prov,tienda){
 // ============================================================
 // MARCAR ENVIADO → crea entrada en historial
 // ============================================================
-function marcarEnviado(pk,prov,tienda){
+async function marcarEnviado(pk,prov,tienda){
   const provFull=getProv(pk)||prov;
   const items=pedidoActual[curTienda][provFull].filter(i=>i.qty>0);
   if(!items.length){showToast('No hay ítems para enviar','error');return;}
@@ -1120,7 +1194,13 @@ function marcarEnviado(pk,prov,tienda){
     status:'enviado',pago:info.pago||'',contacto:info.contacto||'',
     wfSteps:{},confirm:null,
   };
-  HIST.unshift(entry);saveHist();updateBadge();renderEnviados();
+  // Insertar en Supabase y agregar al array local
+  try{
+    const row=histToRow(entry);
+    const res=await sbPedPost(row);
+    if(res&&res[0]) entry._id=res[0].id;
+  }catch(e){console.error('marcarEnviado error',e);}
+  HIST.unshift(entry);updateBadge();renderEnviados();
   const btn=document.getElementById(`sent_${pk}`);
   if(btn){btn.textContent='✓ Enviado';btn.classList.add('done');btn.disabled=true;}
   showToast(`Pedido a ${provFull} marcado como enviado`,'success');
@@ -1340,12 +1420,16 @@ function renderProcesados(){
 
 function toggleHCard(idx){document.getElementById(`hcard_${idx}`)?.classList.toggle('open');}
 
-function updateStatus(idx,status){HIST[idx].status=status;saveHist();updateBadge();renderEnviados();showToast('Estado actualizado','success');}
+async function updateStatus(idx,status){
+  HIST[idx].status=status;
+  try{ await sbPedPatch(HIST[idx]._id,{status}); }catch(e){console.error(e);}
+  updateBadge();renderEnviados();showToast('Estado actualizado','success');
+}
 
 // ============================================================
 // CONFIRMAR RECEPCION
 // ============================================================
-function confirmarRecepcion(idx){
+async function confirmarRecepcion(idx){
   const h=HIST[idx];const diffs=[];
   h.items.forEach((item,ii)=>{
     const qtyRec=parseInt(document.getElementById(`rqty_${idx}_${ii}`)?.value)||0;
@@ -1367,7 +1451,10 @@ function confirmarRecepcion(idx){
     h.status='en-proceso';h.confirm={type:'dif',diffs};
     showToast('⚠ Diferencias registradas — pedido movido a En proceso','error');
   }
-  saveHist();renderAll();
+  try{
+    await sbPedPatch(HIST[idx]._id,{status:HIST[idx].status,confirm:HIST[idx].confirm,items:HIST[idx].items});
+  }catch(e){console.error('confirmarRecepcion error',e);}
+  renderAll();
   // auto-switch to En proceso tab
   switchTab('proceso');
 }
@@ -1375,7 +1462,7 @@ function confirmarRecepcion(idx){
 // ============================================================
 // WORKFLOW STEPS
 // ============================================================
-function toggleWF(idx,stepId){
+async function toggleWF(idx,stepId){
   const h=HIST[idx];
   if(!h.wfSteps)h.wfSteps={};
   // Only allow toggling if previous step is done (or it's the first)
@@ -1384,7 +1471,7 @@ function toggleWF(idx,stepId){
     if(stepIdx>0&&!h.wfSteps[WF_STEPS[stepIdx-1].id]){showToast('Completá el paso anterior primero','error');return;}
   }
   h.wfSteps[stepId]=!h.wfSteps[stepId];
-  saveHist();
+  try{ await sbPedPatch(h._id,{wf_steps:h.wfSteps}); }catch(e){console.error(e);}
   // Re-render just this card's pipeline
   const pipeline=document.getElementById(`wfstep_${idx}_${stepId}`)?.closest('.workflow-section');
   if(pipeline){
@@ -1398,12 +1485,13 @@ function toggleWF(idx,stepId){
   updateBadge();
 }
 
-function marcarProcesado(idx){
+async function marcarProcesado(idx){
   const h=HIST[idx];
   if(!WF_STEPS.every(s=>h.wfSteps&&h.wfSteps[s.id])){showToast('Completá todos los pasos primero','error');return;}
   h.status='procesado';
   h.fechaProcesado=new Date().toISOString();
-  saveHist();renderAll();
+  try{ await sbPedPatch(h._id,{status:'procesado',fecha_procesado:h.fechaProcesado,wf_steps:h.wfSteps}); }catch(e){console.error(e);}
+  renderAll();
   showToast('✓ Pedido marcado como procesado','success');
 }
 
@@ -1417,9 +1505,11 @@ function recopiarWA(idx){
   showToast('Copiado ✓','success');
 }
 
-function deleteHist(idx){
+async function deleteHist(idx){
   if(!confirm('¿Borrar este pedido?'))return;
-  HIST.splice(idx,1);saveHist();updateBadge();renderEnviados();showToast('Pedido borrado','success');
+  const h=HIST[idx];
+  try{ await sbPedDelete(h._id); }catch(e){console.error(e);}
+  HIST.splice(idx,1);updateBadge();renderEnviados();showToast('Pedido borrado','success');
 }
 
 // ============================================================
@@ -1666,23 +1756,96 @@ updateBadge();
 
 <script>
 // Hub bridge - receive context from parent
+const LOCAL_MAP = {palermo:'T', belgrano:'R', barrio_chino:'J', san_telmo:'S'};
+let hubLocal = null;
+let hubRol   = null;
+
 window.addEventListener('message', function(e) {
   if (!e.data || e.data.type !== 'break-context') return;
   var ctx = e.data;
+  hubLocal = ctx.local || null;
+  hubRol   = ctx.rol   || 'empleado';
+
   var bar = document.getElementById('ctx-bar');
   if (bar) bar.style.display = 'flex';
   var el;
   el = document.getElementById('ctx-local');    if (el && ctx.localName) el.textContent = ctx.localName;
   el = document.getElementById('ctx-turno');    if (el && ctx.turno)     el.textContent = ctx.turno;
   el = document.getElementById('ctx-empleado'); if (el && ctx.empleado)  el.textContent = ctx.empleado;
+
   // Auto-select tienda
-  var map = {palermo:'T', belgrano:'R', barrio_chino:'J', san_telmo:'S'};
-  var tk = ctx.local ? map[ctx.local] : null;
+  var tk = ctx.local ? LOCAL_MAP[ctx.local] : null;
   if (tk) {
     var btn = document.querySelector('[data-tienda="' + tk + '"]');
     if (btn) btn.click();
   }
+
+  // Modo empleado: ocultar tabs de admin, ir directo a "En proceso"
+  if (hubRol === 'empleado' || hubRol === 'encargado') {
+    aplicarModoEmpleado();
+  }
 });
+
+function aplicarModoEmpleado() {
+  // Ocultar tabs que no debe ver el empleado
+  ['nuevo','inventario','enviados','procesados'].forEach(function(tab) {
+    var el = document.querySelector('[data-tab="' + tab + '"]');
+    if (el) el.style.display = 'none';
+  });
+  // Ocultar botón de proveedores
+  var provBtn = document.querySelector('[onclick="openProvDB()"]');
+  if (provBtn) provBtn.style.display = 'none';
+
+  // Ir a tab "En proceso" y filtrar por local del hub
+  switchTab('proceso');
+
+  // Agregar banner de modo empleado si no existe
+  if (!document.getElementById('emp-mode-banner')) {
+    var banner = document.createElement('div');
+    banner.id = 'emp-mode-banner';
+    banner.style.cssText = 'padding:10px 20px;background:rgba(184,240,74,0.06);border-bottom:1px solid rgba(184,240,74,0.12);font-family:DM Mono,monospace;font-size:12px;color:#b8f04a;display:flex;align-items:center;gap:8px';
+    banner.innerHTML = '<span>📦</span><span>Pedidos pendientes de recepción — marcá los pasos cuando el proveedor llegue</span>';
+    document.body.insertBefore(banner, document.querySelector('.tabs'));
+  }
+}
+
+// Filtrar renderProceso por local del hub si es empleado
+const _origRenderProceso = renderProceso;
+function renderProceso() {
+  if (hubRol === 'empleado' || hubRol === 'encargado') {
+    renderProcesoEmpleado();
+  } else {
+    _origRenderProceso();
+  }
+}
+
+function renderProcesoEmpleado() {
+  // Solo pedidos en-proceso del local del dispositivo
+  var tk = hubLocal ? LOCAL_MAP[hubLocal] : null;
+  var data = HIST.filter(function(h){ return h.status === 'en-proceso'; });
+  if (tk) data = data.filter(function(h){ return h.tienda === tk; });
+
+  var cont = document.getElementById('proceso-list');
+  if (!data.length) {
+    cont.innerHTML = '<div class="empty"><div class="empty-icon">✅</div><div class="empty-title">Sin pedidos en proceso</div><div class="empty-sub">Cuando llegue un proveedor, el pedido aparecerá acá</div></div>';
+    return;
+  }
+  cont.innerHTML = data.map(function(h) {
+    var ri = HIST.indexOf(h);
+    var fecha = new Date(h.fecha).toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'short'});
+    return '<div class="hcard open" id="hcard_'+ri+'">' +
+      '<div class="hch">' +
+        '<div class="hcl">' +
+          '<div class="hprov">'+h.proveedor+'</div>' +
+          '<div class="hmeta">'+fecha+' · '+h.items.length+' ítems</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="hbody" id="hbody_'+ri+'">' +
+        wfPipelineHTML(ri, h) +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
 </script>
 
 </body>

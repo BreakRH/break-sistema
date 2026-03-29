@@ -1411,12 +1411,30 @@
     </div>
 
     <div style="height:16px"></div>
-    <label class="field-label">Local</label>
-    <div class="local-row">
-      <div class="local-chip" onclick="selLocal('palermo',this)">Thames · Palermo</div>
-      <div class="local-chip" onclick="selLocal('belgrano',this)">Roosevelt · Belgrano</div>
-      <div class="local-chip" onclick="selLocal('barrio_chino',this)">Juramento · B. Chino</div>
-      <div class="local-chip" onclick="selLocal('san_telmo',this)">Independencia · S. Telmo</div>
+    <!-- LOCAL: se muestra dinámico según si hay local fijo en localStorage -->
+    <div id="local-selector-wrap">
+      <label class="field-label">Local</label>
+      <!-- Chips normales (se ocultan si hay local fijo) -->
+      <div class="local-row" id="local-chips-row">
+        <div class="local-chip" onclick="selLocal('palermo',this)">Thames · Palermo</div>
+        <div class="local-chip" onclick="selLocal('belgrano',this)">Roosevelt · Belgrano</div>
+        <div class="local-chip" onclick="selLocal('barrio_chino',this)">Juramento · B. Chino</div>
+        <div class="local-chip" onclick="selLocal('san_telmo',this)">Independencia · S. Telmo</div>
+      </div>
+      <!-- Chip fijo (se muestra si hay local guardado) -->
+      <div id="local-fijo-wrap" style="display:none">
+        <div id="local-fijo-chip"
+          style="background:rgba(232,197,71,0.1);border:0.5px solid var(--accent);border-radius:var(--radius);
+                 padding:11px 14px;font-size:14px;color:var(--accent);display:flex;align-items:center;
+                 justify-content:space-between;gap:8px">
+          <span id="local-fijo-label">—</span>
+          <span id="local-fijo-cambiar" onclick="localFijoCambiar()"
+            style="font-family:var(--mono);font-size:10px;color:var(--text3);cursor:pointer;
+                   padding:3px 8px;border:0.5px solid var(--border2);border-radius:6px;display:none">
+            cambiar
+          </span>
+        </div>
+      </div>
     </div>
 
     <label class="field-label">Turno</label>
@@ -1425,6 +1443,16 @@
       <div class="turno-chip" id="tc-tarde"  onclick="selTurno('tarde',this)">Tarde</div>
       <div class="turno-chip" id="tc-noche"  onclick="selTurno('noche',this)">Noche</div>
     </div>
+  </div>
+
+  <!-- BANNER PEDIDOS PENDIENTES -->
+  <div id="hub-pedidos-banner" style="display:none;margin:0 24px 16px;background:rgba(184,240,74,0.08);border:0.5px solid rgba(184,240,74,0.25);border-radius:10px;padding:12px 16px;align-items:center;gap:10px;cursor:pointer" onclick="openModule('pedidos')">
+    <span style="font-size:18px">📦</span>
+    <div style="flex:1">
+      <div style="font-size:13px;font-weight:600;color:#b8f04a">Pedidos pendientes</div>
+      <div style="font-size:12px;font-family:var(--mono);color:var(--text3)" id="hub-pedidos-msg"></div>
+    </div>
+    <span style="font-size:12px;font-family:var(--mono);color:var(--text3)">Ver →</span>
   </div>
 
   <div class="modules-label">Módulos</div>
@@ -1454,7 +1482,7 @@
       <div class="module-desc">tareas · cierre · caja</div>
     </div>
 
-    <div class="module-card" style="--card-accent:var(--purple);--icon-bg:var(--purple-bg)" onclick="openModule('pedidos')">
+    <div class="module-card" id="card-pedidos" style="--card-accent:var(--purple);--icon-bg:var(--purple-bg);display:none" onclick="openModule('pedidos')">
       <div class="module-badge badge-new">nuevo</div>
       <div class="module-icon">📦</div>
       <div class="module-name">Pedidos</div>
@@ -2792,12 +2820,60 @@ function getChipValue(group) {
 // ═══════════════════════════════════════
 // HUB SELECTIONS
 // ═══════════════════════════════════════
+// ═══════════════════════════════════════
+// LOCAL FIJO POR DISPOSITIVO
+// ═══════════════════════════════════════
+const LOCAL_FIJO_KEY = 'break_local_fijo';
+
+function aplicarLocalFijo() {
+  const localGuardado = localStorage.getItem(LOCAL_FIJO_KEY);
+  if (localGuardado && LOCALES[localGuardado]) {
+    state.local = localGuardado;
+    actualizarTurnosSegunLocal(localGuardado);
+    document.getElementById('local-chips-row').style.display = 'none';
+    document.getElementById('local-fijo-wrap').style.display = '';
+    document.getElementById('local-fijo-label').textContent = LOCALES[localGuardado];
+    actualizarBtnCambiarLocal();
+  } else {
+    document.getElementById('local-chips-row').style.display = '';
+    document.getElementById('local-fijo-wrap').style.display = 'none';
+  }
+}
+
+function actualizarBtnCambiarLocal() {
+  const btn = document.getElementById('local-fijo-cambiar');
+  if (!btn) return;
+  btn.style.display = state.rol === 'admin' ? '' : 'none';
+}
+
+function localFijoCambiar() {
+  if (state.rol !== 'admin') return;
+  if (!confirm('Cambiar el local de este dispositivo. Tenes que elegir uno nuevo con tu PIN de admin.')) return;
+  localStorage.removeItem(LOCAL_FIJO_KEY);
+  state.local = null;
+  state.turno = null;
+  document.querySelectorAll('.turno-chip').forEach(c => c.classList.remove('selected'));
+  document.getElementById('local-chips-row').style.display = '';
+  document.getElementById('local-fijo-wrap').style.display = 'none';
+}
+
+function guardarLocalFijo(local) {
+  localStorage.setItem(LOCAL_FIJO_KEY, local);
+  aplicarLocalFijo();
+}
+
 function selLocal(local, el) {
   state.local = local;
   document.querySelectorAll('.local-chip').forEach(c => c.classList.remove('selected'));
   el.classList.add('selected');
   admActualizarCardTurno();
   actualizarTurnosSegunLocal(local);
+  // Si es admin, guardar como local fijo del dispositivo
+  if (state.rol === 'admin') {
+    guardarLocalFijo(local);
+    showToast('Local guardado: ' + LOCALES[local], 'success');
+  }
+  checkPedidosPendientes();
 }
 
 // Locales de 2 turnos: 8am-5pm y 5pm-3am
@@ -2904,10 +2980,18 @@ async function admValidarPin() {
     // Autenticar como admin
     state.adminPin = adminPinValue;
     state.rol = 'admin';
+    // Si ya hay un local seleccionado y no hay local fijo guardado, guardarlo ahora
+    if (state.local && !localStorage.getItem(LOCAL_FIJO_KEY)) {
+      guardarLocalFijo(state.local);
+    }
+    // Mostrar botón cambiar local si hay local fijo
+    actualizarBtnCambiarLocal();
 
     // Mostrar cards de admin
     const cardAdmin = document.getElementById('card-admin');
     if (cardAdmin) cardAdmin.style.display = 'block';
+    const cardPedidos = document.getElementById('card-pedidos');
+    if (cardPedidos) cardPedidos.style.display = 'block';
     admActualizarCardTurno();
 
     document.getElementById('hub-emp-name').textContent = 'Administrador';
@@ -2962,6 +3046,8 @@ function selRol(rol) {
     state.adminPin = null;
     const cardAdmin = document.getElementById('card-admin');
     if (cardAdmin) cardAdmin.style.display = 'none';
+    const cardPedidos = document.getElementById('card-pedidos');
+    if (cardPedidos) cardPedidos.style.display = 'none';
     admPinInput = '';
     const admInput = document.getElementById('adm-pin-input');
     if (admInput) { admInput.value = ''; admInput.style.borderColor = ''; }
@@ -4152,21 +4238,8 @@ function showToast(msg, type = '') {
 // ═══════════════════════════════════════
 async function init() {
   try {
-    // Detectar local desde URL param (?local=palermo)
-    const urlLocal = new URLSearchParams(window.location.search).get('local');
-    if (urlLocal && LOCALES[urlLocal]) {
-      state.local = urlLocal;
-      // Pre-select and lock local chips
-      document.querySelectorAll('.local-chip').forEach(chip => {
-        const matches = chip.textContent.toLowerCase().includes(urlLocal.replace('_',' ')) ||
-          (urlLocal === 'barrio_chino' && chip.textContent.includes('Chino')) ||
-          (urlLocal === 'san_telmo' && chip.textContent.includes('Telmo')) ||
-          (urlLocal === 'palermo' && chip.textContent.includes('Palermo')) ||
-          (urlLocal === 'belgrano' && chip.textContent.includes('Belgrano'));
-        if (matches) { chip.classList.add('selected'); chip.style.pointerEvents = 'none'; }
-        else chip.style.display = 'none';
-      });
-    }
+    // -- LOCAL FIJO POR DISPOSITIVO --
+    aplicarLocalFijo();
 
     // Cargar empleados desde Supabase (rol = empleado)
     const cuentas = await sbFetch('cuentas?tipo=eq.empleado&order=nombre.asc&select=id,nombre,rol');
@@ -4206,6 +4279,7 @@ async function init() {
     // Mostrar hub
     document.getElementById('loading-overlay').classList.add('hidden');
     goTo('hub');
+    checkPedidosPendientes();
 
   } catch(e) {
     console.error(e);
@@ -5158,18 +5232,10 @@ function deudasOpen() {
   goTo('deudas');
   const badge = document.getElementById('badge-deudas-local');
   if (badge) badge.textContent = LOCALES[state.local] || '--';
+  // Blanquear src primero para forzar recarga aunque el local sea el mismo
   const iframe = document.getElementById('deudas-iframe');
-  const ctx = {
-    type: 'break-context',
-    local: state.local,
-    localName: LOCALES[state.local] || '',
-    turno: state.turno,
-    empleado: state.empleado_nombre
-  };
-  try { iframe.contentWindow.postMessage(ctx, '*'); } catch(e) {}
-  iframe.onload = function() {
-    try { iframe.contentWindow.postMessage(ctx, '*'); } catch(e) {}
-  };
+  iframe.src = '';
+  setTimeout(() => { iframe.src = 'deudas.html?local=' + (state.local || ''); }, 0);
 }
 
 // === MODULO PEDIDOS ===
@@ -5177,23 +5243,55 @@ function pedidosOpen() {
   goTo('pedidos');
   const badge = document.getElementById('badge-pedidos-local');
   if (badge) badge.textContent = LOCALES[state.local] || '--';
-  // Pass context to iframe once loaded
   const iframe = document.getElementById('pedidos-iframe');
+  // Incluir rol para que pedidos.html sepa si mostrar vista empleado o admin
   const ctx = {
     type: 'break-context',
     local: state.local,
     localName: LOCALES[state.local] || '',
     turno: state.turno,
-    empleado: state.empleado_nombre
+    empleado: state.empleado_nombre,
+    rol: state.rol   // 'empleado' | 'encargado' | 'admin'
   };
-  try { iframe.contentWindow.postMessage(ctx, '*'); } catch(e) {}
-  iframe.onload = function() {
-    try { iframe.contentWindow.postMessage(ctx, '*'); } catch(e) {}
-  };
+  iframe.src = '';
+  setTimeout(() => {
+    iframe.src = 'pedidos.html';
+    iframe.onload = function() {
+      try { iframe.contentWindow.postMessage(ctx, '*'); } catch(e) {}
+    };
+  }, 0);
 }
 window.addEventListener('message', function(e) {
   if (e.data && e.data.type === 'break-goback') goTo('hub');
 });
+
+// ═══════════════════════════════════════
+// NOTIFICACIÓN PEDIDOS EN HUB
+// ═══════════════════════════════════════
+async function checkPedidosPendientes() {
+  const localMap = {palermo:'T', belgrano:'R', barrio_chino:'J', san_telmo:'S'};
+  const tk = state.local ? localMap[state.local] : null;
+  if (!tk) return;
+  try {
+    const rows = await sbFetch(
+      'pedidos?status=in.(enviado,en-camino,en-proceso)&select=id,status,proveedor,tienda,fecha'
+    );
+    const propios = (rows||[]).filter(r => r.tienda === tk);
+    const banner  = document.getElementById('hub-pedidos-banner');
+    if (!propios.length) { if (banner) banner.style.display = 'none'; return; }
+
+    const enProceso = propios.filter(r => r.status === 'en-proceso').length;
+    const enviados  = propios.filter(r => r.status === 'enviado' || r.status === 'en-camino').length;
+    let msg = '';
+    if (enProceso) msg += `${enProceso} pedido${enProceso>1?'s':''} esperando recepción`;
+    if (enviados)  msg += (msg ? ' · ' : '') + `${enviados} pedido${enviados>1?'s':''} en camino`;
+
+    if (banner) {
+      banner.querySelector('#hub-pedidos-msg').textContent = msg;
+      banner.style.display = 'flex';
+    }
+  } catch(e) { console.error('checkPedidosPendientes', e); }
+}
 
 </script>
 
