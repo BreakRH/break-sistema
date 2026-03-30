@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Remitos de Traslado — Break 7.52</title>
+<script>if(window.parent!==window)document.documentElement.classList.add('in-iframe');</script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0e0e0e;--surface:#161616;--surface2:#1f1f1f;
+  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);
+  --text:#f0ede8;--muted:#777;
+  --accent:#e8c87a;--accent-dim:rgba(232,200,122,0.12);
+  --red:#e05555;--red-dim:rgba(224,85,85,0.12);
+  --green:#5dbf8a;--green-dim:rgba(93,191,138,0.12);
+  --blue:#6aabda;--blue-dim:rgba(106,171,218,0.12);
+  --purple:#a07edd;--purple-dim:rgba(160,126,221,0.12);
+  --orange:#e8935a;--orange-dim:rgba(232,147,90,0.12);
+  --radius:10px;--radius-lg:16px;
+  --mono:'DM Mono',monospace;--display:'Syne',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;}
+body{background:var(--bg);color:var(--text);font-family:var(--display);min-height:100vh;line-height:1.6;}
+
+#loading-overlay{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:9999;}
+.spinner{width:32px;height:32px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-text{font-size:12px;color:var(--muted);font-family:var(--mono);}
+
+#splash{min-height:100vh;display:none;flex-direction:column;align-items:center;justify-content:center;padding:2rem;gap:2.5rem;}
+html.in-iframe #splash{display:none!important;}
+html.in-iframe #loading-overlay{display:none!important;}
+.logo-block{text-align:center;}
+.logo-label{font-size:11px;letter-spacing:0.18em;color:var(--muted);text-transform:uppercase;margin-bottom:6px;font-family:var(--mono);}
+.logo-title{font-size:2.4rem;font-weight:800;line-height:1.1;}
+.logo-title span{color:var(--accent);}
+.logo-sub{font-size:13px;color:var(--muted);margin-top:6px;font-family:var(--mono);}
+.splash-stats{display:flex;gap:12px;margin-top:16px;flex-wrap:wrap;justify-content:center;}
+.splash-stat{background:var(--surface);border:0.5px solid var(--border2);border-radius:var(--radius-lg);padding:12px 20px;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:110px;}
+.splash-stat-label{font-size:10px;text-transform:uppercase;letter-spacing:0.14em;color:var(--muted);font-family:var(--mono);}
+.splash-stat-val{font-size:1.6rem;font-weight:800;font-family:var(--mono);}
+.sv-active{color:var(--accent);}
+.sv-done{color:var(--green);}
+
+.login-box{width:100%;max-width:400px;background:var(--surface);border:0.5px solid var(--border2);border-radius:var(--radius-lg);padding:2rem;display:flex;flex-direction:column;gap:1.2rem;}
+.login-box h2{font-size:1rem;font-weight:600;color:var(--muted);letter-spacing:0.05em;text-transform:uppercase;font-family:var(--mono);}
+.field-group{display:flex;flex-direction:column;gap:6px;}
+.field-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;font-family:var(--mono);}
+
+select,input[type="text"],input[type="password"],input[type="number"],textarea{
+  background:var(--bg);border:0.5px solid var(--border2);border-radius:var(--radius);
+  color:var(--text);font-family:var(--mono);font-size:14px;padding:10px 14px;
+  width:100%;outline:none;transition:border-color 0.15s;appearance:none;resize:vertical;
+}
+select:focus,input:focus,textarea:focus{border-color:var(--accent);}
+select option{background:#111;}
+
+.btn{padding:11px 20px;border-radius:var(--radius);border:none;font-family:var(--display);font-weight:700;font-size:14px;cursor:pointer;transition:opacity 0.15s,transform 0.1s;letter-spacing:0.02em;}
+.btn:active{transform:scale(0.98);}
+.btn-primary{background:var(--accent);color:#0e0e0e;width:100%;}
+.btn-primary:hover{opacity:0.88;}
+.btn-danger{background:var(--red-dim);color:var(--red);border:0.5px solid var(--red);font-size:13px;padding:8px 14px;}
+.btn-ghost{background:transparent;color:var(--muted);border:0.5px solid var(--border2);font-size:13px;padding:8px 14px;}
+.btn-ghost:hover{color:var(--text);}
+.btn-step{background:var(--green-dim);color:var(--green);border:0.5px solid rgba(93,191,138,0.4);font-size:13px;padding:9px 16px;font-family:var(--display);font-weight:700;cursor:pointer;border-radius:var(--radius);transition:opacity 0.15s;}
+.btn-step:hover{opacity:0.8;}
+.btn-sm{padding:6px 12px;font-size:12px;border-radius:7px;}
+.err-msg{font-size:12px;color:var(--red);font-family:var(--mono);display:none;}
+
+#app{display:none;min-height:100vh;flex-direction:column;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 24px;border-bottom:0.5px solid var(--border);position:sticky;top:0;background:rgba(14,14,14,0.96);backdrop-filter:blur(8px);z-index:100;min-height:60px;}
+.topbar-left{display:flex;flex-direction:column;justify-content:center;padding:10px 0;gap:2px;}
+.topbar-brand{font-size:15px;font-weight:800;letter-spacing:0.02em;line-height:1;}
+.topbar-brand span{color:var(--accent);}
+.topbar-sub{font-size:11px;font-family:var(--mono);color:var(--muted);}
+.topbar-right{display:flex;align-items:center;gap:12px;}
+.topbar-user{font-size:12px;color:var(--muted);font-family:var(--mono);}
+.role-badge{display:inline-block;padding:3px 10px;border-radius:5px;font-size:11px;font-family:var(--mono);font-weight:500;}
+.btn-logout{background:transparent;border:none;color:var(--muted);font-size:12px;cursor:pointer;font-family:var(--mono);padding:4px 8px;border-radius:6px;}
+.btn-logout:hover{color:var(--text);background:var(--surface2);}
+body.in-iframe .topbar{display:none;}
+html.in-iframe .topbar{display:none;}
+
+.main-content{flex:1;padding:24px;max-width:820px;margin:0 auto;width:100%;}
+.tabs{display:flex;gap:4px;margin-bottom:24px;background:var(--surface);border-radius:var(--radius);padding:4px;border:0.5px solid var(--border);}
+.tab-btn{flex:1;padding:8px 6px;border:none;background:transparent;color:var(--muted);font-family:var(--display);font-weight:600;font-size:13px;cursor:pointer;border-radius:8px;transition:all 0.15s;white-space:nowrap;}
+.tab-btn.active{background:var(--surface2);color:var(--text);}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+.card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:1.4rem;margin-bottom:16px;}
+.card-title{font-size:10px;text-transform:uppercase;letter-spacing:0.16em;color:var(--muted);font-family:var(--mono);margin-bottom:14px;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.form-grid .full{grid-column:1/-1;}
+
+/* ── Remito card ── */
+.remito-card{background:var(--surface);border:0.5px solid var(--border2);border-radius:var(--radius-lg);padding:1.4rem;margin-bottom:14px;cursor:pointer;transition:border-color 0.15s;}
+.remito-card:hover{border-color:rgba(232,200,122,0.3);}
+.remito-card.completed{border-color:rgba(93,191,138,0.25);}
+.remito-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px;}
+.remito-id{font-size:11px;color:var(--muted);font-family:var(--mono);}
+.remito-title{font-size:15px;font-weight:700;color:var(--text);margin-top:2px;line-height:1.3;}
+.remito-route{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);font-family:var(--mono);margin-top:5px;}
+.route-store{font-weight:600;}
+.remito-status-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;font-size:11px;font-family:var(--mono);font-weight:500;flex-shrink:0;}
+.status-active{background:var(--accent-dim);color:var(--accent);border:0.5px solid rgba(232,200,122,0.3);}
+.status-done{background:var(--green-dim);color:var(--green);border:0.5px solid rgba(93,191,138,0.3);}
+
+.progress-wrap{margin-bottom:10px;}
+.progress-bar-bg{height:4px;background:var(--border2);border-radius:2px;overflow:hidden;margin-bottom:5px;}
+.progress-bar-fill{height:100%;background:var(--green);border-radius:2px;transition:width 0.4s ease;}
+.progress-label{font-size:10px;color:var(--muted);font-family:var(--mono);}
+
+/* ── Productos table ── */
+.prod-table{width:100%;border-collapse:collapse;margin-bottom:14px;}
+.prod-table th{font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);font-family:var(--mono);padding:6px 10px;text-align:left;border-bottom:0.5px solid var(--border2);}
+.prod-table td{padding:8px 10px;border-bottom:0.5px solid var(--border);font-size:13px;vertical-align:middle;}
+.prod-table tr:last-child td{border-bottom:none;}
+.prod-table input[type="number"]{padding:5px 8px;font-size:13px;width:80px;}
+.prod-table input[type="text"]{padding:5px 8px;font-size:13px;}
+.qty-solicitada{font-family:var(--mono);font-weight:600;color:var(--text);}
+.qty-confirmada{font-family:var(--mono);font-weight:600;}
+.qty-match{color:var(--green);}
+.qty-diff{color:var(--orange);}
+.qty-pending{color:var(--muted);}
+.diff-badge{display:inline-block;padding:1px 6px;border-radius:4px;font-size:10px;font-family:var(--mono);font-weight:500;margin-left:4px;}
+.diff-ok{background:var(--green-dim);color:var(--green);}
+.diff-mod{background:var(--orange-dim);color:var(--orange);}
+
+/* ── Etapas ── */
+.etapas-list{display:flex;flex-direction:column;}
+.etapa-row{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:0.5px solid var(--border);}
+.etapa-row:last-child{border-bottom:none;}
+.etapa-icon{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;margin-top:2px;border:0.5px solid var(--border2);}
+.ei-done{background:var(--green-dim);border-color:rgba(93,191,138,0.4);color:var(--green);}
+.ei-current{background:var(--accent-dim);border-color:rgba(232,200,122,0.4);color:var(--accent);}
+.ei-pending{background:transparent;color:var(--muted);}
+.etapa-body{flex:1;}
+.etapa-name{font-size:13px;font-weight:600;}
+.etapa-name.done{color:var(--green);}
+.etapa-name.current{color:var(--accent);}
+.etapa-name.pending{color:var(--muted);}
+.etapa-meta{font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:1px;}
+.etapa-resp{font-size:10px;font-family:var(--mono);color:var(--muted);margin-top:2px;}
+.etapa-right{flex-shrink:0;display:flex;align-items:center;}
+
+/* ── Modal ── */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.78);z-index:200;display:none;align-items:flex-end;justify-content:center;}
+.modal-backdrop.open{display:flex;}
+.modal{background:var(--surface);border:0.5px solid var(--border2);border-radius:var(--radius-lg) var(--radius-lg) 0 0;width:100%;max-width:820px;max-height:92vh;overflow-y:auto;padding:1.8rem;animation:slideUp 0.22s ease;}
+@keyframes slideUp{from{transform:translateY(40px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+.modal-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.4rem;gap:12px;}
+.modal-title{font-size:1.1rem;font-weight:700;flex:1;}
+.modal-close{background:var(--surface2);border:none;color:var(--muted);font-size:18px;cursor:pointer;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--green);color:#0e0e0e;padding:10px 20px;border-radius:var(--radius);font-size:13px;font-weight:700;font-family:var(--mono);transition:transform 0.3s cubic-bezier(.34,1.56,.64,1);z-index:9998;white-space:nowrap;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.toast.error{background:var(--red);color:#fff;}
+
+.empty-state{text-align:center;padding:3rem 1rem;color:var(--muted);font-family:var(--mono);font-size:13px;}
+.divider-row{display:flex;align-items:center;gap:8px;margin:8px 0 12px;}
+.divider-line{flex:1;height:0.5px;background:var(--border);}
+.divider-txt{font-size:10px;color:var(--muted);font-family:var(--mono);white-space:nowrap;}
+.info-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
+.info-chip{display:inline-flex;flex-direction:column;gap:1px;background:var(--surface2);border-radius:8px;padding:8px 12px;}
+.ic-label{font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);font-family:var(--mono);}
+.ic-val{font-size:13px;font-weight:600;color:var(--text);}
+.nota-box{background:var(--surface2);border-radius:var(--radius);padding:10px 14px;font-size:13px;color:var(--muted);font-family:var(--mono);line-height:1.5;margin-bottom:14px;}
+.section-sep{display:flex;align-items:center;gap:10px;margin:16px 0 10px;}
+.section-sep-label{font-size:10px;text-transform:uppercase;letter-spacing:0.14em;font-family:var(--mono);white-space:nowrap;color:var(--muted);}
+.section-sep-line{flex:1;height:0.5px;background:var(--border);}
+.emp-row{display:flex;align-items:center;gap:12px;padding:10px 8px;border-bottom:0.5px solid var(--border);border-radius:6px;margin:0 -8px;}
+.emp-row:last-child{border-bottom:none;}
+.emp-name{flex:1;font-size:14px;font-weight:600;}
+
+::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
+
+@media(max-width:520px){
+  .form-grid{grid-template-columns:1fr;}
+  .form-grid .full{grid-column:1;}
+  .main-content{padding:16px;}
+  .topbar{padding:0 16px;}
+  .prod-table input[type="number"]{width:60px;}
+}
+</style>
+</head>
+<body>
+
+<div id="loading-overlay">
+  <div class="spinner"></div>
+  <div class="loading-text">Conectando...</div>
+</div>
+
+<div id="splash">
+  <div class="logo-block">
+    <div class="logo-label">Break 7.52 · Red de tiendas</div>
+    <div class="logo-title">Remitos de<br><span>Traslado</span></div>
+    <div class="logo-sub">Sistema interno — acceso restringido</div>
+    <div class="splash-stats">
+      <div class="splash-stat"><div class="splash-stat-label">En curso</div><div class="splash-stat-val sv-active" id="splash-active">0</div></div>
+      <div class="splash-stat"><div class="splash-stat-label">Completados</div><div class="splash-stat-val sv-done" id="splash-done">0</div></div>
+    </div>
+  </div>
+  <div class="login-box">
+    <h2>¿Quién sos?</h2>
+    <div class="field-group">
+      <div class="field-label">Tienda / Rol</div>
+      <select id="rol-select"><option value="">— Seleccioná tu rol —</option></select>
+    </div>
+    <button class="btn btn-primary" onclick="loginRol()">Ingresar</button>
+    <div style="border-top:0.5px solid var(--border);padding-top:1rem;display:flex;flex-direction:column;gap:10px;">
+      <div class="field-label">Acceso administración</div>
+      <input type="password" id="admin-pin" placeholder="PIN de administrador" />
+      <div class="err-msg" id="pin-err">PIN incorrecto.</div>
+      <button class="btn btn-ghost" onclick="loginAdmin()">Entrar como admin</button>
+    </div>
+  </div>
+</div>
+
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-brand">Break <span>7.52</span></div>
+      <div class="topbar-sub">remitos de traslado</div>
+    </div>
+    <div class="topbar-right">
+      <span class="topbar-user" id="topbar-user"></span>
+      <button class="btn-logout" onclick="logout()">Salir</button>
+    </div>
+  </div>
+
+  <div class="main-content">
+
+    <!-- VISTA ROL -->
+    <div id="view-rol" style="display:none;">
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('activos-rol',this,'rol')">En curso</button>
+        <button class="tab-btn" onclick="switchTab('hist-rol',this,'rol')">Historial</button>
+        <button class="tab-btn" id="tab-btn-nueva-rol" style="display:none;" onclick="switchTab('nueva-rol',this,'rol')">Nueva orden</button>
+      </div>
+      <div id="tab-activos-rol" class="tab-panel active"><div id="list-activos-rol"></div></div>
+      <div id="tab-hist-rol" class="tab-panel"><div id="list-hist-rol"></div></div>
+      <div id="tab-nueva-rol" class="tab-panel"><div id="form-nueva-rol"></div></div>
+    </div>
+
+    <!-- VISTA ADMIN -->
+    <div id="view-admin" style="display:none;">
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('activos-admin',this,'admin')">En curso</button>
+        <button class="tab-btn" onclick="switchTab('hist-admin',this,'admin')">Historial</button>
+        <button class="tab-btn" onclick="switchTab('nueva-admin',this,'admin')">Nueva orden</button>
+        <button class="tab-btn" onclick="switchTab('config-admin',this,'admin')">Tiendas</button>
+      </div>
+      <div id="tab-activos-admin" class="tab-panel active"><div id="list-activos-admin"></div></div>
+      <div id="tab-hist-admin" class="tab-panel"><div id="list-hist-admin"></div></div>
+      <div id="tab-nueva-admin" class="tab-panel"><div id="form-nueva-admin"></div></div>
+      <div id="tab-config-admin" class="tab-panel"><div id="config-tiendas"></div></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-backdrop" id="modal-backdrop" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">Remito</div>
+      <button class="modal-close" onclick="closeModalDirect()">×</button>
+    </div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══ SUPABASE ══
+const SURL = 'https://oiuualqixcccfhtpcist.supabase.co';
+const SKEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pdXVhbHFpeGNjY2ZodHBjaXN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NzUxNjEsImV4cCI6MjA4OTQ1MTE2MX0.ms4MHVhKDTKfID0WGi05EFPySf350SA66uNi4wPfsOo';
+const H = {'apikey':SKEY,'Authorization':'Bearer '+SKEY,'Content-Type':'application/json','Prefer':'return=representation'};
+async function sbGet(t,p=''){const r=await fetch(`${SURL}/rest/v1/${t}?${p}`,{headers:H});return r.json();}
+async function sbPost(t,b){const r=await fetch(`${SURL}/rest/v1/${t}`,{method:'POST',headers:H,body:JSON.stringify(b)});return r.json();}
+async function sbPatch(t,p,b){const r=await fetch(`${SURL}/rest/v1/${t}?${p}`,{method:'PATCH',headers:H,body:JSON.stringify(b)});return r.json();}
+async function sbDelete(t,p){await fetch(`${SURL}/rest/v1/${t}?${p}`,{method:'DELETE',headers:H});}
+
+// ══ ETAPAS ══
+const ETAPAS = [
+  {id:'stock',     label:'Stock confirmado disponible',   resp:'origen',     icon:'📦'},
+  {id:'facturado', label:'Facturado — listo para retirar',resp:'origen',     icon:'🧾'},
+  {id:'en_camino', label:'Retirado — en camino',          resp:'repartidor', icon:'🚗'},
+  {id:'entregado', label:'Entregado en destino',           resp:'destino',    icon:'✅'},
+  {id:'activado',  label:'Activado en plataformas',        resp:'destino',    icon:'📲'},
+  {id:'registrado',label:'Registrado en sistema',          resp:'destino',    icon:'📋'},
+];
+
+// ══ PRODUCTOS PREDEFINIDOS ══
+const PRODUCTOS_DEFAULT = JSON.parse("[\"*NO  COMPRAR* - SIDRA 1888 BOTELLA 500ML\", \"01.CIGARRILLO LUCKY STRIKE BOX X12\", \"02.CIGARRILLO LUCKY STRIKE CONVERTIBLE X12\", \"03.2CIGARRILLO ORIGEN BOX10\", \"03.2CIGARRILLO ORIGEN CONVERTIBLE X12\", \"03.CIGARRILLO LUCKY STRIKE DOUBLE PLUS BOX X12\", \"04.CIGARRILLO LUCKY STRIKE RED MIX BOX12\", \"05.CIGARRILLO MARLBORO BOX X12\", \"06.CIGARRILLO MARLBORO FOREST FUSION BOX X12\", \"07.CIGARRILLO PHILIP MORRIS BOX X12\", \"08.CIGARRILLO PHILIP MORRIS BLUE CONVERTIBLE X12\", \"09.CIGARRILLO CHESTERFIELD BLUE BOX X10\", \"10.CIGARRILLO CHESTERFIELD BOX X10\", \"12.CIGARRILLO CAMEL BOX X10\", \"13.CIGARRILLO RED POINT BOX 10\", \"14.0CIGARRILLO LUCKY STRIKE BOX X20\", \"14.11CIGARRILLO LUCKY STRIKE CONVERTIBLE KS20\", \"14.1CIGARRILLO LUCKY STRIKE CONVERTIBLE BOX X20\", \"14.2CIGARRILLO LUCKY STRIKE COMUN  X20\", \"15.1CIGARRILLO ORIGEN BOX20\", \"15.1CIGARRILLO ORIGEN CONVERTIBLE  BOX X20\", \"15.2CIGARRILLO ORIGEN KS X20\", \"15.3 CIGARRILLO ORIGEN CLICK KS X20\", \"15.5CIGARRILLO LUCKY STRIKE DOUBLE PLUS BOX X20\", \"15.6CIGARRILLO LUCKY STRIKE PURPLE MIX BOX X20\", \"15.7CIGARRILLO LUCKY STRIKE RED MIX X20\", \"15.8CIGARRILLO LUCKY STRIKE PARISIENNES BOX X20\", \"15.91CIGARRILLO LUCKY STRIKE ECLIPSE BOX XL X20\", \"15.92CIGARRILLO LUCKY STRIKE LOW KS X20\", \"15.9CIGARRILLO LUCKY STRIKE SILVER SUAVE X20\", \"16.CIGARRILLO MARLBORO BOX X20\", \"17.CIGARRILLO MARLBORO KS COMUN X20\", \"18.CIGARRILLO MARLBORO ICE BLUE BOX X20\", \"19.CIGARRILLO MARLBORO PURPLE FUSION BOX XL X20\", \"20.1CIGARRILLO MARLBORO VISTA FUSION 3 LIMITED X20\", \"20.CIGARRILLO MARLBORO GOLD BOX X20\", \"22.0CIGARRILLO MARLBORO CORAL BOX X20\", \"22.1CIGARRILLO CRAFTED BOX 20\", \"22.2CIGARRILLO CRAFTED KS 20\", \"22.3CIGARRILLO CRAFTED CONVERTIBLE BOX X20\", \"22.4CIGARRILLO CRAFTED BLUE KS 20\", \"22.5CIGARRILLO CRAFTED CONVERTIBLE KS 20\", \"22.6CIGARRILLO CRAFTED CORAL BOX 20\", \"23.0CIGARRILLO PHILIP MORRIS BOX X20\", \"23.1CIGARRILLO PHILIP MORRIS BLUE CONVERTIBLE BOX X20\", \"23.2CIGARRILLO PHILIP MORRIS KS COMUN X20\", \"23.3CIGARRILLO PHILIP MORRIS RED SELECT KS  X20\", \"24.0CIGARRILLO CHESTERFIELD COMUN KS X20\", \"24.11CIGARRILLO CHESTERFIELD BLUE BOX X20\", \"24.1CIGARRILLO CHESTERFIELD BLUE KS\", \"24.3CIGARRILLO CHESTERFIELD REMIX PURPLE  BOX X20\", \"24.4CIGARRILLO CHESTERFIELD PURPLE KS SP X20\", \"40.CIGARRILLO PIER BOX X20 NACIONALES\", \"41.CIGARRILLO MELBOURNE RED X20 NACIONALES\", \"42.CIGARRILLO MELBOURNE GOLD X20 NACIONALES\", \"43.CIGARRILLO DOLCHESTER BOX X20 NACIONALES\", \"45.CIGARRILLO RED POINT MENTHOL KS 20\", \"46.1CIGARRILLO RED POINT SIX CONVERTIBLE X20\", \"46.CIGARRILLO RED POINT ON CONVERTIBLE BOX 20\", \"47.CIGARRILLO RED POINT BOX X20\", \"48.CIGARRILLO RED POINT KS X20\", \"49.1CIGARRILLO MASTER X20 KS  NACIONALES\", \"49.2CIGARRILLO MILENIO BOX X20\", \"50.CIGARRILLO WEST BOX X20\", \"51.CIGARRILLO KIEL KS 20\", \"52.CIGARRILLO BOXER X20 KS NACIONALES\", \"55.CIGARRILLO CAMEL BLUE BOX X20\", \"56.1CIGARRILLO CAMEL LEGEND KS X20\", \"56.CIGARRILLO CAMEL BOX X20\", \"57.1CIGARRILLO CAMEL CONVERTIBLE X20\", \"57.CIGARRILLO CAMEL KS COMUN X20\", \"63.CIGARRILLO MARLBORO TITANIUM BLUE CHARCOAL BOX X20\", \"64.1CIGARRILLO MARLBORO RED TITANIUM BOX X20\", \"64.CIGARRILLO MARLBORO GOLD TITANIUM SUPER SLIMS BOX X20\", \"65.CIGARRILLO CHESTERFIELD BLUE MOTION KS + ENCENDEDOR USB\", \"66.CIGARRILLO BOLD X20 KS NACIONALES\", \"AGUA SABORIZADA LEVITE LIMONADA S/GAS 1,5 LTS\", \"AGUA SABORIZADA LEVITE LIMONADA S/GAS 500 ML\", \"AGUA SABORIZADA LEVITE MANZANA 500ML\", \"AGUA SABORIZADA LEVITE MANZANA CERO S/GAS 1,5 LTS\", \"AGUA SABORIZADA LEVITE MANZANA S/GAS 1,5 LTS\", \"AGUA SABORIZADA LEVITE MANZANA S/GAS ZERO 500ML\", \"AGUA SABORIZADA LEVITE NARANJA CERO S/GAS 1,5 LTS\", \"AGUA SABORIZADA LEVITE NARANJA S/GAS 1,5 LTS\", \"AGUA SABORIZADA LEVITE NARANJA S/GAS 500 ML\", \"AGUA SABORIZADA LEVITE PERA 1,5ML\", \"AGUA SABORIZADA LEVITE PERA S/GAS 500 ML\", \"AGUA SABORIZADA LEVITE POMELO ROSADO 1,5ML\", \"AGUA SABORIZADA LEVITE POMELO ROSADO 500ML\", \"AGUA SABORIZADA LEVITE POMELO S/GAS 1,5 LTS\", \"AGUA SABORIZADA LEVITE POMELO S/GAS 500ML\", \"AGUA SMART C/GAS 591 ML\", \"AGUA SMART S/GAS 1.5 LT\", \"AGUA SMART S/GAS 1L\", \"AGUA SMART S/GAS 591 ML\", \"AGUA TONICA SANTA QUINA 1 LT\", \"AGUA TONICA SANTA QUINA 1 LT SIN AZUCAR\", \"AGUA TONICA SANTA QUINA 500ML\", \"AGUA VILLAVICENCIO C/GAS 1.5 L\", \"AGUA VILLAVICENCIO C/GAS 500 CC\", \"AGUA VILLAVICENCIO S/GAS 1.5 LTS\", \"AGUA VILLAVICENCIO S/GAS 2 LTS\", \"AGUA VILLAVICENCIO S/GAS 500 CC\", \"AGUARDIENTE DE CAÑA 1RO DE AGOSTO 930ML\", \"AGUARDIENTE DE CAÑA OMBU PADILLA 700ML\", \"ALFAJOR AGUILA MINITORTA BLANCO 72 GR.\", \"ALFAJOR AGUILA MINITORTA BROWNIE 74 GR\", \"ALFAJOR AGUILA MINITORTA CLASICA 72 GRS\", \"ALFAJOR AGUILA MINITORTA COCO 73 GRS\", \"ALFAJOR BON O BON BLANCO 60GR\", \"ALFAJOR BON O BON TRIPLE 60 GRS\", \"ALFAJOR CACHAFAZ BLANCO 60 GRS\", \"ALFAJOR CACHAFAZ CHOCOLATE NEGRO 60GR\", \"ALFAJOR CAPITAN DEL ESPACIO SIMPLE NEGRO\", \"ALFAJOR CHOCOTORTA TRIPLE 71GR\", \"ALFAJOR COFLER BLOCK  60G\", \"ALFAJOR DUBAI PISTACHO SIMPLE 70GR\", \"ALFAJOR GUAYMALLEN BLANCO 38 GR\", \"ALFAJOR GUAYMALLEN DDL NEGRO 38 GR\", \"ALFAJOR GUAYMALLEN MEMBRILLO 38 GR\", \"ALFAJOR GUAYMALLEN ORO 38 GR\", \"ALFAJOR GUAYMALLEN PLATINO 38 GR\", \"ALFAJOR GUAYMALLEN TRIPLE BLANCO X70G\", \"ALFAJOR GUAYMALLEN TRIPLE NEGRO X70G\", \"ALFAJOR GUAYMALLEN TRIPLE VERDE X70G\", \"ALFAJOR JORGELIN  NEGRO 85 GRS\", \"ALFAJOR JORGELIN BLANCO 85 GRS\", \"ALFAJOR JORGELIN GLACEADO 85 GRS\", \"ALFAJOR JORGITO BLANCO\", \"ALFAJOR JORGITO CHOCOLATE\", \"ALFAJOR JORGITO FRUTA\", \"ALFAJOR MARLEY 100G\", \"ALFAJOR MARLEY BLANCO 100G\", \"ALFAJOR MARLEY BLANCO SIMPLE 80G\", \"ALFAJOR MARLEY NEGRO SIMPLE 80G\", \"ALFAJOR MILKA MOUSSE TRIPLE 55 GR\", \"ALFAJOR MILKA MOUSSE TRIPLE BLANCO X 55 GR\", \"ALFAJOR MILKA TORTA OREO TRIPLE 61 GR\", \"ALFAJOR MILKA TRIPLE DULCE DE LECHE 70 GR\", \"ALFAJOR MIMI CHOCOLATE 60 GR\", \"ALFAJOR MIMI CHOCOLATE BLANCO 60 GR\", \"ALFAJOR PEPITOS TRIPLE 57 GRS\", \"ALFAJOR RASTA BLANCO 70 GR\", \"ALFAJOR RASTA NEGRO 70 GR\", \"ALFAJOR RASTA TRICO 70 GR\", \"ALFAJOR RASTA TRICO MAICENA 100 GR\", \"ALFAJOR SHOT MANI 44G\", \"ALFAJOR TERRABUSI SIMPLE 50 GRS\", \"ALFAJOR TERRABUSI SIMPLE EXTRA DDL 55GR\", \"ALFAJOR TERRABUSI TRIPLE CON DULCE DE LECHE 70 GRS\", \"ALFAJOR TERRABUSI X3 TORTA 70 GRS\", \"ALFAJOR TRIPLE OREO NEGRO 55G\", \"ALFAJOR TRIPLE SHOT 60G\", \"ALFAJOR TRIPLE SHOT BLANCO 60 GR\", \"ALFAJORCITOS JORGITO AZUL RELLENOS DDL / BAÑO AZUCARADO\", \"ALFAJORCITOS JORGITO MORADOS  RELLENOS CON MOUSSE\", \"ALFAJORCITOS JORGITOS ROJOS RELLENOS DDL / BAÑO REPOSTERIA\", \"ANIS ANISETTE LICOR DE LOS 8 HERMANOS 1L\", \"APERITIVO AMARGO OBRERO 950 ML\", \"APERITIVO AMERICANO GANCIA 950 ML\", \"APERITIVO APEROL 750ML\", \"APERITIVO CAMPARI 1000ML\", \"APERITIVO CAMPARI 750 ML\", \"APERITIVO CAZALIS LEGER 950ML\", \"APERITIVO CINZANO PRO SPRITZ 750ML\", \"APERITIVO CINZANO TO SPRITZ 750ML\", \"APERITIVO CINZANO VERMOUTH ROSSO 1000ML\", \"APERITIVO CYNAR 750 CC\", \"APERITIVO FERNET 1882 450ML\", \"APERITIVO FERNET 1882 750ML\", \"APERITIVO FERNET 777 750ML\", \"APERITIVO GANCIA 473 ML\", \"APERITIVO GANCIA AMERICANO 450ML\", \"APERITIVO GANCIA HIBISCUS 473 ML\", \"APERITIVO GANCIA SIN ALCOHOL LATA 473ML\", \"APERITIVO HODLMOSER 700ML\", \"APERITIVO MARTINI BIANCO 950 ML\", \"APERITIVO MARTINI EXTRA DRY 1L\", \"APERITIVO MARTINI ROSSO 1L\", \"APERITIVO RAMAZZOTTI ROSADO 750ML\", \"AQUARIUS ANANA Y JENGIBRE 1.5LTS\", \"AQUARIUS MANZANA S/GAS 1,5 LTS\", \"AQUARIUS MANZANA S/GAS 500 CC\", \"AQUARIUS NARANJA S/GAS 1,5 LTS\", \"AQUARIUS PERA S/G 237 ML\", \"AQUARIUS PERA S/GAS 1,5 LTS\", \"AQUARIUS PERA S/GAS 500 CC\", \"AQUARIUS POMELO ROSADO S/GAS 500 CC\", \"AQUARIUS POMELO S/GAS 1,5 LTS\", \"AQUARIUS POMELO S/GAS 500 CC\", \"AQUARIUS UVA S/GAS 1,5 LTS\", \"AQUARIUS UVA S/GAS 237 ML\", \"AQUARIUS UVA S/GAS 500 CC\", \"BAILEYS IRISH CREAM 750 ML\", \"BAILEYS SALTED CARAMEL 700ML\", \"BANANA DOLCA 30 GR\", \"BARRA CEREAL CEREALFORT CLASICA 23 GR\", \"BARRA CEREAL EMM FIT CAFE 45G\", \"BARRA CEREAL EMM FIT MANI 45G\", \"BARRA CEREAL FLOW CHOCO 23G\", \"BARRA CEREAL INTEGRA ALMENDRA Y NUEZ COMUN 41G\", \"BARRA CEREAL INTEGRA BANANA COMUN 41G\", \"BARRA CEREAL INTEGRA CACAO Y CHOCOLATE COMUN 41G\", \"BARRA CEREAL INTEGRA CAJU ARANDANOS COMUN 41G\", \"BARRA CEREAL INTEGRA CHOCOLATE Y AVENA COMUN 41G\", \"BARRA CEREAL INTEGRA GIRASOL ARANDANOS COMUN 41G\", \"BARRA CEREAL INTEGRA MANI Y ARANDANOS C/CHOCOBASE 41G\", \"BARRA CEREAL INTEGRA MANI Y CHOCOLATE C/CHOCOBASE 41G\", \"BARRA DE CEREAL BANANA CON DULCE DE LECHE 21GR\", \"BARRA DE CEREAL FRUTTY FRUTILLA 21GR\", \"BARRA DE CEREAL FRUTTY MANZANA 21GR\", \"BIZCOCHOS DON SATUR DULCES 200 GRS\", \"BIZCOCHOS DON SATUR DULCES NEGRITOS 200 GRS\", \"BIZCOCHOS DON SATUR SALADO 200 GRS\", \"BOCADILLO VAUQUITA LIGHT 140 GR\", \"BOCADILLO VAUQUITA LIGHT 22 GR\", \"BOCADILLO VAUQUITA TABLETA DDL  25 GR\", \"BOCADITO BONAFIDE 20GR\", \"BOCADITO CABSHA X 48 GR.\", \"BOCADITO INTEGRA ARANDANO CHOCOLATE 26GRS\", \"BOCADITO INTEGRA MANI & CHOCOLATE 26GRS\", \"BOCADITO MANTECOL CLASICO 26 GR\", \"BOCADITO MARROC FELFORT 14 GR.\", \"BOLSA DE HIELO 2KG\", \"BOLSA DE HIELO 4KG\", \"BOLSA REGALO, COMPRA DE  15MIL BONIFICADA\", \"BOLSAS DE PAPEL PARA VINOS+MOÑO\", \"BOLSAS RIÑON GRIS PARA VINO\", \"BOMBON BON O BON AGUILA 15 GR\", \"BOMBON BON O BON BLANCO 15 GR\", \"BOMBON BON O BON CHOCOLATE 15G\", \"BOMBON BON O BON COCO 15G\", \"BOMBON FERRERO ROCHER 3 UN\", \"BOMBON FERRERO ROCHER CRISTAL 12UN\", \"BOMBON FERRERO ROCHERO ESTUCHE  8U\", \"BOMBON MILKA OREO X 19 GR.\", \"BORGHETTI LICOR DE CAFE 700 CC\", \"BRANDY PRAZDNICINII DIVIN VV 750ML\", \"CACHAZA VELHO BARREIRO 910ML\", \"CAIPIRINHA 750ML\", \"CAJA CARTON CON VISOR PARA VINO + COPA\", \"CAJA CARTON PARA 2 VINOS\", \"CAJA CORONA 4 BOTELLA 330 + TABLA + MINIHIELERA + DESTAPADOR\", \"CARAMELO BUBBALOO CONFITADO 72G\", \"CARAMELO BUTTER TOFFEES DULCE DE LECHE 822 GR. 137 UN.\", \"CARAMELO DE MENTA ARCOR\", \"CARAMELO DE MIEL ARCOR\", \"CARAMELO DE MIEL Y MENTA ARCOR\", \"CARAMELO MASTICABLE FLYNN PAFF\", \"CARAMELO MENTOS FRUTA 29.7 GR\", \"CARAMELO MENTOS MAGIC 29.5 GR\", \"CARAMELO MENTOS MENTA 29.7 GR\", \"CARAMELO MENTOS TUTTI 29.7 GR\", \"CARAMELO SUGUS CONFITADO 50G\", \"CARAMELOS MENTHOPLUS CEREZA\", \"CARAMELOS MENTHOPLUS MENTA VERDE\", \"CARAMELOS MENTHOPLUS ZERO\", \"CERVEZA AMSTEL LAGER LATA 473 CC\", \"CERVEZA AMSTEL LAGER LATA 710CC\", \"CERVEZA ANDES ORIGEN CLASICA 473ML\", \"CERVEZA ANDES ORIGEN IPA 473 CC\", \"CERVEZA ANDES ORIGEN NEGRA 473 CC\", \"CERVEZA ANDES ORIGEN ROJA LATA 473 CC\", \"CERVEZA ANDES ORIGEN RUBIA LATA 473 CC\", \"CERVEZA ANDES ORIGEN RUBIA LATA 710 CC\", \"CERVEZA ANDES ORIGEN RUBIA ORO 473 CC\", \"CERVEZA ANTARES CARAVANA SESSION IPA 473ML\", \"CERVEZA ANTARES HONEY LATA 473ML\", \"CERVEZA ANTARES IPA LATA 473ML\", \"CERVEZA ANTARES KOLSCH 473ML\", \"CERVEZA ANTARES LAGER 473ML\", \"CERVEZA ANTARES PLAYA GRANDE 473ML\", \"CERVEZA ANTARES SCOTCH 473ML\", \"CERVEZA BIECKERT BAPA LATA 473ML\", \"CERVEZA BIECKERT IPA DEL SUR 473 ML\", \"CERVEZA BIECKERT URBANA 473ML\", \"CERVEZA BLUE MOON BELGIAN WHITE LATA 473CC\", \"CERVEZA BRAHMA 473 CC\", \"CERVEZA BUDWEISER 710ML\", \"CERVEZA BUDWEISER LATA 473 CC\", \"CERVEZA CORONA BOTELLA 330 CC\", \"CERVEZA CORONA BOTELLA 710ML\", \"CERVEZA CORONA CERO 0% BOTELLA 330 ML\", \"CERVEZA EICHBAUM PILSENER 473ML\", \"CERVEZA GROLSCH IPA 473 CC\", \"CERVEZA GROLSCH RUBIA 473 CC\", \"CERVEZA HEINEKEN 0.0% 473 CC\", \"CERVEZA HEINEKEN 473 CC\", \"CERVEZA HEINEKEN 710 CC\", \"CERVEZA IMPERIAL APA 473 CC\", \"CERVEZA IMPERIAL CREAM STOUT 473 CC\", \"CERVEZA IMPERIAL GOLDEN 0% ALH 355 CC\", \"CERVEZA IMPERIAL GOLDEN 473 CC\", \"CERVEZA IMPERIAL GOLDEN LATA 710ML\", \"CERVEZA IMPERIAL IPA 473 CC\", \"CERVEZA IMPERIAL LAGER 473 CC\", \"CERVEZA IMPERIAL LAGER 710 CC\", \"CERVEZA IMPERIAL ROJA 473 CC\", \"CERVEZA ISENBECK 473CC\", \"CERVEZA LIT LIGHT 473ML\", \"CERVEZA MICHELOB ULTRA 410 CC\", \"CERVEZA MILLER LATA 710 CC\", \"CERVEZA MILLER RUBIA 473 CC\", \"CERVEZA MILLER RUBIA BOTELLA 330 CC\", \"CERVEZA PATAGONIA 24.7 473ML / 410CC\", \"CERVEZA PATAGONIA AMBER LAGER 473ML / 410CC\", \"CERVEZA PATAGONIA LAGER DEL SUR 473ML\", \"CERVEZA PATAGONIA VERA IPA 473ML / 410CC\", \"CERVEZA PEÑON HONIGBIER 473ML\", \"CERVEZA PEÑON KOLSCH 473ML\", \"CERVEZA PEÑON MEXICAN 473ML\", \"CERVEZA PEÑON OCTOBERFEST 473ML\", \"CERVEZA PEÑON SCHWARBIER 473ML\", \"CERVEZA QUILMES 0.0% 473ML\", \"CERVEZA QUILMES 1890 473 CC\", \"CERVEZA QUILMES CRISTAL LATA 473 CC\", \"CERVEZA QUILMES CRISTAL LATA 710 CC\", \"CERVEZA QUILMES DOBLE MALTA 410ML\", \"CERVEZA QUILMES IPA 473ML\", \"CERVEZA QUILMES STOUT 473 CC\", \"CERVEZA SALTA CAUTIVA FRESH LAGER 473ML\", \"CERVEZA SANTA FE RUBIA 473 CC\", \"CERVEZA SCHNEIDER LAGER 710 CC\", \"CERVEZA SCHNEIDER LAGER LATA 473 CC\", \"CERVEZA SCHNEIDER REMIX LIMON 473ML\", \"CERVEZA SOL 473ML\", \"CERVEZA STELLA ARTOIS 0.0% 473ML\", \"CERVEZA STELLA ARTOIS 710ML\", \"CERVEZA STELLA ARTOIS LATA 473 CC\", \"CERVEZA STELLA ARTOIS NOIRE 473 CC\", \"CERVEZA STELLA ARTOIS PORRON 330ML\", \"CERVEZA TEMPLE WOLF IPA 473 CC\", \"CERVEZA WARSTEINER GERMAN PILSENER 473 CC\", \"CHAMPAGNE VEUVE CLICQUOT BRUT 750ML\", \"CHEETOS HORNEADOS SABOR QUESO 85G\", \"CHEETOS KETCHUP 80GR\", \"CHICLE BELDENT FRUTILLA SIN AZUCAR X 10 GR.\", \"CHICLE BELDENT GLOBO FRESH SPARKS X 10 GR.\", \"CHICLE BELDENT MENTA NEGRO SIN AZUCAR X 10 GR.\", \"CHICLE BELDENT MENTA VERDE SIN AZUCAR X 10 GR.\", \"CHICLE BELDENT MENTOL AZUL SIN AZUCAR X 10 GR.\", \"CHICLE BELDENT SANDIA 10GR\", \"CHICLE BUBBALOO\", \"CHICLE TOPLINE FRUTA 6,7 GR\", \"CHICLE TOPLINE SEVEN ATOMIC STRONG\", \"CHICLE TOPLINE SEVEN BUBBLE FUN ROSA\", \"CHICLE TOPLINE SEVEN FREEZING MENTHOL\", \"CHICLE TOPLINE SEVEN MANDARINA\", \"CHICLE TOPLINE SEVEN SANDIA\", \"CHICLE TOPLINE SEVEN STRAWBERRY\", \"CHICLE TOPLINE SEVEN VIOLET CHERRY\", \"CHICLE TOPLINE SEVEN XPLOSIVE MINT VERDE\", \"CHIP CLARO\", \"CHIP MOVISTAR\", \"CHIP PERSONAL\", \"CHIP TUENTI\", \"CHOCOBARRA ARROZ GALLO 20 GR\", \"CHOCOLATE AGUILA 60% CACAO 14 GR\", \"CHOCOLATE BARRA ROCKLETS X44 GR\", \"CHOCOLATE BLANCO ARCOR 25 GRS\", \"CHOCOLATE CADBURY 50% CACAO 25 GR\", \"CHOCOLATE CADBURY YOGHURT FRUTILLA 27 GRS\", \"CHOCOLATE COFLER AIREADO BON O BON X 67 GR.\", \"CHOCOLATE COFLER BLOCK 38G\", \"CHOCOLATE COFLER BLOCK X 110 GR.\", \"CHOCOLATE COFLER DUBAI PISTACHO 45G\", \"CHOCOLATE CON LECHE ARCOR 25 GRS\", \"CHOCOLATE KINDER BUENO 43 GR.\", \"CHOCOLATE KINDER BUENO WHITE 43 GR.\", \"CHOCOLATE MILKA AIREADO ALMENDRAS 55 GR\", \"CHOCOLATE MILKA ALMENDRAS 55G\", \"CHOCOLATE MILKA ALMOND CARAMEL 300GR\", \"CHOCOLATE MILKA BLANCO 55 GR\", \"CHOCOLATE MILKA CHEESECAKE 300GR\", \"CHOCOLATE MILKA CHOCO SWING 300GR\", \"CHOCOLATE MILKA CHOCOPAUSE OREO 45G\", \"CHOCOLATE MILKA COOKIES 100 GR\", \"CHOCOLATE MILKA HAZELNUT 95GR\", \"CHOCOLATE MILKA LECHE 55 GR\", \"CHOCOLATE MILKA LEGER ALMENDRAS X 100GRS\", \"CHOCOLATE MILKA LEGER COMBINADO X100GRS\", \"CHOCOLATE MILKA LEGER LECHE X 100 GRS\", \"CHOCOLATE MILKA LEGER LECHE X100GRS\", \"CHOCOLATE MILKA OREO 100GR\", \"CHOCOLATE MILKA OREO 300GR\", \"CHOCOLATE MILKA RASPBERRY 100GR\", \"CHOCOLATE ROCKLETS X 40 GR.\", \"CHOCOLATE SHOT BLANCO 38 GR\", \"CHOCOLATE SHOT CON LECHE MANI 35 GRS\", \"CHOCOLATE SNICKERS 48G\", \"CHOCOLATE SNICKERS ALMOND 50 GR\", \"CHUPETIN MR. POP EVOLUTION\", \"CHUPETIN PARAGUITAS\", \"CHUPETIN PICO DULCE FRUTAL\", \"CIGARROS CAMEL LEGEND BOX 20\", \"COCTEL DR. LEMON MOJITO 1L\", \"COCTEL DR. LEMON MOJITO LATA 473ML\", \"COCTEL PIÑA COLADA AMERICAN CLUB 750ML\", \"COFLER AIR BLANCO X 55 GR.\", \"COFLER AIR LECHE X 55 GR.\", \"COFLER AIR MIXTO X 55 GR.\", \"COMBO 2 FERNET 750+1CC2.25+1VASO+1BOLSA REGALO $39.999\", \"DESTAPADOR BUDWEISER\", \"DESTAPADOR DAGA STELLA\", \"DESTAPADOR PATAGONIA\", \"DORITOS DINAMITA EXTRA FLAMIN HOT 45G\", \"DORITOS DINAMITA EXTRA FLAMIN HOT 82G\", \"DORITOS SABOR FLAMIN HOT 82G\", \"DORITOS SABOR QUESO 140 GR\", \"DORITOS SABOR QUESO 77GR\", \"DORITOS SWEET CHILI  90G\", \"DORITOS SWEET CHILI 35GR\", \"DOS CORAZONES BOMBON RELLENO 26G\", \"DR. LEMON CON LIMON LATA 473 CC\", \"DR. LEMON CON VODKA LATA 473 CC\", \"DR. LEMON POMELO 473ML\", \"ENCENDEDOR BIC MAXI\", \"ENCENDEDOR BIC MINI\", \"ENCENDEDOR CANDELA\", \"ENCENDEDOR CATALITICO MAGICLICK\", \"ENCENDEDOR CATALITICO MAGICLICK 2\", \"ENCENDEDOR CATALITICO MAGICLICK MONKEY NEON\", \"ENCENDEDOR CATALITICO MAGICLICK VIP\", \"ENCENDEDOR CATALITICO METAL MAGICLICK VIP\", \"ENCENDEDOR ELECTRONICO MAGICLICK MINI\", \"ENCENDEDOR FUEGO\", \"ENCENDEDOR MAGICLICK REUTILIZABLE\", \"ENCENDEDOR MAGICLICK REUTILIZABLE MARINO\", \"ENCENDEDOR MAGICLICK REUTILIZABLE PSICODELICO\", \"ENCENDEDOR MAXI CLIPPER REUSABLE\", \"ENCENDEDOR MAXI CLIPPER STAMPS\", \"ENCENDEDOR SHARK CLASICO\", \"ENCENDEDORES CATALITICO TOKYO\", \"ENERGIZANTE MONSTER ENERGY ANANÁ 473ML\", \"ENERGIZANTE MONSTER ENERGY LATA 473ML\", \"ENERGIZANTE MONSTER ENERGY LATA ZERO 473ML\", \"ENERGIZANTE MONSTER ENERGY MANGO 473ML\", \"ENERGIZANTE MONSTER ENERGY SUNRISE 473ML\", \"ENERGIZANTE MONSTER ENERGY ULTRA ROSSI 473 CC\", \"ENERGIZANTE MONSTER ROJO WATERMELON 473ML\", \"ENERGIZANTE MONSTER ROSA PUNCH 473ML\", \"ENERGIZANTE MONSTER ULTRA BLANCO 473ML\", \"ENERGIZANTE MONSTER ULTRA PEACH 473ML\", \"ENERGIZANTE MONSTER ULTRA VERDE 473ML\", \"ENERGIZANTE RED BULL 250 ML\", \"ENERGIZANTE RED BULL GREEN 250 ML\", \"ENERGIZANTE RED BULL SUMMER 250 ML\", \"ENERGIZANTE RED BULL ZERO 250ML\", \"ENERGIZANTE SHHHHHH! 250 ML\", \"ENERGIZANTE SPEED 269 ML\", \"ENERGIZANTE SPEED 473 ML\", \"ENERGIZANTE SPEED UNLIMITED 250 ML\", \"ENERGIZANTE SPEED UNLIMITED ZERO 250 ML\", \"ENERGIZANTE SPEED ZERO 473ML\", \"ESPUMANTE BARON B EXTRA BRUT 750ML\", \"ESPUMANTE BOTTEGA GOLD 750ML\", \"ESPUMANTE BOTTEGA WHITE GOLD 750ML\", \"ESPUMANTE BRESSIA ROYALE 750ML\", \"ESPUMANTE CASILLERO DEL DIABLO EXTRA BRUT 750ML\", \"ESPUMANTE CHANDON APERITIF 750ML\", \"ESPUMANTE CHANDON BRUT NATURE 750ML\", \"ESPUMANTE CHANDON DELICE 750ML\", \"ESPUMANTE CHANDON DELICE ROSÉ 750ML\", \"ESPUMANTE CHANDON DEMI SEC 750 ML\", \"ESPUMANTE CHANDON EXTRA BRUT 750 ML\", \"ESPUMANTE CHANDON ROSÉ 750ML\", \"ESPUMANTE COSECHA ESPECIAL EXTRA BRUT 750 ML\", \"ESPUMANTE DADA N°7 PASSION MARACUYA 750ML\", \"ESPUMANTE DADA ORANGE BITTER 750ML\", \"ESPUMANTE DADA SWEET 750ML\", \"ESPUMANTE EL RELATOR ROSE 750ML\", \"ESPUMANTE FEDERICO DE ALVEAR DULCE 750\", \"ESPUMANTE FEDERICO DE ALVEAR EXTRA BRUT 750ML\", \"ESPUMANTE FEDERICO DE ALVEAR EXTRA DULCE 750 ML\", \"ESPUMANTE JASMINE MONET EXTRA BRUT 750ML\", \"ESPUMANTE JASMINE MONET ROSE 750ML\", \"ESPUMANTE JASMINE MONET WHITE BRUT 750ML\", \"ESPUMANTE LA LINDA EXTRA BRUT 750ML\", \"ESPUMANTE LA MASCOTA BLANCO NOIR 750ML\", \"ESPUMANTE LIASON EXTRA BRUT 750ML\", \"ESPUMANTE LOSANCE BRUT NATURE CHARDONNAY-CHENIN 750ML\", \"ESPUMANTE LOSANCE EXTRA BRUT CHARDONNAY-CHENIN 750ML\", \"ESPUMANTE LUI BRUT NATURE PINOT NOIR 750ML\", \"ESPUMANTE LUI DULCE NATURAL 750ML\", \"ESPUMANTE MANOS NEGRAS BRUT NATURE 750ML\", \"ESPUMANTE NAVARRO CORREAS DULCET 750ML\", \"ESPUMANTE NAVARRO CORREAS EXTRA BRUT 750ML\", \"ESPUMANTE NAVARRO CORREAS MALBEC ROSE 750ML\", \"ESPUMANTE NAVARRO CORREAS NATURE 750ML\", \"ESPUMANTE NORTON COSECHA ESPECIAL EXTRA BRUT 750ML\", \"ESPUMANTE NORTON ELEGIDO BRUT ROSE 750ML\", \"ESPUMANTE NORTON ELEGIDO DERMI SEC 750ML\", \"ESPUMANTE NORTON ELEGIDO DULCE 750ML\", \"ESPUMANTE NORTON EXTRA BRUT 750 ML\", \"ESPUMANTE NORTON GAMBEI EXTRA BRUT 750ML\", \"ESPUMANTE NORTON GRUNER VELTLINER 750ML\", \"ESPUMANTE NOVECENTO EXTRA BRUT 750 ML\", \"ESPUMANTE RENAISSANCE DU 750ML\", \"ESPUMANTE RENAISSANCE EXTRA BRUT 750ML\", \"ESPUMANTE SAN TELMO EXTRA BRUT X 750 ML,\", \"ESPUMANTE SAN TELMO EXTRA DULCE 750ML\", \"ESPUMANTE SYLVESTRA EXTRASECCO 750ML\", \"ESTUCHE C/VINO TRIVENTO RESERVA GOLDEN MALBEC 750M\", \"ESTUCHE RAMAZZOTTI + MUMM CUVEE EXTRA BRUT\", \"FABRE DESCORCHADOR DE MADERA\", \"FERNET BRANCA 1 L\", \"FERNET BRANCA 180 ANIVERSARIO 750ML\", \"FERNET BRANCA 450 CC\", \"FERNET BRANCA 750 ML\", \"FERNET BRANCA MENTA 750 ML\", \"FERNET BUHERO NEGRO 700ML\", \"FERNET CON COLA 1882 473 CC\", \"FERNET VITTONE 750ML\", \"FILTRO GIZEH XL SLIM FILTERS 100 UN.\", \"FILTROS GIZEH EXTRA SLIM 5MM 150 UN\", \"FILTROS GIZEH SLIM X 120 UN.\", \"FILTROS GIZEH SLIM XL ORGANICO 120 UN\", \"FILTROS LIBELLA HAVANA SLIM CANT 200\", \"FILTROS LIBELLA NRO 6 SLIM CANT 200\", \"FILTROS LIBELLA PREMIUM FILTER EXTRA SLIM 200UN.\", \"FILTROS LIBELLA REGULAR X 200 UN.\", \"FILTROS LIBELLA STAMPS SLIM 200UN.\", \"FILTROS OCB ORGANICO X 120 UN.\", \"FILTROS OCB REGULAR X 100 UN.\", \"FILTROS OCB SLIM X 120 UN.\", \"FILTROS OCB VIRGIN SLIM X 150UN.\", \"FILTROS PREMIER 200 UN.\", \"FILTROS PREMIER 50 UN.\", \"FILTROS SMOKING SLIM\", \"FILTROS TIPS TONKING BROWN\", \"FILTROS TIPS TONKING WHITE 50 HOJAS\", \"FRAPERA CORONA\", \"FRAPERA HIELERA BRAHMA\", \"FRAPERA HIELERA BUDWEISER\", \"FRAPERA HIELERA QUILMES\", \"FRAPERA HIELERA SPEED UNLIMITED NEGRA\", \"FRAPERA HIELERA STELLA\", \"FRIZZE BLUE EVOLUTION LATA 473ML\", \"FRIZZE EVOLUTION 1L\", \"FRIZZE LIMONATA BOTELLA 1L\", \"FRIZZE POMELATA BOTELLA 1L\", \"FULL SPORT FRESH BLUE 500 ML\", \"FULL SPORT FRUTAS TROPICALES 500 ML\", \"FULL SPORT MANZANA 500 ML\", \"GALLETA CACHAFAZ INTEGRAL ALGARROBA 225 GRS\", \"GALLETA CACHAFAZ INTEGRAL AVE/ALM/MANI 225 GRS\", \"GALLETA CACHAFAZ INTEGRAL AVENA C/CHIPS 225 GRS\", \"GALLETA CACHAFAZ INTEGRAL AVENA/PASAS 225 GRS\", \"GALLETAS CEREALITAS AVENA Y CACAO 170G\", \"GALLETAS CEREALITAS GRANOLA 170G\", \"GALLETAS DULCES ZUPAY MANTEQUILLA 300G\", \"GALLETAS DUQUESA PETIT 64,5 GR\", \"GALLETAS MELBA PETIT 64,5 GR\", \"GALLETAS OREO PETIT 64,5 GR\", \"GALLETAS SURTIDAS ZUPAY GLASEADAS 300G 895\", \"GALLETITAS DULCES CHOCOLINAS 170 GRS\", \"GALLETITAS DULCES TEREPIN PEPAS 400 GRS\", \"GALLETITAS DULCES TRIO PEPAS 200GRS\", \"GALLETITAS OREO BANADAS EN CHOCOLATE BLANCO 17GR\", \"GALLETITAS OREO BANADAS EN CHOCOLATE NEGRO 17GR\", \"GALLETITAS OREO CHOCOLATE 118 GR\", \"GALLETITAS OREO CLASICAS 118 GR\", \"GALLETITAS OREO GOLDEN 118 GR\", \"GALLETITAS OREO MANI 118 GR\", \"GALLETITAS OREO MENTA 118 GR\", \"GALLETITAS PEPAS TEREPIN MEMBRILLO 200 GRS\", \"GALLETITAS PEPITOS ORIGINAL 119 GR.\", \"GALLETITAS SURTIDO BAGLEY 390 GR\", \"GALLETITAS TERRABUSI MELBA 120 GR\", \"GALLETITAS TERRABUSI DUQUESA 120 GR\", \"GALLETITAS TITA X19 GR.\", \"GAS CLAER 160CC\", \"GAS CLAER 400 CC\", \"GASEOSA 7UP BOTELLA 500 ML\", \"GASEOSA 7UP FREE 1.5L\", \"GASEOSA 7UP FREE LATA 354ML\", \"GASEOSA 7UP LATA 354 ML\", \"GASEOSA 7UP ORIGINAL 1.5L\", \"GASEOSA 7UP ZERO BOTELLA 500ML\", \"GASEOSA COCA COLA BOTELLA 1,75 LTS\", \"GASEOSA COCA COLA BOTELLA 2,25 LTS\", \"GASEOSA COCA COLA BOTELLA 2,5 LTS\", \"GASEOSA COCA COLA BOTELLA 237 ML\", \"GASEOSA COCA COLA BOTELLA 600 ML\", \"GASEOSA COCA COLA BOTELLA LIGHT 1,75 LTS\", \"GASEOSA COCA COLA BOTELLA ZERO 1,75 LTS\", \"GASEOSA COCA COLA BOTELLA ZERO 2.25 LTS\", \"GASEOSA COCA COLA BOTELLA ZERO 237 ML\", \"GASEOSA COCA COLA LATA 354 ML\", \"GASEOSA COCA COLA LATA ZERO MUNDIAL 473 ML\", \"GASEOSA COCA COLA LIGHT 600 ML\", \"GASEOSA COCA COLA ZERO 600 ML\", \"GASEOSA COCA COLA ZERO LATA 354 ML\", \"GASEOSA FANTA BOTELLA 1,75LTS\", \"GASEOSA FANTA BOTELLA ZERO 1,75LTS\", \"GASEOSA FANTA NARANJA 600 ML\", \"GASEOSA FANTA NARANJA BOTELLA 500 ML\", \"GASEOSA FANTA NARANJA ZERO LATA 354 ML\", \"GASEOSA FANTA POMELO 600 ML\", \"GASEOSA PASO DE LOS TOROS POMELO 1,5L\", \"GASEOSA PASO DE LOS TOROS TONICA 1,5 LTS\", \"GASEOSA PEPSI BLACK 1.5L\", \"GASEOSA PEPSI BLACK CERO AZUCAR 500ML\", \"GASEOSA PEPSI BLACK LATA 354ML\", \"GASEOSA PEPSI LATA 354 ML\", \"GASEOSA PEPSI ORIGINAL 1,5L\", \"GASEOSA PEPSI ORIGINAL BOTELLA 500ML\", \"GASEOSA PEPSI TWIST SABOR LIMON 1,5L\", \"GASEOSA SCHWEPPES POMELO 1.5 L\", \"GASEOSA SCHWEPPES POMELO 310 ML\", \"GASEOSA SCHWEPPES TONICA 1,5 LTS\", \"GASEOSA SCHWEPPES TONICA 310 ML\", \"GASEOSA SCHWEPPES TONICA ZERO 1,5 LTS\", \"GASEOSA SPRITE 600ML\", \"GASEOSA SPRITE BOTELLA 1,75 LTS\", \"GASEOSA SPRITE BOTELLA ZERO 1,75 LTS\", \"GASEOSA SPRITE BOTELLA ZERO 237ML\", \"GASEOSA SPRITE LATA 354 CC\", \"GASEOSA SPRITE LATA ZERO 354 CC\", \"GASEOSA SPRITE ZERO 600 ML\", \"GATORADE COOL BLUE 1,25L\", \"GATORADE COOL BLUE 500ML\", \"GATORADE COOL BLUE 750ML\", \"GATORADE FRUTAS TROPICALES 1,25L\", \"GATORADE FRUTAS TROPICALES 500ML\", \"GATORADE FRUTAS TROPICALES 750ML\", \"GATORADE MANZANA 1,25L\", \"GATORADE MANZANA 500ML\", \"GATORADE MANZANA 750ML\", \"GATORADE NARANJA 1,25L\", \"GATORADE NARANJA 500ML\", \"GATORADE UVA 500ML\", \"GIFT 2 BOTELLAS SERNOVA 700ML\", \"GIFT 2 CIGARRILLOS MARLBORO TITANIUM RED BOX X20 + ENCENDEDOR USB\", \"GIFT 2 COPAS GUSTITO ANDES\", \"GIFT 2 COPAS TULIPA PATAGONIA *10% DESC. SOLO EN EFECTIVO*\", \"GIFT 2 FERNET 750+1 CC2.25+2VASOS+CARTAS+BOLSA $33.000\", \"GIFT 2 FERNET 750+1 CC2.25+2VASOS+CARTAS+BOLSA $41.999\", \"GIFT 2 FERNET 750ML+ CAJA + BOLSA FERNET $35499. DESC 2000\", \"GIFT 2 VODKA SERNOVA 700ML\", \"GIFT BARRIL HEINEKEN 5L\", \"GIFT BEERMAT ABSOLUT NEGRO *DESC. *10% DESC. SOLO EN EFECTIVO*\", \"GIFT BEERMAT APEROL *10% DESC. SOLO EN EFECTIVO*\", \"GIFT BEERMAT BRANCA *10% DESC. SOLO EN EFECTIVO*\", \"GIFT BEERMAT CORONA\", \"GIFT BEERMAT HEINEKEN VERDE *10% DESC. SOLO EN EFECTIVO*\", \"GIFT BEERMAT JACK DANIELS HONEY *10% DESC. SOLO EN EFECTIVO*\", \"GIFT BEERMAT JACK DANIELS REGULAR *DESC. $2600 SOLO EN EFECTIVO*\", \"GIFT BEERMAT JAGEMEISTER NEGRO *10% DESC. SOLO EN EFECTIVO*\", \"GIFT BEERMAT JAGEMEISTER VERDE *10% DESC. SOLO EN EFECTIVO*\", \"GIFT BEERMAT JAMESON *10% DESC. SOLO EN EFECTIVO*\", \"GIFT BEERMAT PATAGONIA *10% DESC. SOLO EN EFECTIVO*\", \"GIFT BEERMAT QUILMES *10% DESC. SOLO EN EFECTIVO*\", \"GIFT BEERMAT SMIRNOFF ROJO\", \"GIFT BEERMAT STELLA\", \"GIFT BLU +  VASO BLU $16500 DESC. 4000.\", \"GIFT BUDWEISER VASOS ALUMINIO 500CC\", \"GIFT CAJA REGALO 1 FERNET BRANCA 750ML\", \"GIFT CAJA REGALO DOBLE FERNET 750ML\", \"GIFT CAJA REGALO FERNET BRANCA 750ML\", \"GIFT CAJA REGALO GIN BLU 700ML\", \"GIFT COPA BEEFEATER CRISTAL\", \"GIFT COPA BOMBAY SAPPHIRE CRISTAL\", \"GIFT COPAS GINKO PATAGONIA\", \"GIFT ESPECIERO STELLA ARTOIS 4 FRASCOS + CANASTO *10% DESC. SOLO EN EFECTIVO*\", \"GIFT HERACLITO 3 BOTELLAS 700ML\", \"GIFT HERACLITO ESTUCHE 3 COPAS ACRILICAS *10% DESC. SOLO EN EFECTIVO*\", \"GIFT HEREDERO SET 1 COPA + GIN HEREDERO\", \"GIFT JAGERMEISTER 700CC + 2 SHOTS VIDRIO\", \"GIFT LIASON SPEED CON FRAPPERA\", \"GIFT POSA VASOS PATAGONIA CORCHO 500CC\", \"GIFT SCHOFFERHOFER 3 LATAS 500ML + 1 VASO\", \"GIFT SET COCTELERA + ACC *10% DESC. SOLO EN EFECTIVO*\", \"GIFT STELLA ARTOIS 2 COPAS 330ML *10% DESC. SOLO EN EFECTIVO*\", \"GIFT STELLA ARTOIS 2 COPAS 500ML *10% DESC. SOLO EN EFECTIVO*\", \"GIFT STELLA CUBIERTOS DE MADERA BAMBOO *10% DESC. SOLO EN EFECTIVO*\", \"GIFT TABLA DE MADERA PATAGONIA *10% DESC. SOLO EN EFECTIVO*\", \"GIFT VASO FERNET PLÁSTICO 1UND\", \"GIFT VASO FERNET VIDRIO 1UND\", \"GIFT VASOS HOEGAARDEN 500ML *10% DESC. SOLO EN EFECTIVO*\", \"GIFT WHISKY JACK DANIELS TENESSE HONEY 700ML + 2 VASOS\", \"GIFT ZUCCARDI + COPA\", \"GIFT TAZAS PATAGONIA  *10% DESC. SOLO EN EFECTIVO*\", \"GIFT TAZAS PATAGONIA ENLOZADA BAHIA RASO *10% DESC. SOLO EN EFECTIVO*\", \"GIFT TAZAS PATAGONIA ENLOZADA FERNANDEZ Y 24.7 *10% DESC. SOLO EN EFECTIVO*\", \"GIN ALGIDO LONDON DRY 750ML\", \"GIN BEEFEATER LONDON DRY 1L\", \"GIN BEEFEATER LONDON DRY 700ML\", \"GIN BOMBAY SAPPHIRE 750ML\", \"GIN BOSQUE CRAFT 500ML\", \"GIN BOSQUE NATIVO 500ML\", \"GIN BRIGHTON 700ML\", \"GIN BRIGHTON PINK 700ML\", \"GIN BRIGHTON TANGERINE 700ML\", \"GIN BULLDOG LONDON DRY 750 ML\", \"GIN GORDONS 750ML\", \"GIN GORDONS LATA 473ML\", \"GIN GORDONS PREMIUM PINK 750ML\", \"GIN HENDRICK'S 1L\", \"GIN HENDRICK'S 700ML\", \"GIN HERACLITO LONDON DRY 750ML\", \"GIN HEREDERO BOYSENBERRY 700 ML\", \"GIN HEREDERO POMELO ROSA 700 ML\", \"GIN HEREDERO TANGERINE 700 ML\", \"GIN MERLE BOCA JUNIORS AMARILLO 750 ML\", \"GIN MERLE BOCA JUNIORS AZUL 750ML\", \"GIN SPIRITO BLU 700 ML\", \"GIN TANQUERAY 700ML\", \"GIN TANQUERAY DARK BERRY ROYALE 700ML\", \"GIN TONIC BLUEBERRY & STRAWBERRY MERLE LATA 355CC\", \"GIN TONIC MERLE PINK LATA 355CC\", \"GIN TRANE LONDON DRY 750ML\", \"GINEBRA LLAVE 700 ML\", \"GINKGO PATAGONIA 500ML\", \"GOMITAS BUBBALOO BALA BLUEBERRY 82 GR\", \"GOMITAS BUBBALOO GATITOS ACIDOS FRUTAL 16 GR\", \"GOMITAS BUBBALOO GUSANITOS ACIDOS NARANJA Y ARANDANO 82 GR\", \"GOMITAS BUBBALOO HUELLITAS ACIDAS FRUTILLA 16 GR\", \"GOMITAS BUBBALOO HUELLITAS ACIDAS FRUTILLA 82 GR\", \"GOMITAS BUBBALOO HUELLITAS FRUTILLA 16 GR\", \"GOMITAS MOGUL CEREBRITOS X 30 GR\", \"GOMITAS MOGUL DIENTES 80 GR\", \"GOMITAS MOGUL FRUTALES X 50GR.\", \"GOMITAS MOGUL JELLY BUTTONS 80 GR\", \"GOMITAS MOGUL MORAS X 150 GR\", \"GOMITAS MOGUL OSITOS EXTREME X 50 GR\", \"GOMITAS MOGUL OSITOS X 30 GR\", \"GOMITAS MOGUL PIECITOS 30G\", \"GOMITAS MOGUL ROLLO BOMBONES DE FRUTA X 35 GR\", \"GOMITAS MOGUL ROLLO EXTREME ACIDO DULCE X 35 GR\", \"GOMITAS MOGUL TIBURON X 30G\", \"GOMITAS MOGUL TUBITOS EXTREME FRUTILLA 20G\", \"GOMITAS MOGUL TUBITOS EXTREME TUTTI FRUTTI 20G\", \"GOMITAS YUMMY ANIMALITOS 30G\", \"GOMITAS YUMMY DINO 25G\", \"GOMITAS YUMMY FRUTITAS 30GR\", \"GOMITAS YUMMY MORITAS 30 GR\", \"GOMITAS YUMMY OSITOS 25G\", \"GOMITAS YUMMY OSITOS ACIDOS 30G\", \"GOMITAS YUMMY PECECITOS 30G\", \"GOMITAS YUMMY PIECITOS ACIDOS 27G\", \"GRANADINA DELEPIANE 750ML\", \"HALLS CHERRY 28 GR\", \"HALLS FREE CHERRY LYPTUS 20 GR\", \"HALLS FREE MENTA LYPTUS 20 GR\", \"HALLS FRUTILLA 28 GR\", \"HALLS MENTA LYPTUS VERDE 28 GR\", \"HALLS MENTHOL LYPTUS AZUL 28 GR\", \"HALLS SANDIA 28 GR\", \"HALLS STANI MIEL LIMON 28 GR\", \"HALLS STANI MIEL MENTA 28 GR\", \"HALLS STRONG (NEGRO) 28 GR\", \"HUEVO KINDER SORPRESA AZUL 20G\", \"HUEVO KINDER SORPRESA ROSA 20 GRS\", \"JAGER MEISTER 700ML\", \"JAGERMEISTER 1L\", \"JUGO CEPITA BOTELLA NARANJA 1000 ML\", \"JUGO CEPITA MANZANA 200 ML\", \"JUGO CEPITA MIX ANANA MANDARINA 995ML\", \"JUGO CEPITA MULTIFRUTA 200 ML\", \"JUGO CEPITA NARANJA 200 ML\", \"JUGO CEPITA NARANJA 300 ML\", \"JUGO CEPITA TETRA MANZANA 1L\", \"JUGO CEPITA TETRA MULTIFRUTA 1LT\", \"JUGO CEPITA TETRA NARANJA 1L\", \"JUGO DE NARANJA CITRIC DE 500ML\", \"JUGO DE NARANJA CON PULPA CITRIC 1L\", \"KIT BLACK JASMINE MONET\", \"KIT NEGRONI CAMPARI 3 BOTELLAS\", \"KIT ROSE JASMINE MONET\", \"LA GOTITA GEL 3G\", \"LA GOTITA INSTANTANEO 2 ML\", \"LATA CLIGHT\", \"LATA TANG\", \"LECHE CON CACAO LAS TRES NINAS 200 ML\", \"LICOR AMARULA CREMA 750ML\", \"LICOR AMARULA FRUIT AND CREAM 750 ML\", \"LICOR APERITIF PISTACHIO 750 ML\", \"LICOR CAFE AL RON TRES PLUMAS 750ML\", \"LICOR CAFE AL WHISKY TRES PLUMAS 750ML\", \"LICOR DE CHOCOLATE TRES PLUMAS 750ML\", \"LICOR DE CREMA WILD AFRICA 750ML\", \"LICOR DE DURAZNO TRES PLUMAS 700ML\", \"LICOR DE NARANJA COINTREAU 700ML\", \"LICOR FINO LEGUI 750ML\", \"LICOR LIMONCHELO SPECIALISTA 750ML\", \"LICOR SHERIDAN'S 750ML\", \"LICOR SHERIDANS 500ML\", \"LICOR SHERIDANS CAFE CHOCO CREMA 750ML\", \"LICOR TAMBO LIQUEUR 750ML\", \"LIQUIDO CLAER 150 CC\", \"LONDON DRIY GIN ACONCAGUA AZUL 750ML\", \"LONDON DRY GIN BURNETTS 1L\", \"LONDON DRY GIN DR. LEMON TROPICAL 473ML\", \"LONDON DRY GIN MERLE 750ML\", \"LONDON DRY GIN NEW STYLE CITRIC 1L\", \"LONDON DRY GIN NEW STYLE ORIGINAL 1L\", \"LONDON DRY GIN NEW STYLE PINK 1L\", \"LONDON DRY GIN RUNA ARANDANOS 750ML\", \"LONDON DRY GIN RUNA MARACUYA & MIEL 750ML\", \"LONDON DRY GIN RUNA ORIGINAL 750ML\", \"LONDON DRY GIN TANQUERAY SEVILLA 700ML\", \"LONDON DRY GIN TONIC DR. LEMON 473ML\", \"LONDON DRY GIN ZINGARA 750ML\", \"M&M CONFITE CON MANI 49.3G\", \"M&M CONFITES CHOCOLATE 47.90G\", \"MANI JAPONES JAMON PEHUAMAR 95GR\", \"MANI JAPONES SAL PEHUAMAR 95 GR\", \"MANI PELADO PEHUAMAR 135GRS\", \"MANI PELADO PEHUAMAR 75 GR\", \"MANTECOL CUBANITO 10GRS\", \"MAQUINA ARMADORA ACRILICO ZEUS\", \"MAQUINA ARMADORA DE METAL ACRILICO ZEUS\", \"MAZO DE CARTAS ESPAÑOLAS CANDELA\", \"MAZO DE CARTAS FERNET *VENTA SOLO CON COMBOS*\", \"MENTHOPLUS MENTOL\", \"MENTHOPLUS STRONG\", \"MILKA BIS OREO 105,6G\", \"MILKA CHOCO BIS 105.6 GRS\", \"MILKA CHOCO PAUSE 45 GR\", \"MINI ABSOLUT VODKA 200ML\", \"MINI ALFAJORCITOS DUBAI PISTACHO SIMPLE 140GR\", \"MINI CHAMPAGNE BOTTEGA GOLD 50ML\", \"MINI CHIVAS REGAL 12 AÑOS 200ML\", \"MINI CHIVAS REGAL 18 AÑOS 200ML\", \"MINI FERNET 50ML\", \"MINI JACK DANIELS 50ML\", \"MINI JAGER MEISTER 20ML\", \"MINI JOHNNIE WALKER BLACK LABEL 200ML\", \"MINI JOHNNIE WALKER RED LABEL 200ML\", \"MINI OREO X 50 GR.\", \"OBLEA BON O BON CHOCOLATE  BLANCO 30 GRS\", \"OBLEA BON O BON LECHE 30 GRS\", \"OBLEA BON O BON XL X 45 GR.\", \"OBLEA COFLER BLOCK MAX 60G\", \"OBLEA COFLER BLOCK XL 45 GR.\", \"OBLEA KIT KAT LECHE 41.5 GR\", \"OBLEA MANTECOL BAÑADO CON CHOCOLATE 20GR\", \"OBLEA RHODESIA RELLENO LIMON 27G\", \"PACK 10UN  CHESTERFIELD  KS X20 + ENCENDEDOR USB\", \"PACK 4 VASOS QUILMES RIVER/BOCA\", \"PALITOS DE QUESO PEHUAMAR 165 GR\", \"PALITOS SALADOS PEHUAMAR 165 GR\", \"PAPAS LAYS CLASICAS 134 GR\", \"PAPAS LAYS FLAMIN HOT 70 GR\", \"PAPAS LAYS QUESO CREMA & CEBOLLA 77GR\", \"PAPAS PIU CREMA Y CEBOLLA 90GR\", \"PAPAS PIU RICCO HOT SPICY 90GR\", \"PAPAS PIU RICCO ORIGINAL 90GR\", \"PAPAS PRINGLES CREMA Y CEBOLLA 39G\", \"PAPAS PRINGLES ORIGINAL 39G\", \"PAPELILLO CELULOSA BLUNT REY\", \"PAPELILLO CELULOSA SATIVA CLUB\", \"PAPELILLO CELULOSA SATIVA CLUB ANCHO\", \"PAPELILLO CELULOSA STAMPS\", \"PAPELILLO CELULOSA TONKING\", \"PAPELILLO CELULOSA TONKING 250 HOJAS\", \"PAPELILLO CELULOSA ZEUS ORGANICO\", \"PAPELILLO CLIPPER ROLL BLACK\", \"PAPELILLO LIBELLA EXTRA THIN\", \"PAPELILLO OCB BLUE\", \"PAPELILLO OCB GRIS X-PERT\", \"PAPELILLO OCB ORGANICO\", \"PAPELILLO OCB PREMIUM\", \"PAPELILLO PREMIER PLUS\", \"PAPELILLOS ABADIE BLOCK 500 HOJAS\", \"PAPELILLOS TONKING BLOCK 500 HOJAS\", \"PASTILLAS TIC TAC MENTA 16 GRS\", \"PASTILLAS TIC TAC NARANJA 16 GRS\", \"PAÑUELOS ELITE EXTRA SEDA POCKET\", \"PEPITOS RUEDITAS FLAMIN HOT 71G\", \"PETACA CAFE AL RON TRES PLUMAS 200ML\", \"PETACA CAFE AL WHISKY TRES PLUMAS 200ML\", \"PETACA CAÑA 1RO DE AGOSTO 200ML\", \"PETACA CRIADORES WHISKY 195ML\", \"PETACA CUSENIER CAFE AL COÑAC 200 CC\", \"PETACA MARIPOSA 200 ML\", \"PETACA OLD SMUGGLER WHISKEY ANEJO 200ML\", \"PETACA PIONNER WHISKY 200ML\", \"PETACA SEAGRAMS BLENDERS PRIDE 200ML\", \"PETACA TRES PLUMAS CAFE AL COÑAC 200 ML\", \"PETACA WHISKY DOBLE V 200ML\", \"PILA PHILCO ALCALINA AAA X1 U\", \"PILAS DURACELL AA X 2U\", \"PILAS DURACELL AAA X 2U\", \"PISCO CAPEL 40 BLANCO 700ML\", \"PORTA (SUJETA) BOTELLA\", \"POSTRE MANTECOL 27GR\", \"POWERADE FRUTAS TROPICALES 1.5L\", \"POWERADE FRUTAS TROPICALES 1L\", \"POWERADE FRUTAS TROPICALES 500 ML\", \"POWERADE GOLDEN RUSH 500ML\", \"POWERADE HOT FILL UVA 500 ML\", \"POWERADE MANZANA 1.5LTS\", \"POWERADE MANZANA 1L\", \"POWERADE MANZANA 500ML\", \"POWERADE MOUNTAIN BLAST 1.5L\", \"POWERADE MOUNTAIN BLAST 1L\", \"POWERADE MOUNTAIN BLAST 500 ML\", \"POWERADE SOUR 500ML\", \"PRESERVATIVO M FORCE + MULTI-O\", \"PRESERVATIVO M FORCE NATURAL\", \"PRESERVATIVO M FORCE TEXTURIZADO\", \"PRESERVATIVO MAXX ESPERMICIDA\", \"PRESERVATIVO MAXX SUPER TACHAS\", \"PRESERVATIVO MAXX SUPERLUBRICADO\", \"PRESERVATIVO MAXX TACHAS\", \"PRESERVATIVO MAXX TEXTURADO\", \"PRESERVATIVO MAXX ULTRA SENSIBLES\", \"PRESERVATIVO PRIME  ESPERMICIDA X3\", \"PRESERVATIVO PRIME ANATOMICO X3\", \"PRESERVATIVO PRIME CON TACHAS X3\", \"PRESERVATIVO PRIME EXTRA LUBR. X 3\", \"PRESERVATIVO PRIME MEGA  X3U\", \"PRESERVATIVO PRIME RETARDANTE\", \"PRESERVATIVO PRIME SKIN MEGA SIN LATEX\", \"PRESERVATIVO PRIME STRONGER X3\", \"PRESERVATIVO PRIME SUPER FINO 3\", \"PRESERVATIVO PRIME TEXTURADO 3\", \"PRESERVATIVO PRIME TURBO X3\", \"PRESERVATIVO PRIME ULTRA FINO 3\", \"PRESERVATIVO PRIME WARMING X3\", \"PRESERVATIVOS PLAYBOY CLÁSICO\", \"PRESERVATIVOS PLAYBOY EXHIBIDOR TEXTURADO\", \"PRESERVATIVOS PLAYBOY EXTRA LUBRICADO\", \"PRESERVATIVOS PLAYBOY TACHAS\", \"PRESERVATIVOS PLAYBOY ULTRA FINO\", \"PUSH POP CHUPETIN\", \"RE-KO CARIBEÑA SANGRIA 473ML\", \"RED BULL SANDIA ENERGY DRINK 250ML\", \"RON BACARDI BLANCO 750ML\", \"RON BACARDI BLANCO 980ML\", \"RON BACARDI ORO 750ML\", \"RON BACARDI ORO 980 ML\", \"RON CARUPANO 18 AÑOS RESERVA 750ML\", \"RON CARUPANO 21 AÑOS RESERVA 750ML\", \"RON COCTEL DE COCO MALIBU 750ML\", \"RON DIPLOMATICO MANTUANO 700ML\", \"RON DIPLOMATICO RESERVA EXCLUSIVA 750ML\", \"RON HAVANA CLUB ORO AÑEJO ESPECIAL 750 ML\", \"RON MALIBU COCO 750ML\", \"RON SANTA TERESA 1796 SOLERA 750 ML\", \"RON SANTA TERESA GRAN RESERVA 750 ML\", \"SALADIX HORNEADOS DÚO JAMÓN Y QUESO 100GR\", \"SALADIX PIZZA 100GR\", \"SIDRA 1888 750ML\", \"SIDRA 1888 BOTANICA BLEND ENEBRO 750ML\", \"SIDRA 1888 COSECHA ESPECIAL ROSÉ 750ML\", \"SIDRA 1930 SACCANI DERMI SEC 500ML\", \"SIDRA 1930 SACCANI DOLCE 750ML\", \"SIDRA 1930 SACCANI PASION DE FRESA 750ML\", \"SIDRA 1930 SACCANI ROSE 750ML\", \"SIDRA 1930 SACCANNI DERMISEC 750ML\", \"SIDRA DEL VALLE LATA 473 ML\", \"SIDRA PASTEURIZADA DEL VALLE 720ML\", \"SIDRA REAL ANANA 750ML\", \"SIDRA REAL CLASICA 750ML\", \"SKITTLES ORIGINAL 61 GR\", \"SKITTLES WILD BERRY 61 GR\", \"SMIRNOFF ICE LATA GREEN APPLE 473 ML\", \"SMIRNOFF ICE LATA NARANJA Y LIMA 473 ML\", \"SMIRNOFF ICE LATA POMELO Y LIMA 473 ML\", \"SMIRNOFF ICE RED BERRIES LATA 473 ML\", \"SMIRNOFF LATA ORIGINAL 473 ML\", \"SNACK 3D MEGAQUESO 143 GR\", \"SNACK 3D MEGAQUESO 43 GR\", \"SNACK TAKIS ORIGINAL 49G\", \"SUERO FRUTILLA KIWI 630ML\", \"SUERO MANZANA 630ML\", \"SUERO POMELO 630ML\", \"SUEROX FRUTOS ROJOS 630ML\", \"SUEROX LIMONADA 630 ML\", \"TABACO ARGENTO FINO NATURAL 40G\", \"TABACO ARGENTO VAINILLA 40G\", \"TABACO ARGENTO WHISKY CHOCOLATE 40G\", \"TABACO CERRITO 45G\", \"TABACO CERRITO CHOCOLATE BROWN 45G\", \"TABACO CERRITO EXPRESSO 40G\", \"TABACO CERRITO NEGRO 45G\", \"TABACO CERRITO SILVER 45G\", \"TABACO CERRITO VAINILLA 45G\", \"TABACO CERRITO VIRGINIA 40G\", \"TABACO FLANDRIA GOLD 30G\", \"TABACO FLANDRIA NEGRO 30G\", \"TABACO FLANDRIA ORIGINAL 30G\", \"TABACO FLANDRIA SAUVAGE\", \"TABACO FLANDRIA SILVER 40G\", \"TABACO FLANDRIA VAINILLA 30G\", \"TABACO FLANDRIA VIRGINIA 30G\", \"TABACO LAS CUATRO LEGUAS\", \"TABACO LAS HOJAS 50G\", \"TABACO LUCKY STRIKE CRAFTED GALPAO 30 GR\", \"TABACO LUCKY STRIKE GOLDEN 30 GR\", \"TABACO LUCKY STRIKE ORIGINAL 30 GR\", \"TABACO PUEBLO SIN ADITIVOS 30 GR\", \"TABACO REDFIELD AMERICAN BLEND 30G\", \"TABACO REDFIELD NATURAL 30G\", \"TABACO REDFIELD PREMIUM 30G\", \"TABACO REDFIELD VAINILLA 40G\", \"TABACO SAINTS NATURAL X50GR\", \"TABACO SAYRI ORIGINAL 30G\", \"TABACO STANLEY NATURAL 30G\", \"TABACO STANLEY RUBIO ORIGINAL\", \"TABACO VAN HAASEN ORIGINAL 30G\", \"TABACO VAN HAASEN VANILLA BLEND 30 GR\", \"TABACO VAN KIFF MELLOW 30G\", \"TABACO VAN KIFF NATIVE\", \"TAKIS FUEGO 140GR\", \"TAKIS FUEGO 49GR\", \"TAKIS FUEGO 85GR\", \"TAKIS INTENSE 140 GR\", \"TAKIS INTENSE 49GR\", \"TAKIS INTENSE NACHO 85GR\", \"TAKIS ORIGINAL 140GR\", \"TAKIS ORIGINAL 85GR\", \"TAKIS XPLOSION 140GR\", \"TAKIS XPLOSION 49GR\", \"TAKIS XPLOSION 85GR\", \"TARJETA SUBE\", \"TEQUILA CONQUISTADOR DE MEXICO 750 CC\", \"TEQUILA CRISTALINO 1800 700ML\", \"TEQUILA JOSE CUERVO ESPECIAL LIMITADO PLATA 750ML\", \"TEQUILA JOSE CUERVO ESPECIAL ORO 750ML\", \"TEQUILA JOSE CUERVO ESPECIAL PLATA 750ML\", \"TEQUILA JOSE CUERVO REPOSADO ORO 750 ML\", \"TEQUILA SILVER PATRON 1L\", \"TEQUILA SOL AZTECA 1L\", \"TOSTADAS TWISTOS JAMON IBERICO 95 GR\", \"TOSTADAS TWISTOS QUESO 95 GR\", \"TRITURADOR TABACO GIZEH PLASTICO\", \"TRITURADORA DE TABACO CHICA ZEUS\", \"TRITURADORA GRANDE S/FILTRO GENERICA\", \"TURRON DE MANI ARCOR 25 GRS\", \"VAPE DEATH ROW APPLE WATERMELON\", \"VAPE DEATH ROW KIWI STRAWBERRY\", \"VAPE DEATH ROW LUSH\", \"VAPE DEATH ROW MANGO GRAPE\", \"VAPE DEATH ROW PEACH GRAPE\", \"VAPE DEATH ROW STRAWBERRY BANANA\", \"VAPE DEATH ROW WILD BERRIES\", \"VAPE ELFBAR BAJA SPLASH ICE KING\", \"VAPE ELFBAR BLUE RAZZ ICE\", \"VAPE ELFBAR CHERRY FUSE ICE KING\", \"VAPE ELFBAR CHERRY LEMON\", \"VAPE ELFBAR CHERRY STRAZZ ICE KING\", \"VAPE ELFBAR CITRUS GRAPE\", \"VAPE ELFBAR ELF LOVE\", \"VAPE ELFBAR GEORGIA PEACH\", \"VAPE ELFBAR GRAPE ICE KING\", \"VAPE ELFBAR GREEN APPLE ICE KING\", \"VAPE ELFBAR ICE KING DRAGON STRAWNANA\", \"VAPE ELFBAR ICE SOUR LUSH GUMMY\", \"VAPE ELFBAR MIAMI MINT\", \"VAPE ELFBAR OMG\", \"VAPE ELFBAR PASSION FRUIT ORANGE GUAVA\", \"VAPE ELFBAR PEACH MANGO WATERMELON\", \"VAPE ELFBAR PEACH+ ICE KING\", \"VAPE ELFBAR PEAR WATERMELON DRAGONFRUIT\", \"VAPE ELFBAR SAKURA GRAPE\", \"VAPE ELFBAR SOUR APPLE ICE\", \"VAPE ELFBAR SOUR STRAWBERRY DRAGONFRUIT\", \"VAPE ELFBAR STRAWBERRY ICE\", \"VAPE ELFBAR STRAWBERRY ICE KING\", \"VAPE ELFBAR STRAWBERRY WATERMELON ICE KING\", \"VAPE ELFBAR WATERMELON BG\", \"VAPE ELFBAR WATERMELON ICE KING\", \"VAPE IGNITE PINEAPPLE ICE\", \"VAPE IGNITE SOUR RASPBERRY\", \"VAPE IGNITE STRAWBERRY APPLE WATERMELON\", \"VAPE IGNITE STRAWBERRY KIWI\", \"VAPE IGNITE WATERMELON DRAGON FRUIT\", \"VAPE RABBEATS BLUE RAZZ ICE\", \"VAPE RABBEATS BLUEBERRY WATERMELON\", \"VAPE RABBEATS DRAGON STRAWNANA\", \"VAPE RABBEATS OMG\", \"VAPE SUPREME BLUE RAZZ ICE\", \"VAPE SUPREME BLUEBERRY MINT\", \"VAPE SUPREME GRAPE\", \"VAPE SUPREME LUSH ICE\", \"VAPE SUPREME MINT ICE\", \"VAPE SUPREME PEACH BERRY ICE\", \"VAPE SUPREME PEACH MANGO WATERMELON\", \"VAPE SUPREME STRAWBERRY BANANA\", \"VAPE SUPREME STRAWBERRY KIWI\", \"VAPE SUPREME STRAWBERRY WATERMELON\", \"VASO 1000 ML\", \"VASO 1000ML CON HIELO\", \"VASO 500 ML\", \"VASO 500ML CON HIELO\", \"VASO BLU *VENTA SOLO CON COMBOS*\", \"VASO FRATELLI *VENTA SOLO CON COMBOS*\", \"VASO MESSI AFA QATAR 500CC\", \"VASO PLASTICO LUNFA 500ML\", \"VASO SERNOVA *VENTA SOLO CON COMBOS*\", \"VASOS PLASTICOS 750CC\", \"VECCHIO AMARO DEL CAPO 700ML\", \"VELO  POUCH NICOTINA MENTA 4MG\", \"VELO  POUCH NICOTINA MENTA 6MG\", \"VELO  POUCH NICOTINA SANDIA 4MG\", \"VELO  POUCH NICOTINA SANDIA 6MG\", \"VELO  POUCH NICOTINA UVA 4MG\", \"VELO  POUCH NICOTINA UVA 6MG\", \"VERMOUTH AJENJO DRY 750ML\", \"VERMOUTH AJENJO ROJO 750ML\", \"VERMOUTH BIANCO CINZANO 1L\", \"VERMOUTH CARPANO ROSSO 950 ML\", \"VERMOUTH PUNT E MES 750 ML\", \"VERMOUTH VINCENZO ROSSO 950 ML\", \"VERMUT BIANCO LUNFA 750ML\", \"VERMUT TIPO TORINO LUNFA 750ML\", \"VERMUT TIPO TORINO LUNFA ROSADO 750ML\", \"VINO ALAMOS MOSCATEL 750ML\", \"VINO ALARIS CABERNET SAUVIGNON 750 ML\", \"VINO ALARIS MALBEC 750ML\", \"VINO ALEGORIA BLEND MALBEC 750ML\", \"VINO ALMA MORA CABERNET SAUVIGNON 750 ML\", \"VINO ALMA MORA CHARDONNAY 750ML\", \"VINO ALMA MORA MALBEC 750 ML\", \"VINO ALMA MORA MERLOT 750ML\", \"VINO ALMA MORA RESERVA CHARDONNAY 750ML\", \"VINO ALMA MORA SELECT RESERVE BLEND 750 ML\", \"VINO ALMA MORA SELECT RESERVE MALBEC 750 ML\", \"VINO ALMA MORA SYRAH 750 ML\", \"VINO AMANSADO MALBEC 750ML\", \"VINO ANCELLOTTA STOCCO DE VIANI 750ML\", \"VINO ANIMAL MALBEC ORGANICO 750ML\", \"VINO BENJAMIN MALBEC 750ML\", \"VINO BENJAMIN NIETO MALBEC 750 ML\", \"VINO BLANCO ALARIS CHARDONNAY 750ML\", \"VINO BLANCO ALARIS SAUVIGNON BLANC 750ML\", \"VINO BLANCO ALARIS SAUVIGNON FRANC 750ML\", \"VINO BLANCO COLON SELECTO DULCE FRESCO 750ML\", \"VINO BLANCO DULCE ETNIA COSECHA MADURA 750ML\", \"VINO BLANCO DULCE FINCA LAS MORAS 750ML\", \"VINO BLANCO DULCE NATURAL TORRONTES ELEMENTOS 750ML\", \"VINO BLANCO DULCE VIOGNIER-PINOT ALMA MORA 750ML\", \"VINO BLANCO DULCE ZUMUVA 1L\", \"VINO BLANCO HONEY #6 DADA 750ML\", \"VINO BLANCO LACRADO DON VALENTIN 750ML\", \"VINO BLANCO LOLA MONTES BLEND 750ML\", \"VINO BLANCO NAVARRO CORREAS CHARDONNAY 750ML\", \"VINO BLANCO OTRO LOCO MAS 750ML\", \"VINO BLANCO SAMT ABEL TORINO 700ML\", \"VINO BLANCO SAUVIGNON  EL RELATOR 750ML\", \"VINO BLANCO SAUVINON BLANC LUIGI BOSCA 750ML\", \"VINO BLANCO TERMIDOR 1L\", \"VINO BLANCO TORRENTES COLON 750ML\", \"VINO BLANCO TORRONTES ELEMENTOS 750ML\", \"VINO BLANCO TORRONTES GATA FLORA 750ML\", \"VINO BLEND CASILLERO DEL DIABLO 750ML\", \"VINO BLEND TIERRA AUSTRAL 750ML\", \"VINO BRESSIA PROFUNDO MALBEC 750ML\", \"VINO CABERNET #391 DADA 2021 750ML\", \"VINO CABERNET AMANSADO 750ML\", \"VINO CABERNET COLON 2022 750 ML\", \"VINO CABERNET DON DAVID 2021 750ML\", \"VINO CABERNET ESCORIHUELA GASCON 750ML\", \"VINO CABERNET FINCA LAS MORAS 750ML\", \"VINO CABERNET LATITUD 33  750ML\", \"VINO CABERNET LOS ARBOLES 750ML\", \"VINO CABERNET LOS INTOCABLES 2020 750ML\", \"VINO CABERNET RESERVA ALMA MORA 750ML\", \"VINO CABERNET RESERVA CALLEJON DEL CRIMEN 750ML\", \"VINO CABERNET RESERVA TERRAZAS DE LOS ANDES 750ML\", \"VINO CABERNET SAN HUBERTO RESERVA 750ML\", \"VINO CABERNET SAN TELMO 750ML\", \"VINO CABERNET SANTA JULIA 750ML\", \"VINO CABERNET SAUVIGNON LUIGI BOSCA 750ML\", \"VINO CABERNET SUTER 750ML\", \"VINO CABERNET TRUMPETER 750ML\", \"VINO CABERNET UNO ANTIGAL 750ML\", \"VINO CAFAYATE TORRONTES DULCE 750 ML\", \"VINO CARAMEL #9 DADA 750ML\", \"VINO CHARDONNAY FOND DE CAVE 750ML\", \"VINO CHARDONNAY LA LINDA 750ML\", \"VINO CHARDONNAY LUIGI BOSCA 750ML\", \"VINO CHARDONNAY SAN TELMO 750ML\", \"VINO CHARDONNAY TRAPICHE RESERVA 750ML\", \"VINO CHARDONNAY UNO ANTIGAL 750ML\", \"VINO COLON SELECTO  ROSÉ 750ML\", \"VINO COLON SELECTO BLANCO DULCE FRESCO 750 ML\", \"VINO CORDERO CON PIEL DE LOBO MALBEC 750 ML\", \"VINO CORDERO CON PIEL DE LOBO ROSE 750ML\", \"VINO DADA ART MALBEC 750ML\", \"VINO DADA ART WHITE MALBEC 750ML\", \"VINO DADA MALBEC/TEMPRANILLO INCREDIBLENDS II 750ML\", \"VINO DEMENCIAL MALBEC 750ML\", \"VINO DON DAVID CHARDONNAY 750ML\", \"VINO DON DAVID MALBEC 750ML\", \"VINO DON DAVID RESERVA CABERNET SAUV 750ML\", \"VINO DON DAVID RESERVA MALBEC 750ML\", \"VINO DV CATENA  CABERNET-CABERNET 750 ML\", \"VINO DV CATENA CABERNET MALBEC 750ML\", \"VINO DV CATENA MALBEC-MALBEC 750 ML\", \"VINO EL BAUTISMO CABERNET SAUVIGNON 750 ML\", \"VINO EL BAUTISMO MALBEC 750 ML\", \"VINO EL CAZADOR MALBEC 750ML\", \"VINO EL ENEMIGO MALBEC 750 ML\", \"VINO EL ESTECO CABERNET SAUVIGNON 2023 750ML\", \"VINO EL ESTECO ESTATE MALBEC 750ML\", \"VINO EL ESTECO EXTREMOS MALBEC 750ML\", \"VINO EL ESTECO MALBEC 750ML\", \"VINO EL ESTECO OLD VINES 1946  MALBEC 750ML\", \"VINO ESPUMOSO DADA N°7 SWEET PINK 750ML\", \"VINO ESPUMOSO FEDERICO DE ALVEAR DULCE 750ML\", \"VINO FABRE GRAN RESERVA MONTMAYOU CAB. SAUVIGNON 750 ML\", \"VINO FABRE GRAN RESERVA MONTMAYOU MALBEC 750 ML\", \"VINO FABRE GRAND VIN MONTMAYOU 750 ML\", \"VINO FABRE RESERVA MONTMAYOU CAB. FRANC 750 ML\", \"VINO FABRE RESERVA MONTMAYOU CAB. SAUVIGNON 750 ML\", \"VINO FABRE RESERVA MONTMAYOU CHARDONNAY 750 ML\", \"VINO FABRE RESERVA MONTMAYOU MALBEC 750 ML\", \"VINO FABRE RESERVA MONTMAYOU MERLOT 750ML\", \"VINO FAIR FOR LIFE MALBEC 750ML\", \"VINO FINCA LAS MORAS MALBEC 750ML\", \"VINO FINCAS NOTABLES CABERNET SAUVIGNON 750ML\", \"VINO FINCAS NOTABLES MALBEC 750ML\", \"VINO FINJAMOS DEMENCIA CORTE DE TINTAS 750ML\", \"VINO FINJAMOS DEMENCIA DULCE CONDENA CHARDONNAY 750ML\", \"VINO FINJAMOS DEMENCIA MALBEC 750ML\", \"VINO FOND DE CAVE CABERNET SAUVIGNON 750ML\", \"VINO FOND DE CAVE GRAN RESERVA MALBEC 750ML\", \"VINO FOND DE CAVE MALBEC 750ML\", \"VINO FOND DE CAVE RESERVA CAB SAUV 750ML\", \"VINO FOND DE CAVE RESERVA CABERNET FRANC 750ML\", \"VINO FOND DE CAVE RESERVA MALBEC 750ML\", \"VINO GRAN MASCOTA CABERNET SAUVIGNON 750ML\", \"VINO GRAN MASCOTA MALBEC  750ML\", \"VINO HORMIGA NEGRA MALBEC 750ML\", \"VINO LA CELIA RESERVA CABERNET SAUVIGNON 2022 750 ML\", \"VINO LA CELIA RESERVA MALBEC 2024 750 ML\", \"VINO LA LINDA MALBEC 750 ML\", \"VINO LA LINDA RED BLEND 750ML\", \"VINO LA MASCOTA MALBEC 750ML\", \"VINO LOS ARBOLES MALBEC 750 ML\", \"VINO LOS ELEMENTOS CABERNET SAUVIGNON 750ML\", \"VINO LOS ELEMENTOS MALBEC 750ML\", \"VINO LOS INTOCABLES MALBEC 700ML\", \"VINO LUIGI BOSCA RESERVA MALBEC 750 ML\", \"VINO MALBEC AGENTING 750ML\", \"VINO MALBEC ANGELICA ZAPATA 750ML\", \"VINO MALBEC CALLIA 750ML\", \"VINO MALBEC CASILLERO DEL DIABLO 750ML\", \"VINO MALBEC CEPAS DE FAMILIA 750ML\", \"VINO MALBEC DINASTIA 750ML\", \"VINO MALBEC EL RELATOR 750ML\", \"VINO MALBEC ESCORIHUELA GASCON 750ML\", \"VINO MALBEC EUGENIO BUSTOS 750ML\", \"VINO MALBEC FUEGO NEGRO 750ML\", \"VINO MALBEC GRAN RESERVA CALLEJON DEL CRIMEN 2018 750ML\", \"VINO MALBEC LATITUD 33 750ML\", \"VINO MALBEC ORGANICO LA LINDA 750ML\", \"VINO MALBEC P15  750ML\", \"VINO MALBEC PRIVADO RESERVA 750ML\", \"VINO MALBEC SAN FELIPE ROBLE 750ML\", \"VINO MALBEC SAN FELIPE VARIETALES 750ML\", \"VINO MALBEC SAN HUBERTO RESERVA 750ML\", \"VINO MALBEC TAN SOLO BY CIRO 750ML\", \"VINO MALBEC UNO ANTIGAL 750ML\", \"VINO MALBEC/CABERNET DADA INCREDIBLENDS I 750ML\", \"VINO MALBEC/CABERNET/SHIRAZ DINASTIA 750ML\", \"VINO MALMA RESERVA MALBEC 750ML\", \"VINO MARANTIQUA PATAGONIA CAB. SAUVIGNON 750ML\", \"VINO MARANTIQUA PATAGONIA CHARDONNAY 750ML\", \"VINO MARANTIQUA PATAGONIA MALBEC 750ML\", \"VINO MARANTIQUA PATAGONIA PINOT NOIR 750ML\", \"VINO MONTAÑITA MALBEC 750ML\", \"VINO MONTEAGRELO BRESSIA MALBEC 750ML\", \"VINO NICASIA CABERNET FRANC 750ML\", \"VINO NICASIA CABERNET MALBEC 750ML\", \"VINO NICASIA MALBEC 750ML\", \"VINO NORTON COSECHA TARDIA BLANCO 750 ML\", \"VINO NORTON COSECHA TARDIA TINTO DULCE 750ML\", \"VINO NORTON COSECHA TARDÍA ROSADO DULCE 750ML\", \"VINO NORTON ELEGIDO CABERNET SAUVIGNON 750 ML\", \"VINO NORTON ELEGIDO CHARDONNAY 750ML\", \"VINO NORTON ELEGIDO MALBEC 750ML\", \"VINO NORTON LIBRE CABERNET SAUVIGNON 750ML\", \"VINO NORTON LIBRE ESTATE MALBEC 750ML\", \"VINO NORTON LIBRE GRUNER VELTLINER 750ML\", \"VINO NORTON RESERVA MALBEC 2023 750 ML\", \"VINO OTRO LOCO MAS MALBEC 750 ML\", \"VINO PATERO LA SALONERA 1,125ML\", \"VINO PAZ MALBEC 750ML\", \"VINO PECADO BLANCO 750ML\", \"VINO PECADO TINTO 700ML\", \"VINO PERRO CALLEJERO MALBEC 750ML\", \"VINO PETIT VERDOT GRAN RESERVA CALLEJON DEL CRIMEN 2018 750ML\", \"VINO PINOT SUTER ETIQUETA MARRÓN 750ML\", \"VINO QUARA CABERNET SAUVIGNON 750ML\", \"VINO QUARA MALBEC 750ML\", \"VINO QUARA TORRENTES DULCES 750ML\", \"VINO RED BLEND LOS ARBOLES 750ML\", \"VINO RED BLEND LOS INTOCABLES 750ML\", \"VINO ROSADO ALARIS DULCE COSECHA 750ML\", \"VINO ROSADO AMANSADO 750ML\", \"VINO ROSADO CALLEJON DEL CRIMEN 750ML\", \"VINO ROSADO CASILLERO DEL DIABLO 750ML\", \"VINO ROSADO CORDERO CON PIEL DE LOBO 750 ML\", \"VINO ROSADO DULCE FINCA LAS MORAS 750ML\", \"VINO ROSADO EL BAUTISMO R4 2021 750ML\", \"VINO ROSADO ETNIA COSECHA MADURA 750ML\", \"VINO ROSADO LA LINDA 750ML\", \"VINO ROSADO LUI WIND BLEND ROSE 750ML\", \"VINO ROSADO MIL ROSAS NORTON 750ML\", \"VINO ROSADO SYRAH ALMA MORA 750ML\", \"VINO ROSADO TORRENTES ELEMENTOS 750ML\", \"VINO ROSE COLON SELECTO DULCE FRESCO 750ML\", \"VINO RUTINI CABERNET SAUVIGNON 750ML\", \"VINO RUTINI COLECCIÓN MALBEC 750 ML\", \"VINO SAINT FELICIEN MALBEC 750ML\", \"VINO SAN TELMO MALBEC 750ML\", \"VINO SANTA JULIA CHARDONNAY 750ML\", \"VINO SANTA JULIA CHENIN DULCE LATA 355 ML\", \"VINO SANTA JULIA CHENIN DULCE NATURAL 750 ML\", \"VINO SANTA JULIA MALBEC 750 ML\", \"VINO SANTA JULIA ROSE LATA 355 ML\", \"VINO SANTA JULIA SAUVIGNON BLANC 750ML\", \"VINO SANTA JULIA TINTILLO LATA 269ML\", \"VINO SANTA JULIA TORRENTES 750ML\", \"VINO SEXY FISH MALBEC 750 CC\", \"VINO SYLVESTRA MALBEC 2023 750ML\", \"VINO SYLVESTRA PINOT NOIR ROSE 750ML\", \"VINO SYRAH PORTILLO #08 750ML\", \"VINO TINTO ABEL TINTO TORINO 700 CC\", \"VINO TINTO COLON MALBEC 750ML\", \"VINO TINTO COLON SELECTO CABERNET SAUVIGNON 750ML\", \"VINO TINTO COLON SELECTO DULCE FRESCO 750ML\", \"VINO TINTO COLON SELECTO MALBEC 700ML\", \"VINO TINTO DULCE SANTA JULIA LATA 269ML\", \"VINO TINTO LACRADO DON VALENTIN 750ML\", \"VINO TINTO MALBEC OVEJA NEGRA 750ML\", \"VINO TINTO MALBEC TILIA ORGANICO 750ML\", \"VINO TINTO NAVARRO CORREAS COLECCIÓN PRIVADA CABERNET SAUVNIGNON 750ML\", \"VINO TINTO NAVARRO CORREAS COLECCIÓN PRIVADA MALBEC 2023 750ML\", \"VINO TINTO PATERO CAVAS DON CARLOS 1,125ML\", \"VINO TINTO PATERO DULCE SANTA FILOMENA 1,125ML\", \"VINO TINTO PATERO TORO 1,125ML\", \"VINO TINTO PISPI BLEND 750ML\", \"VINO TINTO SAPO DE OTRO POZO BLEND 750ML\", \"VINO TINTO TERMIDOR 1L\", \"VINO TRAPICHE  LATERAL SEMILLON CHARDONNAY 750ML\", \"VINO TRAPICHE CABERNET RESERVA 750ML\", \"VINO TRAPICHE CHARDONNAY RESERVA 750ML\", \"VINO TRAPICHE EXPEDICION SUR MALBEC 750ML\", \"VINO TRAPICHE GRAN MEDALLA MALBEC 750 ML\", \"VINO TRAPICHE LATERAL GSM MALBEC 750ML\", \"VINO TRAPICHE MALBEC IMPURO 750 ML\", \"VINO TRAPICHE MALBEC RESERVA 750 ML\", \"VINO TRAPICHE MEDALLA 750ML\", \"VINO TRAPICHE ORIGEN CABERNET 750 ML\", \"VINO TRAPICHE ORIGEN MALBEC 750 ML\", \"VINO TRAPICHE PURO MALBEC 750ML\", \"VINO TRAPICHE TESORO 750ML\", \"VINO TRIVENTO RESERVA CABERNET SAUVIGNON 750ML\", \"VINO TRIVENTO RESERVA CHARDONNAY 750ML\", \"VINO TRIVENTO RESERVA GOLDEN  MALBEC CABERNET FRANC 2023 750ML\", \"VINO TRIVENTO RESERVA GOLDEN CABERNET FRANC 750ML\", \"VINO TRIVENTO RESERVA GOLDEN MALBEC 750ML\", \"VINO TRIVENTO RESERVA MALBEC 750ML\", \"VINO TRIVENTO RESERVA MAXIMUM RED BLEND 750ML\", \"VINO TRIVENTO STRATUS 750ML\", \"VINO TRIVENTO WHITE MALBEC 750ML\", \"VINO TRUMPETER CHARDONAY BLANCO 750ML\", \"VINO TRUMPETER MALBEC 750 ML\", \"VINO TRUMPETER SAUVIGNON BLANC 750 ML\", \"VINO WINE #1 DADA 2021 750ML\", \"VINO WINE #2 DADA 2021 750ML\", \"VINO WINE #3 DADA 2021 750ML\", \"VINO ZUCCARDI SERIE A MALBEC 750 ML\", \"VINO ZUCCARDI SERIE Q MALBEC 750 ML\", \"VODKA ABSOLUT 700 ML\", \"VODKA ABSOLUT MANDARINA 700ML\", \"VODKA ABSOLUT MANGO 700ML\", \"VODKA ABSOLUT PEACH 700ML\", \"VODKA ABSOLUT WATERMELON 700ML\", \"VODKA DR. LEMON CON LIMON BOTELLA 1L\", \"VODKA DR. LEMON ORIGINAL BOTELLA 1L\", \"VODKA GHOST GOLD 700ML\", \"VODKA LILAC 700 ML\", \"VODKA SERNOVA 700ML\", \"VODKA SERNOVA CANDY GLOW 750 ML\", \"VODKA SERNOVA CARIBBEAN BLEND 700ML\", \"VODKA SERNOVA SWEET APPLE 700ML\", \"VODKA SERNOVA TROPICAL PASSION 700ML\", \"VODKA SERNOVA WILD BERRIES 700ML\", \"VODKA SKYY 750 ML\", \"VODKA SKYY APRICOT 750ML\", \"VODKA SKYY BLOOD ORANGE 750ML\", \"VODKA SKYY COSMIC 750 ML\", \"VODKA SKYY PINEAPPLE 750ML\", \"VODKA SKYY RASPBERRY 750 ML\", \"VODKA SMIRNOFF 700 ML\", \"VODKA SMIRNOFF CITRIC GRAPERUIT 700ML\", \"VODKA SMIRNOFF CITRIC RUBY ORANGE 700ML\", \"VODKA SMIRNOFF CITRIC TANGERINE & LEMONGRASS 700ML\", \"VODKA SMIRNOFF GREEN APPLE 700ML\", \"VODKA SMIRNOFF RASPBERRY 700ML\", \"VODKA SMIRNOFF SPICY TAMARINDO 750ML\", \"VODKA SMIRNOFF TROPICAL FRUITS 700ML\", \"VODKA SMIRNOFF WATERMELON 700ML\", \"VODKA TOFKA TOFFE 1000ML\", \"VODKA TSUKERKY PINK CANDY 750 ML\", \"WHISKY BALLANTINES 200ML\", \"WHISKY BALLANTINES BLENDED SCOTCH 700ML\", \"WHISKY BOURBON JIM BEAM VAINILLA 750ML\", \"WHISKY BOURBON JIM BEAM WHITE 750ML\", \"WHISKY BUCHANANS DELUXE 12 YEARS 750ML\", \"WHISKY CHIVAS REGAL 12 YEARS 1000ML\", \"WHISKY CHIVAS REGAL 12 YEARS 700ML\", \"WHISKY DRAMBUIE 750ML\", \"WHISKY FIREBALL 750ML\", \"WHISKY GRAND OLD PARR 750 ML\", \"WHISKY J&B BLENDED SCOTCH\", \"WHISKY JACK DANIEL'S 700ML\", \"WHISKY JACK DANIEL'S HONEY 1LT\", \"WHISKY JACK DANIELS GUITARRA LIMITED EDITION 700ML\", \"WHISKY JAMESON 750ML\", \"WHISKY JOHNNIE WALKER BLACK LABEL 1000ML\", \"WHISKY JOHNNIE WALKER BLACK LABEL 750ML\", \"WHISKY JOHNNIE WALKER BLACK LIMITED EDITION 750ML\", \"WHISKY JOHNNIE WALKER BLUE LABEL 750ML\", \"WHISKY JOHNNIE WALKER DOUBLE BLACK LABEL 1LT\", \"WHISKY JOHNNIE WALKER DOUBLE BLACK LABEL 750ML\", \"WHISKY JOHNNIE WALKER GOLD LABEL 750ML\", \"WHISKY JOHNNIE WALKER RED LABEL 1000ML\", \"WHISKY JOHNNIE WALKER RED LABEL 750ML\", \"WHISKY JOHNNIE WALKER TRIPLE BLACK 1000ML\", \"WHISKY OLD SMUGGLER 1LT\", \"WHISKY SINGLETON 12 AÑOS 750ML\", \"WHISKY SIR EDWARDS 700ML\", \"WHISKY SOMETHING SPECIAL1L\", \"WHISKY SWING BY J.W. 750ML\", \"WHISKY THE GLENLIVET 700ML\", \"WHISKY WHITE HORSE 750ML\"]");
+
+function filtrarProductos(query) {
+  if (!query || query.length < 2) return [];
+  const q = query.toLowerCase();
+  return PRODUCTOS_DEFAULT.filter(p => p.toLowerCase().includes(q)).slice(0, 40);
+}
+
+function actualizarDatalist(inputEl, datalistId) {
+  const dl = document.getElementById(datalistId);
+  if (!dl) return;
+  const resultados = filtrarProductos(inputEl.value);
+  dl.innerHTML = resultados.map(p => `<option value="${p.replace(/"/g,'&quot;')}">`).join('');
+}
+
+// ══ STATE ══
+let remitos = [];
+let tiendas = [];
+let pin = '1234';
+let currentRol = null;
+let currentUser = null;
+let modalRemitoId = null;
+let hubLocal = null;   // ID de tienda recibido del hub; null = standalone (ve todo)
+// productos en construcción para nueva orden
+let lineasNueva = [];
+
+// ══ COLORES POR TIENDA (asignados dinámicamente) ══
+const PALETA = ['var(--accent)','var(--blue)','var(--purple)','var(--orange)','var(--green)','var(--red)'];
+function colorTienda(id) {
+  const idx = tiendas.findIndex(t=>t.id===id);
+  return PALETA[idx % PALETA.length] || 'var(--accent)';
+}
+function nombreTienda(id) {
+  if (id==='repartidor') return 'Repartidor';
+  if (id==='admin') return 'Administración';
+  const t = tiendas.find(x=>x.id===id);
+  return t ? t.nombre : id;
+}
+
+// ══ INIT ══
+async function sbGetT(t, p='') {
+  const r = await fetch(`${SURL}/rest/v1/${t}?${p}`, {headers:H});
+  if (!r.ok) {
+    const body = await r.json().catch(()=>({}));
+    throw new Error(`[${r.status}] tabla "${t}": ${body.message || body.hint || r.statusText}`);
+  }
+  return r.json();
+}
+
+async function init() {
+  const loadingText = document.getElementById('loading-overlay').querySelector('.loading-text');
+  try {
+    loadingText.textContent = 'Conectando con Supabase...';
+    const [rows, tRows, cfgRows] = await Promise.all([
+      sbGetT('remitos','order=created_at.desc'),
+      sbGetT('tiendas_remitos','order=nombre'),
+      sbGetT('config','clave=eq.pin_remitos')
+    ]);
+
+    if (!Array.isArray(rows)) throw new Error('No se pudo cargar remitos');
+    if (!Array.isArray(tRows)) throw new Error('No se pudo cargar tiendas');
+
+    remitos = rows || [];
+    tiendas = tRows || [];
+    pin = cfgRows && cfgRows[0] ? cfgRows[0].valor : '1234';
+
+    if (!tiendas.length) {
+      loadingText.textContent = 'Configurando tiendas...';
+      const defaults = ['Thames','Roosevelt','Juramento','Independencia'];
+      for (const n of defaults) {
+        const id = n.toLowerCase();
+        const r = await sbPost('tiendas_remitos',{id,nombre:n});
+        if (r&&r[0]) tiendas.push(r[0]);
+      }
+    }
+    populateRolSelect();
+    updateSplashStats();
+    document.getElementById('loading-overlay').style.display='none';
+    document.getElementById('splash').style.display='flex';
+  } catch(e) {
+    console.error('Error init:', e);
+    loadingText.innerHTML = `⚠️ Error al conectar.<br><br><span style="font-size:11px;opacity:0.8;">${e.message || 'Revisá tu conexión e intentá de nuevo.'}</span>`;
+    loadingText.style.cssText = 'color:#e05555;font-size:13px;text-align:center;max-width:260px;line-height:1.6;';
+    // Botón de reintento
+    const btn = document.createElement('button');
+    btn.textContent = 'Reintentar';
+    btn.style.cssText = 'margin-top:16px;padding:10px 24px;background:#e8c87a;color:#0e0e0e;border:none;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;';
+    btn.onclick = () => { loadingText.style.cssText=''; loadingText.textContent='Conectando...'; btn.remove(); init(); };
+    document.getElementById('loading-overlay').appendChild(btn);
+  }
+}
+init();
+
+// ══ HUB INTEGRATION (iframe postMessage) ══
+// Cuando remitos.html corre dentro del iframe del hub, recibe el contexto
+// { type:'break-context', local, localName, turno, empleado, rol }
+// y hace auto-login saltando el splash propio.
+if (window.parent !== window) {
+  document.body.classList.add('in-iframe');
+}
+
+// Mapa de claves del hub → fragmento del nombre de tienda en remitos
+// Se usa para hacer match dinámico contra tiendas[] cargadas desde Supabase
+const HUB_LOCAL_NOMBRE = {
+  palermo:     'thames',
+  belgrano:    'roosevelt',
+  barrio_chino:'juramento',
+  san_telmo:   'independencia',
+};
+
+// Busca el ID real de la tienda en el array tiendas[] comparando por nombre (case-insensitive)
+function resolverTiendaId(hubLocalKey) {
+  const fragmento = HUB_LOCAL_NOMBRE[hubLocalKey] || hubLocalKey;
+  const match = tiendas.find(t => t.nombre.toLowerCase().includes(fragmento));
+  return match ? match.id : fragmento;  // fallback al fragmento si no hay match
+}
+
+window.addEventListener('message', function(e) {
+  if (!e.data || e.data.type !== 'break-context') return;
+  const ctx = e.data;
+
+  if (ctx.rol === 'admin') {
+    currentRol  = 'admin';
+    currentUser = 'Administración';
+    hubLocal    = null;   // admin ve todo
+  } else {
+    // Esperar a que init() termine (tiendas[] esté cargado) antes de resolver el ID
+    const tryResolve = () => {
+      if (document.getElementById('loading-overlay').style.display !== 'none') {
+        setTimeout(tryResolve, 200); return;
+      }
+      const tiendaId  = resolverTiendaId(ctx.local);
+      currentRol      = tiendaId;
+      currentUser     = ctx.localName || tiendaId;
+      hubLocal        = tiendaId;   // empleado/encargado: solo ve su tienda
+      enterApp();
+    };
+    tryResolve();
+    return;  // enterApp se llama dentro de tryResolve
+  }
+
+  // Para admin, igual esperar que init() termine
+  const tryEnter = () => {
+    if (document.getElementById('loading-overlay').style.display !== 'none') {
+      setTimeout(tryEnter, 200); return;
+    }
+    enterApp();
+  };
+  tryEnter();
+});
+
+// ══ UTILS ══
+function now(){const d=new Date(),p=x=>String(x).padStart(2,'0');return `${p(d.getDate())}/${p(d.getMonth()+1)}/${String(d.getFullYear()).slice(2)} ${p(d.getHours())}:${p(d.getMinutes())}`;}
+function uid(){return Date.now().toString(36).toUpperCase();}
+function showToast(msg,err=false){const t=document.getElementById('toast');t.textContent=msg;t.className='toast'+(err?' error':'');t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
+function showLoading(msg='Guardando...'){const o=document.getElementById('loading-overlay');o.querySelector('.loading-text').textContent=msg;o.style.display='flex';}
+function hideLoading(){document.getElementById('loading-overlay').style.display='none';}
+
+function currentEtapaIdx(r){return ETAPAS.findIndex(e=>!r.etapas_completadas[e.id]);}
+function isCompleted(r){return ETAPAS.every(e=>r.etapas_completadas[e.id]);}
+function progreso(r){return ETAPAS.filter(e=>r.etapas_completadas[e.id]).length;}
+function stockConfirmado(r){return !!(r.etapas_completadas && r.etapas_completadas['stock']);}
+
+function canComplete(r){
+  if (currentRol==='admin') return true;
+  const idx=currentEtapaIdx(r); if(idx===-1) return false;
+  const e=ETAPAS[idx];
+  // Cuando viene del hub, usar hubLocal para determinar si puede actuar como origen/destino
+  const rolEfectivo = hubLocal || currentRol;
+  if(e.resp==='origen')     return rolEfectivo===r.origen;
+  if(e.resp==='destino')    return rolEfectivo===r.destino;
+  if(e.resp==='repartidor') return currentRol==='repartidor';
+  return false;
+}
+function canEditProductos(r){
+  // Solo antes de confirmar stock, solo tienda origen o admin
+  if (stockConfirmado(r)) return false;
+  const rolEfectivo = hubLocal || currentRol;
+  return currentRol==='admin' || rolEfectivo===r.origen;
+}
+function canConfirmarCantidad(r){
+  // Solo la tienda origen puede editar cantidad confirmada, antes de "facturado"
+  if (r.etapas_completadas['facturado']) return false;
+  const rolEfectivo = hubLocal || currentRol;
+  return rolEfectivo===r.origen || currentRol==='admin';
+}
+
+function updateSplashStats(){
+  document.getElementById('splash-active').textContent=remitos.filter(r=>!isCompleted(r)).length;
+  document.getElementById('splash-done').textContent=remitos.filter(r=>isCompleted(r)).length;
+}
+
+function populateRolSelect(){
+  const sel=document.getElementById('rol-select');
+  sel.innerHTML='<option value="">— Seleccioná tu rol —</option>'+
+    tiendas.map(t=>`<option value="${t.id}">${t.nombre}</option>`).join('')+
+    '<option value="repartidor">Repartidor</option>';
+}
+
+// ══ AUTH ══
+function loginRol(){
+  const rol=document.getElementById('rol-select').value;
+  if(!rol){showToast('Seleccioná tu rol primero.',true);return;}
+  currentRol=rol; currentUser=nombreTienda(rol); enterApp();
+}
+function loginAdmin(){
+  if(document.getElementById('admin-pin').value!==pin){document.getElementById('pin-err').style.display='block';return;}
+  document.getElementById('pin-err').style.display='none';
+  currentRol='admin'; currentUser='Administración'; enterApp();
+}
+function enterApp(){
+  document.getElementById('splash').style.display='none';
+  document.getElementById('app').style.display='flex';
+  const color = currentRol==='admin'?'var(--accent)':(currentRol==='repartidor'?'var(--green)':colorTienda(currentRol));
+  document.getElementById('topbar-user').innerHTML=
+    `<span class="role-badge" style="background:rgba(255,255,255,0.06);color:${color};border:0.5px solid ${color};">${currentUser}</span>`;
+  if(currentRol==='admin'){
+    document.getElementById('view-admin').style.display='block';
+    document.getElementById('view-rol').style.display='none';
+    renderAdmin();
+  } else {
+    document.getElementById('view-rol').style.display='block';
+    document.getElementById('view-admin').style.display='none';
+    // tiendas origen pueden crear órdenes
+    if(currentRol!=='repartidor'){
+      document.getElementById('tab-btn-nueva-rol').style.display='';
+      renderFormNueva('form-nueva-rol');
+    }
+    renderRol();
+  }
+}
+async function logout(){
+  // Si estamos dentro del iframe del hub, volver al hub en vez de mostrar el splash propio
+  if (window.parent !== window) {
+    try { window.parent.postMessage({type:'break-goback'}, '*'); } catch(e) {}
+    return;
+  }
+  showLoading('Actualizando...');
+  try{
+    const [rows,tRows,cfgRows]=await Promise.all([
+      sbGet('remitos','order=created_at.desc'),
+      sbGet('tiendas_remitos','order=nombre'),
+      sbGet('config','clave=eq.pin_remitos')
+    ]);
+    remitos=rows||[]; tiendas=tRows||[];
+    pin=cfgRows&&cfgRows[0]?cfgRows[0].valor:'1234';
+    populateRolSelect(); updateSplashStats();
+  }catch(e){}
+  hideLoading();
+  currentRol=currentUser=null;
+  document.getElementById('splash').style.display='flex';
+  document.getElementById('app').style.display='none';
+  document.getElementById('admin-pin').value='';
+  document.getElementById('rol-select').value='';
+}
+
+// ══ RENDER REMITO CARD ══
+function remitoCardHTML(r, showActions){
+  const prog=progreso(r), pct=Math.round(prog/ETAPAS.length*100), comp=isCompleted(r);
+  const nextIdx=currentEtapaIdx(r), nextEtapa=nextIdx>=0?ETAPAS[nextIdx]:null;
+  const puedo=showActions&&canComplete(r);
+  const productos=r.productos||[];
+  const resumen=productos.slice(0,2).map(p=>`${p.qty_solicitada}x ${p.nombre}`).join(', ')+(productos.length>2?` +${productos.length-2} más`:'');
+  return `<div class="remito-card ${comp?'completed':''}" onclick="openModal('${r.id}')">
+    <div class="remito-header">
+      <div>
+        <div class="remito-id">#${r.codigo} · ${r.fecha_creacion}</div>
+        <div class="remito-title">${resumen||'Sin productos'}</div>
+        <div class="remito-route">
+          <span class="route-store" style="color:${colorTienda(r.origen)}">${nombreTienda(r.origen)}</span>
+          <span style="color:var(--muted)">→</span>
+          <span class="route-store" style="color:${colorTienda(r.destino)}">${nombreTienda(r.destino)}</span>
+        </div>
+      </div>
+      <div class="remito-status-badge ${comp?'status-done':'status-active'}">
+        ${comp?'✓ Completado':`Etapa ${prog}/${ETAPAS.length}`}
+      </div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
+      <div class="progress-label">${comp?'Todas las etapas completadas':(nextEtapa?`Pendiente: ${nextEtapa.label}`:'')}</div>
+    </div>
+    ${puedo&&!comp?`<div onclick="event.stopPropagation()"><button class="btn-step" onclick="completarEtapa(event,'${r.id}')">Completar: ${nextEtapa.label} →</button></div>`:''}
+  </div>`;
+}
+
+// ══ RENDER LISTAS ══
+function renderRol(){
+  // Si viene del hub con local fijo, filtrar por tienda involucrada (origen o destino)
+  // Si es standalone (splash propio), filtrar por rol seleccionado
+  const visible = hubLocal
+    ? r => r.origen === hubLocal || r.destino === hubLocal
+    : r => r.origen === currentRol || r.destino === currentRol || currentRol === 'repartidor';
+  const activos = remitos.filter(r => !isCompleted(r) && visible(r));
+  const hist    = remitos.filter(r =>  isCompleted(r) && visible(r));
+  document.getElementById('list-activos-rol').innerHTML=activos.length?activos.map(r=>remitoCardHTML(r,true)).join(''):`<div class="empty-state"><div style="font-size:2rem;margin-bottom:8px;">📭</div>No hay órdenes activas para ${currentUser}.</div>`;
+  document.getElementById('list-hist-rol').innerHTML=hist.length?hist.map(r=>remitoCardHTML(r,false)).join(''):`<div class="empty-state"><div style="font-size:2rem;margin-bottom:8px;">📂</div>Sin órdenes completadas aún.</div>`;
+}
+function renderAdmin(){
+  const activos=remitos.filter(r=>!isCompleted(r));
+  const hist   =remitos.filter(r=> isCompleted(r));
+  document.getElementById('list-activos-admin').innerHTML=activos.length?activos.map(r=>remitoCardHTML(r,true)).join(''):`<div class="empty-state"><div style="font-size:2rem;margin-bottom:8px;">📭</div>No hay órdenes activas.</div>`;
+  document.getElementById('list-hist-admin').innerHTML=hist.length?hist.map(r=>remitoCardHTML(r,false)).join(''):`<div class="empty-state"><div style="font-size:2rem;margin-bottom:8px;">📂</div>Sin órdenes completadas aún.</div>`;
+  renderFormNueva('form-nueva-admin');
+  renderConfigTiendas();
+}
+
+// ══ FORM NUEVA ORDEN ══
+function renderFormNueva(containerId){
+  lineasNueva = lineasNueva.length ? lineasNueva : [{nombre:'',qty_solicitada:1}];
+  const opcionesTiendas = tiendas.map(t=>`<option value="${t.id}">${t.nombre}</option>`).join('');
+  const lineasHTML = lineasNueva.map((l,i)=>`
+    <tr>
+      <td>
+        <input list="prod-list" type="text" value="${l.nombre}" oninput="lineasNueva[${i}].nombre=this.value;actualizarDatalist(this,'prod-list')" placeholder="Producto..." style="min-width:160px;" />
+      </td>
+      <td><input type="number" min="1" value="${l.qty_solicitada}" oninput="lineasNueva[${i}].qty_solicitada=parseInt(this.value)||1" /></td>
+      <td><button class="btn btn-danger btn-sm" onclick="eliminarLineaNueva(${i})">✕</button></td>
+    </tr>`).join('');
+
+  document.getElementById(containerId).innerHTML=`
+    <datalist id="prod-list"></datalist>
+    <div class="card">
+      <div class="card-title">Nueva orden de traslado</div>
+      <div class="form-grid">
+        <div class="field-group">
+          <div class="field-label">Tienda origen</div>
+          <select id="n-origen-${containerId}"><option value="">— Seleccioná —</option>${opcionesTiendas}</select>
+        </div>
+        <div class="field-group">
+          <div class="field-label">Tienda destino</div>
+          <select id="n-destino-${containerId}"><option value="">— Seleccioná —</option>${opcionesTiendas}</select>
+        </div>
+        <div class="field-group full">
+          <div class="field-label">Notas adicionales (opcional)</div>
+          <input type="text" id="n-notas-${containerId}" placeholder="ej: Urgente, para evento del sábado..." />
+        </div>
+      </div>
+      <div class="divider-row" style="margin-top:4px;"><div class="divider-line"></div><div class="divider-txt">productos a trasladar</div><div class="divider-line"></div></div>
+      <table class="prod-table">
+        <thead><tr><th>Producto</th><th>Cant. solicitada</th><th></th></tr></thead>
+        <tbody id="lineas-tbody-${containerId}">${lineasHTML}</tbody>
+      </table>
+      <button class="btn btn-ghost btn-sm" style="margin-bottom:14px;" onclick="agregarLineaNueva('${containerId}')">+ Agregar producto</button>
+      <button class="btn btn-primary" onclick="crearOrden('${containerId}')">Crear orden de traslado →</button>
+    </div>`;
+
+  // Pre-seleccionar origen: priorizar hubLocal (contexto del hub) sobre currentRol
+  const origenPreselecc = hubLocal || (currentRol !== 'admin' && currentRol !== 'repartidor' ? currentRol : null);
+  if (origenPreselecc) {
+    const sel = document.getElementById(`n-origen-${containerId}`);
+    if (sel) sel.value = origenPreselecc;
+  }
+}
+
+function agregarLineaNueva(containerId){
+  lineasNueva.push({nombre:'',qty_solicitada:1});
+  renderFormNueva(containerId);
+}
+function eliminarLineaNueva(idx){
+  lineasNueva.splice(idx,1);
+  if(!lineasNueva.length) lineasNueva=[{nombre:'',qty_solicitada:1}];
+  const cid=currentRol==='admin'?'form-nueva-admin':'form-nueva-rol';
+  renderFormNueva(cid);
+}
+
+async function crearOrden(containerId){
+  const origen =document.getElementById(`n-origen-${containerId}`).value;
+  const destino=document.getElementById(`n-destino-${containerId}`).value;
+  const notas  =document.getElementById(`n-notas-${containerId}`).value.trim();
+  if(!origen)  {showToast('Seleccioná la tienda origen.',true);return;}
+  if(!destino) {showToast('Seleccioná la tienda destino.',true);return;}
+  if(origen===destino){showToast('Origen y destino no pueden ser la misma tienda.',true);return;}
+  const productosValidos=lineasNueva.filter(l=>l.nombre.trim());
+  if(!productosValidos.length){showToast('Agregá al menos un producto.',true);return;}
+
+  showLoading('Creando orden...');
+  const etapas_completadas={};
+  const etapas_timestamps={};
+  ETAPAS.forEach(e=>{etapas_completadas[e.id]=false;etapas_timestamps[e.id]=null;});
+
+  const productos=productosValidos.map(l=>({
+    nombre:l.nombre.trim(),
+    qty_solicitada:l.qty_solicitada||1,
+    qty_confirmada:null
+  }));
+
+  const nueva={
+    codigo:uid(), origen, destino,
+    productos, notas,
+    fecha_creacion:now(),
+    creado_por:currentUser,
+    etapas_completadas, etapas_timestamps,
+    completado:false
+  };
+
+  const res=await sbPost('remitos',nueva);
+  if(res&&res[0]){
+    remitos.unshift(res[0]);
+    lineasNueva=[{nombre:'',qty_solicitada:1}];
+    if(currentRol==='admin'){renderAdmin();document.querySelectorAll('#view-admin .tab-btn')[0].click();}
+    else{renderRol();renderFormNueva(containerId);document.querySelectorAll('#view-rol .tab-btn')[0].click();}
+    showToast('Orden creada correctamente.');
+  } else {showToast('Error al crear la orden.',true);}
+  hideLoading();
+}
+
+// ══ COMPLETAR ETAPA ══
+async function completarEtapa(event,remitoId){
+  event.stopPropagation();
+  const r=remitos.find(x=>x.id===remitoId); if(!r) return;
+  const idx=currentEtapaIdx(r); if(idx===-1) return;
+  const etapa=ETAPAS[idx];
+  if(!canComplete(r)){showToast('No tenés permiso para completar esta etapa.',true);return;}
+
+  // Validar que todos los productos tengan qty_confirmada antes de pasar de stock
+  if(etapa.id==='stock'){
+    const sinConfirmar=r.productos.filter(p=>p.qty_confirmada===null||p.qty_confirmada===undefined);
+    if(sinConfirmar.length){showToast('Confirmá la cantidad de todos los productos antes de avanzar.',true);return;}
+  }
+
+  showLoading('Guardando...');
+  const nuevasComp={...r.etapas_completadas,[etapa.id]:true};
+  const nuevasTs={...r.etapas_timestamps,[etapa.id]:now()};
+  const todasListas=ETAPAS.every(e=>nuevasComp[e.id]);
+
+  const res=await sbPatch('remitos',`id=eq.${remitoId}`,{
+    etapas_completadas:nuevasComp,
+    etapas_timestamps:nuevasTs,
+    completado:todasListas
+  });
+  if(res&&res[0]){
+    const i=remitos.findIndex(x=>x.id===remitoId);
+    remitos[i]=res[0];
+    if(currentRol==='admin') renderAdmin(); else renderRol();
+    if(modalRemitoId===remitoId) renderModalBody();
+    showToast(todasListas?'¡Orden completada!':`"${etapa.label}" completada.`);
+  } else {showToast('Error al guardar.',true);}
+  hideLoading();
+}
+
+// ══ GUARDAR CANTIDAD CONFIRMADA ══
+async function guardarCantidadesConfirmadas(remitoId){
+  const r=remitos.find(x=>x.id===remitoId); if(!r) return;
+  if(!canConfirmarCantidad(r)){showToast('No tenés permiso para modificar las cantidades.',true);return;}
+  // Leer valores del modal
+  const filas=document.querySelectorAll(`.qty-conf-input`);
+  const nuevosProductos=r.productos.map((p,i)=>{
+    const input=document.getElementById(`qconf-${remitoId}-${i}`);
+    const val=input?parseInt(input.value):null;
+    return {...p, qty_confirmada: (val>=0?val:null)};
+  });
+  showLoading('Guardando cantidades...');
+  const res=await sbPatch('remitos',`id=eq.${remitoId}`,{productos:nuevosProductos});
+  if(res&&res[0]){
+    const i=remitos.findIndex(x=>x.id===remitoId);
+    remitos[i]=res[0];
+    renderModalBody();
+    if(currentRol==='admin') renderAdmin(); else renderRol();
+    showToast('Cantidades guardadas.');
+  } else {showToast('Error al guardar.',true);}
+  hideLoading();
+}
+
+// ══ AGREGAR / ELIMINAR PRODUCTO EN ORDEN EXISTENTE ══
+async function agregarProductoExistente(remitoId){
+  const r=remitos.find(x=>x.id===remitoId); if(!r) return;
+  const nom=document.getElementById(`add-prod-nom-${remitoId}`).value.trim();
+  const qty=parseInt(document.getElementById(`add-prod-qty-${remitoId}`).value)||1;
+  if(!nom){showToast('Escribí el nombre del producto.',true);return;}
+  showLoading('Guardando...');
+  const nuevos=[...r.productos,{nombre:nom,qty_solicitada:qty,qty_confirmada:null}];
+  const res=await sbPatch('remitos',`id=eq.${remitoId}`,{productos:nuevos});
+  if(res&&res[0]){
+    const i=remitos.findIndex(x=>x.id===remitoId);
+    remitos[i]=res[0];
+    renderModalBody();
+    if(currentRol==='admin') renderAdmin(); else renderRol();
+    showToast('Producto agregado.');
+  } else {showToast('Error.',true);}
+  hideLoading();
+}
+async function eliminarProductoExistente(remitoId,idx){
+  const r=remitos.find(x=>x.id===remitoId); if(!r) return;
+  if(r.productos.length<=1){showToast('Debe haber al menos un producto.',true);return;}
+  showLoading('Guardando...');
+  const nuevos=r.productos.filter((_,i)=>i!==idx);
+  const res=await sbPatch('remitos',`id=eq.${remitoId}`,{productos:nuevos});
+  if(res&&res[0]){
+    const i=remitos.findIndex(x=>x.id===remitoId);
+    remitos[i]=res[0];
+    renderModalBody();
+    if(currentRol==='admin') renderAdmin(); else renderRol();
+    showToast('Producto eliminado.');
+  } else {showToast('Error.',true);}
+  hideLoading();
+}
+
+// ══ MODAL ══
+function openModal(id){
+  modalRemitoId=id; renderModalBody();
+  document.getElementById('modal-backdrop').classList.add('open');
+}
+
+function renderModalBody(){
+  const r=remitos.find(x=>x.id===modalRemitoId); if(!r) return;
+  const comp=isCompleted(r);
+  const nextIdx=currentEtapaIdx(r);
+  const puedeEditarProds=canEditProductos(r);
+  const puedeConfirmarQty=canConfirmarCantidad(r);
+
+  document.getElementById('modal-title').textContent=`Remito #${r.codigo}`;
+
+  // Tabla de productos
+  const productos=r.productos||[];
+  const prodFilas=productos.map((p,i)=>{
+    const qconf=p.qty_confirmada;
+    const confirmada=qconf!==null&&qconf!==undefined;
+    const match=confirmada&&qconf===p.qty_solicitada;
+    const diff=confirmada&&qconf!==p.qty_solicitada;
+    const diffBadge=confirmada?(match?`<span class="diff-badge diff-ok">✓ exacto</span>`:`<span class="diff-badge diff-mod">ajustado</span>`):'';
+
+    const celConf = puedeConfirmarQty
+      ? `<input type="number" id="qconf-${r.id}-${i}" class="qty-conf-input" min="0" value="${confirmada?qconf:''}" placeholder="—" style="width:70px;padding:5px 8px;font-size:13px;" />`
+      : `<span class="${confirmada?(match?'qty-match':'qty-diff'):'qty-pending'}">${confirmada?qconf:'—'}</span>`;
+
+    const btnElim=puedeEditarProds?`<button class="btn btn-danger btn-sm" onclick="eliminarProductoExistente('${r.id}',${i})">✕</button>`:'';
+
+    return `<tr>
+      <td>${p.nombre}</td>
+      <td><span class="qty-solicitada">${p.qty_solicitada}</span></td>
+      <td>${celConf}${diffBadge}</td>
+      ${puedeEditarProds||puedeConfirmarQty?`<td>${btnElim}</td>`:''}
+    </tr>`;
+  }).join('');
+
+  const thAcciones=(puedeEditarProds||puedeConfirmarQty)?'<th></th>':'';
+  const thConf='<th>Cant. confirmada '+(puedeConfirmarQty?'<span style="color:var(--accent);font-size:9px;">(editable)</span>':'')+'</th>';
+
+  const addProdHTML=puedeEditarProds?`
+    <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">
+      <datalist id="prod-list-modal"></datalist>
+      <div class="field-group" style="flex:2;min-width:140px;">
+        <div class="field-label">Producto</div>
+        <input list="prod-list-modal" type="text" id="add-prod-nom-${r.id}" oninput="actualizarDatalist(this,'prod-list-modal')" placeholder="Nombre del producto..." />
+      </div>
+      <div class="field-group" style="width:90px;">
+        <div class="field-label">Cantidad</div>
+        <input type="number" id="add-prod-qty-${r.id}" min="1" value="1" />
+      </div>
+      <button class="btn btn-ghost btn-sm" style="margin-bottom:2px;" onclick="agregarProductoExistente('${r.id}')">+ Agregar</button>
+    </div>`:'';
+
+  const guardarQtyBtn=puedeConfirmarQty?`<button class="btn btn-primary" style="margin-top:12px;" onclick="guardarCantidadesConfirmadas('${r.id}')">Guardar cantidades confirmadas →</button>`:'';
+
+  // Etapas
+  const etapasHTML=ETAPAS.map((e,i)=>{
+    const hecha=r.etapas_completadas[e.id];
+    const esCurrent=!comp&&i===nextIdx;
+    const cls=hecha?'done':(esCurrent?'current':'pending');
+    const iconCls=hecha?'ei-done':(esCurrent?'ei-current':'ei-pending');
+    const iconChar=hecha?'✓':(esCurrent?'→':'·');
+    const ts=r.etapas_timestamps&&r.etapas_timestamps[e.id];
+    const respLabel=e.resp==='origen'?nombreTienda(r.origen):(e.resp==='destino'?nombreTienda(r.destino):'Repartidor');
+    return `<div class="etapa-row">
+      <div class="etapa-icon ${iconCls}">${iconChar}</div>
+      <div class="etapa-body">
+        <div class="etapa-name ${cls}">${e.label}</div>
+        ${ts?`<div class="etapa-meta">${ts}</div>`:''}
+        <div class="etapa-resp">Responsable: ${respLabel}</div>
+      </div>
+      <div class="etapa-right">
+        ${esCurrent&&canComplete(r)?`<button class="btn-step" onclick="completarEtapa(event,'${r.id}')">Completar</button>`:''}
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('modal-body').innerHTML=`
+    <div class="info-row">
+      <div class="info-chip"><span class="ic-label">Origen</span><span class="ic-val" style="color:${colorTienda(r.origen)}">${nombreTienda(r.origen)}</span></div>
+      <div class="info-chip"><span class="ic-label">Destino</span><span class="ic-val" style="color:${colorTienda(r.destino)}">${nombreTienda(r.destino)}</span></div>
+      <div class="info-chip"><span class="ic-label">Creado por</span><span class="ic-val">${r.creado_por||'—'}</span></div>
+      <div class="info-chip"><span class="ic-label">Fecha</span><span class="ic-val">${r.fecha_creacion}</span></div>
+    </div>
+
+    ${r.notas?`<div class="nota-box">📝 ${r.notas}</div>`:''}
+
+    <div class="divider-row"><div class="divider-line"></div><div class="divider-txt">productos del traslado</div><div class="divider-line"></div></div>
+    <table class="prod-table">
+      <thead><tr><th>Producto</th><th>Cant. solicitada</th>${thConf}${thAcciones}</tr></thead>
+      <tbody>${prodFilas}</tbody>
+    </table>
+    ${guardarQtyBtn}
+    ${addProdHTML}
+
+    <div class="divider-row" style="margin-top:16px;"><div class="divider-line"></div><div class="divider-txt">estado de etapas</div><div class="divider-line"></div></div>
+    <div class="progress-wrap" style="margin-bottom:12px;">
+      <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${Math.round(progreso(r)/ETAPAS.length*100)}%"></div></div>
+      <div class="progress-label">${progreso(r)} de ${ETAPAS.length} etapas completadas</div>
+    </div>
+    <div class="etapas-list">${etapasHTML}</div>
+  `;
+}
+
+function closeModal(e){if(e.target===document.getElementById('modal-backdrop'))closeModalDirect();}
+function closeModalDirect(){document.getElementById('modal-backdrop').classList.remove('open');modalRemitoId=null;}
+
+// ══ CONFIG TIENDAS (admin) ══
+function renderConfigTiendas(){
+  document.getElementById('config-tiendas').innerHTML=`
+    <div class="card">
+      <div class="card-title">Agregar tienda</div>
+      <div class="form-grid">
+        <div class="field-group"><div class="field-label">Nombre de la tienda</div><input type="text" id="nueva-tienda-nom" placeholder="ej: San Telmo, Recoleta..." /></div>
+        <div style="display:flex;align-items:flex-end;"><button class="btn btn-primary" onclick="agregarTienda()">Agregar</button></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Tiendas activas</div>
+      ${tiendas.map(t=>`<div class="emp-row">
+        <div class="emp-name" style="color:${colorTienda(t.id)}">${t.nombre}</div>
+        <button class="btn btn-danger btn-sm" onclick="eliminarTienda('${t.id}','${t.nombre}')">Eliminar</button>
+      </div>`).join('')}
+    </div>
+    <div class="card">
+      <div class="card-title">Cambiar PIN de administrador</div>
+      <div class="form-grid">
+        <div class="field-group"><div class="field-label">PIN actual</div><input type="password" id="pin-actual-r" /></div>
+        <div class="field-group"><div class="field-label">PIN nuevo</div><input type="password" id="pin-nuevo-r" /></div>
+        <div class="full"><button class="btn btn-ghost" onclick="cambiarPin()">Actualizar PIN</button></div>
+      </div>
+    </div>`;
+}
+
+async function agregarTienda(){
+  const nombre=document.getElementById('nueva-tienda-nom').value.trim();
+  if(!nombre) return;
+  if(tiendas.find(t=>t.nombre.toLowerCase()===nombre.toLowerCase())){showToast('Ya existe esa tienda.',true);return;}
+  const id=nombre.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'')+'-'+Date.now();
+  showLoading('Guardando...');
+  const res=await sbPost('tiendas_remitos',{id,nombre});
+  if(res&&res[0]){
+    tiendas.push(res[0]);
+    document.getElementById('nueva-tienda-nom').value='';
+    populateRolSelect();
+    renderAdmin();
+    showToast('Tienda agregada.');
+  } else {showToast('Error al guardar.',true);}
+  hideLoading();
+}
+
+async function eliminarTienda(id,nombre){
+  if(!confirm(`¿Eliminar la tienda "${nombre}"? Sus remitos históricos se mantienen.`)) return;
+  showLoading('Eliminando...');
+  await sbDelete('tiendas_remitos',`id=eq.${id}`);
+  tiendas=tiendas.filter(t=>t.id!==id);
+  populateRolSelect(); renderAdmin();
+  hideLoading(); showToast('Tienda eliminada.');
+}
+
+async function cambiarPin(){
+  const actual=document.getElementById('pin-actual-r').value;
+  const nuevo=document.getElementById('pin-nuevo-r').value;
+  if(actual!==pin){showToast('PIN actual incorrecto.',true);return;}
+  if(!nuevo||nuevo.length<4){showToast('El PIN debe tener al menos 4 caracteres.',true);return;}
+  showLoading('Guardando...');
+  await sbPatch('config','clave=eq.pin_remitos',{valor:nuevo});
+  pin=nuevo;
+  document.getElementById('pin-actual-r').value='';
+  document.getElementById('pin-nuevo-r').value='';
+  hideLoading(); showToast('PIN actualizado.');
+}
+
+// ══ TABS ══
+function switchTab(tab,btn,scope){
+  const view=scope==='admin'?'#view-admin':'#view-rol';
+  document.querySelectorAll(`${view} .tab-btn`).forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll(`${view} .tab-panel`).forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(`tab-${tab}`).classList.add('active');
+}
+</script>
+
+<!--
+═══════════════════════════════════════════
+SQL PARA SUPABASE — ejecutar una sola vez
+═══════════════════════════════════════════
+
+create table tiendas_remitos (
+  id text primary key,
+  nombre text not null
+);
+
+create table remitos (
+  id uuid primary key default gen_random_uuid(),
+  codigo text not null,
+  origen text not null,
+  destino text not null,
+  productos jsonb default '[]',
+  notas text default '',
+  fecha_creacion text not null,
+  creado_por text default '',
+  etapas_completadas jsonb default '{}',
+  etapas_timestamps jsonb default '{}',
+  completado boolean default false,
+  created_at timestamptz default now()
+);
+
+alter table tiendas_remitos enable row level security;
+alter table remitos enable row level security;
+create policy "pub tiendas" on tiendas_remitos for all using (true) with check (true);
+create policy "pub remitos" on remitos for all using (true) with check (true);
+
+insert into config (clave, valor) values ('pin_remitos', '1234')
+  on conflict (clave) do nothing;
+
+-->
+</body>
+</html>

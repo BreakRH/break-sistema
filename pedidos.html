@@ -315,6 +315,44 @@ body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-he
 ::-webkit-scrollbar{width:6px;height:6px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--line2);border-radius:3px}
+/* ── BALANCEO ── */
+.bal-view{display:none}
+.bal-view.vis{display:block}
+.bal-header{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.bal-title{font-size:13px;font-weight:700;color:var(--text);flex:1}
+.bal-sub{font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)}
+.bal-tiendas{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px}
+.bal-tcard{background:var(--bg2);border:1px solid var(--line);border-radius:var(--r2);padding:10px 14px;min-width:120px}
+.bal-tcard-name{font-size:12px;font-weight:700;margin-bottom:6px}
+.bal-tcard-stat{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);display:flex;justify-content:space-between;gap:8px;margin-top:2px}
+.bal-tcard-stat span:last-child{color:var(--text2)}
+.bal-empty{text-align:center;padding:48px 20px;color:var(--text3);font-size:13px}
+.bal-empty-icon{font-size:2rem;margin-bottom:10px}
+.bal-table-wrap{overflow-x:auto}
+.bal-table{width:100%;border-collapse:collapse;font-size:13px}
+.bal-table th{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);text-align:left;padding:8px 12px;background:var(--bg3);border-bottom:1px solid var(--line);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+.bal-table td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+.bal-table tr:last-child td{border-bottom:none}
+.bal-table tr:hover td{background:var(--bg3)}
+.bal-desc{font-weight:600;color:var(--text);line-height:1.3}
+.bal-cod{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-top:2px}
+.bal-route{display:flex;align-items:center;gap:6px;font-family:'DM Mono',monospace;font-size:12px}
+.bal-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-family:'DM Mono',monospace;font-size:11px;font-weight:600}
+.bal-qty-input{width:64px;background:var(--bg4);border:1px solid var(--line2);border-radius:6px;padding:4px 8px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;text-align:center;outline:none}
+.bal-qty-input:focus{border-color:var(--accent)}
+.bal-btn{padding:5px 12px;border-radius:6px;border:none;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s}
+.bal-btn-gen{background:var(--accent);color:#0e0f0e}
+.bal-btn-gen:hover{opacity:.85}
+.bal-btn-gen:disabled{opacity:.35;cursor:not-allowed}
+.bal-group{background:var(--bg2);border:1px solid var(--line);border-radius:var(--r2);margin-bottom:14px;overflow:hidden}
+.bal-group-header{padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line)}
+.bal-group-title{font-size:13px;font-weight:700;flex:1}
+.bal-group-sub{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3)}
+.bal-gen-all{padding:6px 14px;border-radius:var(--r);border:none;background:var(--accent);color:#0e0f0e;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:opacity .15s}
+.bal-gen-all:hover{opacity:.85}
+.bal-gen-all:disabled{opacity:.35;cursor:not-allowed}
+.bal-sent{display:inline-flex;align-items:center;gap:4px;font-family:'DM Mono',monospace;font-size:11px;color:var(--accent2);padding:3px 8px;background:var(--adim);border-radius:10px}
+.bal-calc-bar{display:flex;align-items:center;gap:12px;margin-bottom:20px}
 @media(max-width:768px){
   .main{padding:16px}.upsec{grid-template-columns:1fr}
   .header{padding:0 16px}.tabs{padding:12px 16px 0}
@@ -335,6 +373,7 @@ body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-he
 <div class="tabs">
   <div class="tab active" data-tab="nuevo">Nuevo pedido</div>
   <div class="tab" data-tab="inventario">Inventario <span class="badge" id="badge-inv" style="background:var(--bldim);color:var(--blue)">—</span></div>
+  <div class="tab" data-tab="balanceo">Balanceo <span class="badge" id="badge-bal" style="background:rgba(77,255,204,.1);color:var(--teal)">—</span></div>
   <div class="tab" data-tab="enviados">Enviados <span class="badge" id="badge-enviados">0</span></div>
   <div class="tab" data-tab="proceso">En proceso <span class="badge" id="badge-proceso" style="background:var(--amdim);color:var(--amber)">0</span></div>
   <div class="tab" data-tab="procesados">Procesados <span class="badge" id="badge-procesados" style="background:rgba(92,184,255,.12);color:var(--blue)">0</span></div>
@@ -428,6 +467,16 @@ body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-he
       </table>
     </div>
     <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);margin-top:10px;text-align:right" id="inv-foot"></div>
+  </div>
+
+  <!-- BALANCEO DE STOCK ENTRE TIENDAS -->
+  <div id="balanceo-view" style="display:none">
+    <div class="bal-calc-bar">
+      <button class="btn-p" id="btn-bal-calc" onclick="calcularBalanceo()">⇄ Calcular balanceo</button>
+      <span class="ci" id="bal-calc-info">Cargá archivos de al menos 2 tiendas para calcular</span>
+    </div>
+    <div id="bal-tiendas-status" class="bal-tiendas"></div>
+    <div id="bal-content"></div>
   </div>
 
   <!-- PEDIDOS ENVIADOS -->
@@ -1738,10 +1787,12 @@ function switchTab(name){
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===name));
   document.getElementById('nuevo-view').style.display=name==='nuevo'?'block':'none';
   document.getElementById('inventario-view').classList.toggle('vis',name==='inventario');
+  document.getElementById('balanceo-view').style.display=name==='balanceo'?'block':'none';
   ['enviados','proceso','procesados'].forEach(v=>{
     document.getElementById(v+'-view').classList.toggle('vis',v===name);
   });
   if(name==='inventario') renderInventario();
+  else if(name==='balanceo') renderBalanceoStatus();
   else if(name!=='nuevo') renderAll();
 }
 document.querySelectorAll('.tab').forEach(tab=>{
@@ -1749,9 +1800,270 @@ document.querySelectorAll('.tab').forEach(tab=>{
 });
 
 // ============================================================
-// INIT
+// BALANCEO DE STOCK ENTRE TIENDAS
 // ============================================================
-updateBadge();
+
+// Mapa de clave pedidos → ID tienda en tabla remitos (tiendas_remitos)
+const TIENDA_REMITO_NOMBRE = {T:'thames', R:'roosevelt', J:'juramento', S:'independencia'};
+
+// Estado del balanceo: sugerencias calculadas y estado de generación de remitos
+let balSugerencias = [];   // [{origen, destino, items:[{desc,codigo,qty,stock_orig,exc_orig,def_dest}]}]
+let balRemitosEnviados = new Set(); // keys "ORIG→DEST" ya enviados esta sesión
+
+// Tiendas con ambos archivos listos
+function tiendasListas(){
+  return Object.keys(TIENDAS).filter(k => artsData[k] && ventasData[k]);
+}
+
+// Calcula stock requerido usando la misma lógica que calcularPedidos
+function calcStockReq(v30){
+  const demSem = Math.ceil(v30/30*7);
+  const stockMin = Math.ceil(demSem/7*2);
+  const stockSeg = Math.ceil(stockMin*0.2);
+  return demSem + stockMin + stockSeg;
+}
+
+// Renderiza el estado de tiendas cargadas en el header de balanceo
+function renderBalanceoStatus(){
+  const listas = tiendasListas();
+  const statusEl = document.getElementById('bal-tiendas-status');
+  statusEl.innerHTML = Object.keys(TIENDAS).map(k=>{
+    const ok = listas.includes(k);
+    const color = {T:'var(--accent)',R:'var(--blue)',J:'var(--teal)',S:'var(--amber)'}[k];
+    return `<div class="bal-tcard" style="border-color:${ok?color:'var(--line)'}">
+      <div class="bal-tcard-name" style="color:${ok?color:'var(--text3)'}">${TIENDAS[k]}</div>
+      <div class="bal-tcard-stat"><span>Artículos</span><span>${artsData[k]?artsData[k].length:'—'}</span></div>
+      <div class="bal-tcard-stat"><span>Ventas</span><span>${ventasData[k]?Object.keys(ventasData[k]).length:'—'}</span></div>
+      <div class="bal-tcard-stat"><span>Estado</span><span style="color:${ok?'var(--accent2)':'var(--red)'}">${ok?'✓ listo':'sin datos'}</span></div>
+    </div>`;
+  }).join('');
+
+  const calcBtn = document.getElementById('btn-bal-calc');
+  const info = document.getElementById('bal-calc-info');
+  if(listas.length < 2){
+    calcBtn.disabled = true;
+    info.textContent = `${listas.length} tienda${listas.length===1?'':' s'} cargada — necesitás al menos 2`;
+  } else {
+    calcBtn.disabled = false;
+    info.textContent = `${listas.length} tiendas listas — calculá el balanceo`;
+  }
+}
+
+function calcularBalanceo(){
+  const listas = tiendasListas();
+  if(listas.length < 2){ showToast('Cargá archivos de al menos 2 tiendas','error'); return; }
+
+  const {byCod, byDesc} = buildLookup();
+
+  // Construir mapa: codigo → { tienda → {stock, v30, stockReq, excedente} }
+  const mapaProductos = {};
+
+  for(const tk of listas){
+    const arts = artsData[tk];
+    const ventas = ventasData[tk];
+    for(const art of arts){
+      if(!art.codigo) continue;
+      const cod = art.codigo;
+      const v30 = (ventas[cod]||{ventas30:0}).ventas30;
+      // Cobertura de 2 semanas = lo mínimo que la tienda necesita conservar
+      const dosSemanasVentas = Math.ceil(v30 / 30 * 14);
+      // Excedente = lo que supera 2 semanas de cobertura
+      const excedente = art.stock - dosSemanasVentas;  // >0 = sobrestock, <0 = déficit
+
+      if(!mapaProductos[cod]) mapaProductos[cod] = {desc: art.desc, codigo: cod, tiendas:{}};
+      mapaProductos[cod].tiendas[tk] = {stock: art.stock, v30, dosSemanasVentas, excedente};
+    }
+  }
+
+  // Generar sugerencias de transferencia
+  const sugerenciasPorRuta = {};  // key: "ORIG→DEST"
+
+  for(const [cod, prod] of Object.entries(mapaProductos)){
+    const dataTiendas = prod.tiendas;
+    // Tiendas con sobrestock (excedente > 0)
+    const origenes = Object.entries(dataTiendas).filter(([,d]) => d.excedente > 0);
+    // Tiendas con déficit (excedente < 0) — solo las que tienen ese artículo
+    const destinos = Object.entries(dataTiendas).filter(([,d]) => d.excedente < 0);
+
+    if(!origenes.length || !destinos.length) continue;
+
+    // Matchear cada origen con cada destino
+    for(const [origTk, origData] of origenes){
+      for(const [destTk, destData] of destinos){
+        if(origTk === destTk) continue;
+        const transferible = Math.min(origData.excedente, Math.abs(destData.excedente));
+        if(transferible <= 0) continue;
+
+        const routeKey = `${origTk}→${destTk}`;
+        if(!sugerenciasPorRuta[routeKey]) sugerenciasPorRuta[routeKey] = {origen:origTk, destino:destTk, items:[]};
+        sugerenciasPorRuta[routeKey].items.push({
+          desc: prod.desc,
+          codigo: cod,
+          qty: transferible,
+          qtyOriginal: transferible,
+          stock_orig: origData.stock,
+          exc_orig: origData.excedente,
+          def_dest: Math.abs(destData.excedente),
+          stock_dest: destData.stock,
+        });
+      }
+    }
+  }
+
+  balSugerencias = Object.values(sugerenciasPorRuta);
+  // Ordenar por cantidad de items desc
+  balSugerencias.sort((a,b) => b.items.length - a.items.length);
+
+  const badge = document.getElementById('badge-bal');
+  const totalItems = balSugerencias.reduce((s,g)=>s+g.items.length,0);
+  badge.textContent = totalItems || '0';
+
+  renderBalanceo();
+  showToast(`Balanceo calculado — ${totalItems} transferencias sugeridas`, 'success');
+}
+
+function renderBalanceo(){
+  const cont = document.getElementById('bal-content');
+
+  if(!balSugerencias.length){
+    cont.innerHTML = `<div class="bal-empty">
+      <div class="bal-empty-icon">⚖️</div>
+      <div>No hay transferencias sugeridas — el stock está balanceado entre las tiendas cargadas</div>
+    </div>`;
+    return;
+  }
+
+  const colorMap = {T:'var(--accent)',R:'var(--blue)',J:'var(--teal)',S:'var(--amber)'};
+
+  cont.innerHTML = balSugerencias.map((grupo, gi)=>{
+    const routeKey = `${grupo.origen}→${grupo.destino}`;
+    const yaEnviado = balRemitosEnviados.has(routeKey);
+    const colorOrig = colorMap[grupo.origen];
+    const colorDest = colorMap[grupo.destino];
+
+    const filas = grupo.items.map((item, ii)=>`
+      <tr>
+        <td>
+          <div class="bal-desc">${item.desc}</div>
+          <div class="bal-cod">${item.codigo}</div>
+        </td>
+        <td>
+          <span class="bal-badge" style="background:rgba(255,255,255,.06);color:${colorOrig}">${item.stock_orig}</span>
+          <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--accent2);margin-left:4px">+${item.exc_orig} sobre 2 sem.</span>
+        </td>
+        <td>
+          <span class="bal-badge" style="background:rgba(255,92,92,.08);color:var(--red)">${item.stock_dest}</span>
+          <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--red);margin-left:4px">−${item.def_dest} faltante</span>
+        </td>
+        <td>
+          <input type="number" class="bal-qty-input" min="1"
+            value="${item.qty}"
+            oninput="balActualizarQty(${gi},${ii},this.value)"
+            ${yaEnviado?'disabled':''}>
+        </td>
+      </tr>`).join('');
+
+    return `<div class="bal-group">
+      <div class="bal-group-header">
+        <div class="bal-route">
+          <span style="color:${colorOrig};font-family:'DM Mono',monospace;font-size:13px;font-weight:700">${TIENDAS[grupo.origen]}</span>
+          <span style="color:var(--text3)">→</span>
+          <span style="color:${colorDest};font-family:'DM Mono',monospace;font-size:13px;font-weight:700">${TIENDAS[grupo.destino]}</span>
+        </div>
+        <div class="bal-group-sub">${grupo.items.length} artículo${grupo.items.length!==1?'s':''}</div>
+        <div style="flex:1"></div>
+        ${yaEnviado
+          ? `<span class="bal-sent">✓ Remito generado</span>`
+          : `<button class="bal-gen-all" onclick="generarRemito(${gi})">↗ Generar remito</button>`
+        }
+      </div>
+      <table class="bal-table">
+        <thead><tr>
+          <th>Artículo</th>
+          <th>Stock origen (${TIENDAS[grupo.origen]})</th>
+          <th>Stock destino (${TIENDAS[grupo.destino]})</th>
+          <th>Cantidad a transferir</th>
+        </tr></thead>
+        <tbody>${filas}</tbody>
+      </table>
+    </div>`;
+  }).join('');
+}
+
+function balActualizarQty(gi, ii, val){
+  const n = parseInt(val) || 0;
+  if(balSugerencias[gi] && balSugerencias[gi].items[ii]){
+    balSugerencias[gi].items[ii].qty = Math.max(0, n);
+  }
+}
+
+async function generarRemito(gi){
+  const grupo = balSugerencias[gi];
+  if(!grupo){ showToast('Grupo no encontrado','error'); return; }
+
+  const routeKey = `${grupo.origen}→${grupo.destino}`;
+  const items = grupo.items.filter(i => i.qty > 0);
+  if(!items.length){ showToast('Todas las cantidades son 0','error'); return; }
+
+  // Buscar IDs reales de tiendas en tiendas_remitos
+  let tiendas_remitos = [];
+  try {
+    const r = await fetch(`${SB_URL}/rest/v1/tiendas_remitos?order=nombre`, {headers: SB_HDR});
+    tiendas_remitos = await r.json();
+  } catch(e){ showToast('Error al conectar con Supabase','error'); return; }
+
+  function resolverIdTienda(tk){
+    const fragmento = TIENDA_REMITO_NOMBRE[tk] || tk.toLowerCase();
+    const match = tiendas_remitos.find(t => t.nombre.toLowerCase().includes(fragmento));
+    return match ? match.id : fragmento;
+  }
+
+  const origenId = resolverIdTienda(grupo.origen);
+  const destinoId = resolverIdTienda(grupo.destino);
+
+  const etapas_completadas = {};
+  const etapas_timestamps  = {};
+  ['stock','facturado','en_camino','entregado','activado','registrado'].forEach(e=>{
+    etapas_completadas[e] = false;
+    etapas_timestamps[e]  = null;
+  });
+
+  const payload = {
+    codigo:  'BAL-' + Date.now().toString(36).toUpperCase(),
+    origen:  origenId,
+    destino: destinoId,
+    productos: items.map(i=>({
+      nombre:          i.desc,
+      qty_solicitada:  i.qty,
+      qty_confirmada:  null,
+    })),
+    notas: `Generado automáticamente desde Balanceo de stock — ${new Date().toLocaleDateString('es-AR')}`,
+    fecha_creacion: (() => {
+      const d=new Date(), p=x=>String(x).padStart(2,'0');
+      return `${p(d.getDate())}/${p(d.getMonth()+1)}/${String(d.getFullYear()).slice(2)} ${p(d.getHours())}:${p(d.getMinutes())}`;
+    })(),
+    creado_por: 'Pedidos / Balanceo',
+    etapas_completadas,
+    etapas_timestamps,
+    completado: false,
+  };
+
+  try {
+    const r = await fetch(`${SB_URL}/rest/v1/remitos`, {
+      method:'POST', headers: SB_HDR, body: JSON.stringify(payload)
+    });
+    const res = await r.json();
+    if(res && res[0]){
+      balRemitosEnviados.add(routeKey);
+      renderBalanceo();
+      showToast(`Remito ${payload.codigo} generado → ${TIENDAS[grupo.destino]}`, 'success');
+    } else {
+      showToast('Error al guardar el remito: ' + JSON.stringify(res), 'error');
+    }
+  } catch(e){
+    showToast('Error de red al generar remito', 'error');
+  }
+}
 </script>
 
 <script>
@@ -1788,7 +2100,7 @@ window.addEventListener('message', function(e) {
 
 function aplicarModoEmpleado() {
   // Ocultar tabs que no debe ver el empleado
-  ['nuevo','inventario','enviados','procesados'].forEach(function(tab) {
+  ['nuevo','inventario','enviados','procesados','balanceo'].forEach(function(tab) {
     var el = document.querySelector('[data-tab="' + tab + '"]');
     if (el) el.style.display = 'none';
   });

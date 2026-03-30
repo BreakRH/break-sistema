@@ -1489,6 +1489,13 @@
       <div class="module-desc">proveedores · stock · inventario</div>
     </div>
 
+    <div class="module-card" id="card-remitos" style="--card-accent:var(--orange);--icon-bg:var(--orange-bg)" onclick="openModule('remitos')">
+      <div class="module-badge badge-new">nuevo</div>
+      <div class="module-icon">🚚</div>
+      <div class="module-name">Remitos</div>
+      <div class="module-desc">traslados · etapas · trazabilidad</div>
+    </div>
+
     <div class="module-card wide" id="card-admin"
          style="--card-accent:var(--accent);--icon-bg:rgba(232,197,71,0.1);display:none"
          onclick="goTo('admin');loadAdminDashboard()">
@@ -2765,6 +2772,7 @@ function goTo(screen) {
     'panel-turno': 'screen-panel-turno',
     'pedidos': 'screen-pedidos',
     'deudas':  'screen-deudas',
+    'remitos': 'screen-remitos',
   };
   const id = map[screen] || screen;
   const el = document.getElementById(id);
@@ -2785,6 +2793,7 @@ function openModule(mod) {
   if (mod === 'deudas')      { deudasOpen(); return; }
   if (mod === 'panel-turno') { ptInit(); goTo('panel-turno'); return; }
   if (mod === 'pedidos') { pedidosOpen(); return; }
+  if (mod === 'remitos') { remitosOpen(); return; }
 }
 
 function openForm(tipo) {
@@ -5265,6 +5274,29 @@ window.addEventListener('message', function(e) {
   if (e.data && e.data.type === 'break-goback') goTo('hub');
 });
 
+// === MODULO REMITOS ===
+function remitosOpen() {
+  goTo('remitos');
+  const badge = document.getElementById('badge-remitos-local');
+  if (badge) badge.textContent = LOCALES[state.local] || '--';
+  const iframe = document.getElementById('remitos-iframe');
+  const ctx = {
+    type: 'break-context',
+    local: state.local,
+    localName: LOCALES[state.local] || '',
+    turno: state.turno,
+    empleado: state.empleado_nombre,
+    rol: state.rol
+  };
+  iframe.src = '';
+  setTimeout(() => {
+    iframe.src = 'remitos.html';
+    iframe.onload = function() {
+      try { iframe.contentWindow.postMessage(ctx, '*'); } catch(e) {}
+    };
+  }, 0);
+}
+
 // ═══════════════════════════════════════
 // NOTIFICACIÓN PEDIDOS EN HUB
 // ═══════════════════════════════════════
@@ -5320,6 +5352,21 @@ async function checkPedidosPendientes() {
   <iframe
     id="pedidos-iframe"
     src="pedidos.html"
+    style="flex:1;border:none;width:100%;min-height:0"
+    allow="clipboard-write"
+  ></iframe>
+</div>
+
+<!-- SCREEN: REMITOS -->
+<div class="screen" id="screen-remitos" style="flex-direction:column">
+  <div class="topbar">
+    <div class="topbar-back" onclick="goTo('hub')">&#8592;</div>
+    <span class="topbar-title">Remitos</span>
+    <span class="topbar-badge" id="badge-remitos-local">--</span>
+  </div>
+  <iframe
+    id="remitos-iframe"
+    src="remitos.html"
     style="flex:1;border:none;width:100%;min-height:0"
     allow="clipboard-write"
   ></iframe>
