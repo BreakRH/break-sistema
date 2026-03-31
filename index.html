@@ -1496,6 +1496,12 @@
       <div class="module-desc">traslados · etapas · trazabilidad</div>
     </div>
 
+    <div class="module-card" id="card-inventario" style="--card-accent:var(--teal);--icon-bg:rgba(77,255,200,0.08)" onclick="openModule('inventario')">
+      <div class="module-icon">📋</div>
+      <div class="module-name">Inventario</div>
+      <div class="module-desc">conteo · diferencias · análisis</div>
+    </div>
+
     <div class="module-card wide" id="card-admin"
          style="--card-accent:var(--accent);--icon-bg:rgba(232,197,71,0.1);display:none"
          onclick="goTo('admin');loadAdminDashboard()">
@@ -2773,6 +2779,7 @@ function goTo(screen) {
     'pedidos': 'screen-pedidos',
     'deudas':  'screen-deudas',
     'remitos': 'screen-remitos',
+    'inventario': 'screen-inventario',
   };
   const id = map[screen] || screen;
   const el = document.getElementById(id);
@@ -2794,6 +2801,7 @@ function openModule(mod) {
   if (mod === 'panel-turno') { ptInit(); goTo('panel-turno'); return; }
   if (mod === 'pedidos') { pedidosOpen(); return; }
   if (mod === 'remitos') { remitosOpen(); return; }
+  if (mod === 'inventario') { inventarioOpen(); return; }
 }
 
 function openForm(tipo) {
@@ -5297,6 +5305,28 @@ function remitosOpen() {
   }, 0);
 }
 
+function inventarioOpen() {
+  goTo('inventario');
+  const badge = document.getElementById('badge-inventario-local');
+  if (badge) badge.textContent = LOCALES[state.local] || '--';
+  const iframe = document.getElementById('inventario-iframe');
+  const ctx = {
+    type: 'break-context',
+    local: state.local,
+    localName: LOCALES[state.local] || '',
+    turno: state.turno,
+    empleado: state.empleado_nombre,
+    rol: state.rol
+  };
+  iframe.src = '';
+  setTimeout(() => {
+    iframe.src = 'inventario.html';
+    iframe.onload = function() {
+      try { iframe.contentWindow.postMessage(ctx, '*'); } catch(e) {}
+    };
+  }, 0);
+}
+
 // ═══════════════════════════════════════
 // NOTIFICACIÓN PEDIDOS EN HUB
 // ═══════════════════════════════════════
@@ -5367,6 +5397,21 @@ async function checkPedidosPendientes() {
   <iframe
     id="remitos-iframe"
     src="remitos.html"
+    style="flex:1;border:none;width:100%;min-height:0"
+    allow="clipboard-write"
+  ></iframe>
+</div>
+
+<!-- SCREEN: INVENTARIO -->
+<div class="screen" id="screen-inventario" style="flex-direction:column">
+  <div class="topbar">
+    <div class="topbar-back" onclick="goTo('hub')">&#8592;</div>
+    <span class="topbar-title">Inventario</span>
+    <span class="topbar-badge" id="badge-inventario-local">--</span>
+  </div>
+  <iframe
+    id="inventario-iframe"
+    src="inventario.html"
     style="flex:1;border:none;width:100%;min-height:0"
     allow="clipboard-write"
   ></iframe>

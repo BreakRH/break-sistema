@@ -1887,11 +1887,22 @@ function calcularBalanceo(){
 
     if(!origenes.length || !destinos.length) continue;
 
+    // Lookup en PDB para obtener múltiplo de caja
+    const pdbEntry = byCod[cod] || byDesc[normalize(prod.desc)];
+    const cantCaja = pdbEntry ? Math.max(1, pdbEntry.q) : 1;
+    const unidad   = pdbEntry ? (pdbEntry.u || 'UND.') : 'UND.';
+
     // Matchear cada origen con cada destino
     for(const [origTk, origData] of origenes){
       for(const [destTk, destData] of destinos){
         if(origTk === destTk) continue;
-        const transferible = Math.min(origData.excedente, Math.abs(destData.excedente));
+        const transferibleRaw = Math.min(origData.excedente, Math.abs(destData.excedente));
+        if(transferibleRaw <= 0) continue;
+
+        // Redondear al múltiplo de caja más cercano, sin superar el excedente del origen
+        const transferible = cantCaja > 1
+          ? Math.min(Math.ceil(transferibleRaw / cantCaja) * cantCaja, origData.excedente)
+          : transferibleRaw;
         if(transferible <= 0) continue;
 
         const routeKey = `${origTk}→${destTk}`;
@@ -1905,6 +1916,10 @@ function calcularBalanceo(){
           exc_orig: origData.excedente,
           def_dest: Math.abs(destData.excedente),
           stock_dest: destData.stock,
+          v30_orig: origData.v30,
+          v30_dest: destData.v30,
+          cantCaja,
+          unidad,
         });
       }
     }
@@ -1941,7 +1956,13 @@ function renderBalanceo(){
     const colorOrig = colorMap[grupo.origen];
     const colorDest = colorMap[grupo.destino];
 
-    const filas = grupo.items.map((item, ii)=>`
+    const filas = grupo.items.map((item, ii)=>{
+      const demOrig = item.v30_orig != null ? `${Math.round(item.v30_orig/30*7)} u/sem` : '—';
+      const demDest = item.v30_dest != null ? `${Math.round(item.v30_dest/30*7)} u/sem` : '—';
+      const cajaTag = item.cantCaja > 1
+        ? `<span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--teal);margin-left:4px;background:rgba(77,255,204,.08);padding:1px 5px;border-radius:3px">${item.unidad} ×${item.cantCaja}</span>`
+        : '';
+      return `
       <tr>
         <td>
           <div class="bal-desc">${item.desc}</div>
@@ -1950,18 +1971,24 @@ function renderBalanceo(){
         <td>
           <span class="bal-badge" style="background:rgba(255,255,255,.06);color:${colorOrig}">${item.stock_orig}</span>
           <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--accent2);margin-left:4px">+${item.exc_orig} sobre 2 sem.</span>
+          <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-top:3px">demanda: ${demOrig}</div>
         </td>
         <td>
           <span class="bal-badge" style="background:rgba(255,92,92,.08);color:var(--red)">${item.stock_dest}</span>
           <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--red);margin-left:4px">−${item.def_dest} faltante</span>
+          <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-top:3px">demanda: ${demDest}</div>
         </td>
         <td>
-          <input type="number" class="bal-qty-input" min="1"
-            value="${item.qty}"
-            oninput="balActualizarQty(${gi},${ii},this.value)"
-            ${yaEnviado?'disabled':''}>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <input type="number" class="bal-qty-input" min="1"
+              value="${item.qty}"
+              oninput="balActualizarQty(${gi},${ii},this.value)"
+              ${yaEnviado?'disabled':''}>
+            ${cajaTag}
+          </div>
         </td>
-      </tr>`).join('');
+      </tr>`;
+    }).join('');
 
     return `<div class="bal-group">
       <div class="bal-group-header">

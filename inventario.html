@@ -1,0 +1,1554 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BREAK · Inventario</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ── VARIABLES ── */
+:root{
+  --bg:#0a0a0f;
+  --bg2:#111118;
+  --bg3:#18181f;
+  --bg4:#1e1e28;
+  --line:rgba(255,255,255,.08);
+  --text:#f0f0f8;
+  --text2:#a8a8c0;
+  --text3:#5a5a78;
+  --accent:#7c6fff;
+  --accent2:#a89fff;
+  --green:#4dffc8;
+  --red:#ff5c5c;
+  --amber:#ffc95c;
+  --blue:#5ca8ff;
+  --teal:#4dffc8;
+  --purple:#c87cff;
+  --radius:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;font-size:14px}
+button{cursor:pointer;font-family:'Syne',sans-serif}
+input,select,textarea{font-family:'Syne',sans-serif}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--line);border-radius:2px}
+
+/* ── LAYOUT ── */
+.app{display:flex;flex-direction:column;min-height:100vh}
+
+/* ── TOPBAR ── */
+.topbar{
+  display:flex;align-items:center;gap:16px;
+  padding:14px 24px;
+  background:var(--bg2);
+  border-bottom:1px solid var(--line);
+  position:sticky;top:0;z-index:100;
+}
+.topbar-logo{
+  font-family:'Syne',sans-serif;font-size:18px;font-weight:800;
+  color:var(--accent);letter-spacing:-.03em;
+  display:flex;align-items:center;gap:8px
+}
+.topbar-logo span{color:var(--text3);font-size:11px;font-weight:400;letter-spacing:.1em;text-transform:uppercase}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.inv-meta{
+  display:flex;align-items:center;gap:6px;
+  background:var(--bg3);border:1px solid var(--line);
+  border-radius:6px;padding:6px 12px;
+  font-family:'DM Mono',monospace;font-size:11px;color:var(--text2)
+}
+.inv-meta strong{color:var(--accent);font-size:12px}
+.pill{
+  background:var(--bg3);border:1px solid var(--line);
+  border-radius:6px;padding:5px 10px;
+  font-size:11px;color:var(--text2);
+  font-family:'DM Mono',monospace
+}
+.btn-primary{
+  background:var(--accent);color:#fff;border:none;
+  border-radius:6px;padding:8px 16px;font-size:12px;font-weight:700;
+  transition:opacity .15s
+}
+.btn-primary:hover{opacity:.85}
+.btn-ghost{
+  background:transparent;color:var(--text2);border:1px solid var(--line);
+  border-radius:6px;padding:7px 14px;font-size:12px;
+  transition:border-color .15s,color .15s
+}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn-danger{
+  background:rgba(255,92,92,.1);color:var(--red);border:1px solid rgba(255,92,92,.2);
+  border-radius:6px;padding:7px 14px;font-size:12px;
+  transition:background .15s
+}
+.btn-danger:hover{background:rgba(255,92,92,.18)}
+
+/* ── PROGRESS BAR ── */
+.progress-wrap{
+  padding:10px 24px;background:var(--bg2);border-bottom:1px solid var(--line);
+  display:flex;align-items:center;gap:12px
+}
+.progress-bar{flex:1;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--green));border-radius:3px;transition:width .4s ease}
+.progress-label{font-family:'DM Mono',monospace;font-size:11px;color:var(--text2);white-space:nowrap}
+
+/* ── PHASE INDICATOR ── */
+.phases{
+  display:flex;gap:0;padding:0 24px;background:var(--bg2);border-bottom:1px solid var(--line)
+}
+.phase-tab{
+  padding:10px 20px;font-size:12px;font-weight:600;letter-spacing:.04em;
+  border-bottom:2px solid transparent;color:var(--text3);
+  cursor:pointer;transition:color .15s,border-color .15s;text-transform:uppercase;
+  display:flex;align-items:center;gap:6px
+}
+.phase-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.phase-tab.done{color:var(--green);border-bottom-color:transparent}
+.phase-tab .phase-dot{
+  width:6px;height:6px;border-radius:50%;background:currentColor
+}
+
+/* ── MAIN CONTENT ── */
+.main{flex:1;padding:24px;max-width:1400px;margin:0 auto;width:100%}
+
+/* ── SCREENS ── */
+.screen{display:none}
+.screen.active{display:block}
+
+/* ── SETUP SCREEN ── */
+.setup-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:900px}
+.card{
+  background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:20px
+}
+.card-title{
+  font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--text3);margin-bottom:16px;display:flex;align-items:center;gap:8px
+}
+.card-title::before{content:'';width:3px;height:12px;background:var(--accent);border-radius:2px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:11px;color:var(--text3);margin-bottom:5px;font-weight:600;letter-spacing:.04em}
+.field input,.field select{
+  width:100%;background:var(--bg3);border:1px solid var(--line);
+  color:var(--text);border-radius:6px;padding:9px 12px;font-size:13px;
+  outline:none;transition:border-color .15s
+}
+.field input:focus,.field select:focus{border-color:var(--accent)}
+.field select option{background:var(--bg3)}
+
+/* ── FILE DROP ── */
+.file-drop{
+  border:2px dashed var(--line);border-radius:10px;padding:32px;text-align:center;
+  cursor:pointer;transition:border-color .15s,background .15s;
+  background:var(--bg3)
+}
+.file-drop:hover,.file-drop.drag{border-color:var(--accent);background:rgba(124,111,255,.05)}
+.file-drop-icon{font-size:32px;margin-bottom:10px}
+.file-drop-label{font-size:13px;color:var(--text2);margin-bottom:4px}
+.file-drop-sub{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace}
+.file-drop input{display:none}
+.file-loaded{
+  border:1px solid rgba(77,255,200,.3);background:rgba(77,255,200,.05);
+  border-radius:10px;padding:16px;display:flex;align-items:center;gap:12px
+}
+.file-loaded-icon{font-size:24px}
+.file-loaded-info .name{font-size:13px;font-weight:600;color:var(--green)}
+.file-loaded-info .meta{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:2px}
+
+/* ── FILTER KEYWORDS ── */
+.filter-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.filter-tag{
+  background:rgba(255,92,92,.1);color:var(--red);border:1px solid rgba(255,92,92,.2);
+  border-radius:4px;padding:3px 8px;font-size:11px;font-family:'DM Mono',monospace;
+  display:flex;align-items:center;gap:4px;cursor:default
+}
+.filter-tag .rm{cursor:pointer;opacity:.6;font-size:13px;line-height:1;margin-left:2px}
+.filter-tag .rm:hover{opacity:1}
+.tag-add-row{display:flex;gap:6px;margin-top:8px}
+.tag-add-row input{
+  flex:1;background:var(--bg3);border:1px solid var(--line);
+  color:var(--text);border-radius:6px;padding:6px 10px;font-size:12px;outline:none
+}
+.tag-add-row input:focus{border-color:var(--accent)}
+.tag-add-row button{
+  background:var(--bg3);border:1px solid var(--line);color:var(--text2);
+  border-radius:6px;padding:6px 12px;font-size:12px
+}
+.tag-add-row button:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ── DIVISION TABLE ── */
+.div-table{width:100%;border-collapse:collapse;font-size:12px}
+.div-table th{
+  text-align:left;padding:8px 10px;
+  border-bottom:1px solid var(--line);
+  font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3)
+}
+.div-table td{padding:7px 10px;border-bottom:1px solid rgba(255,255,255,.04)}
+.div-table tr:hover td{background:rgba(255,255,255,.02)}
+.div-table select{
+  background:var(--bg3);border:1px solid var(--line);color:var(--text);
+  border-radius:4px;padding:3px 8px;font-size:11px;outline:none
+}
+.div-table select:focus{border-color:var(--accent)}
+.rubro-chip{
+  display:inline-block;background:var(--bg3);border:1px solid var(--line);
+  border-radius:4px;padding:2px 7px;font-family:'DM Mono',monospace;font-size:11px
+}
+
+/* ── CONTEO SCREEN ── */
+.conteo-layout{display:flex;gap:20px;height:calc(100vh - 200px);min-height:500px}
+.rubros-sidebar{
+  width:220px;flex-shrink:0;
+  background:var(--bg2);border:1px solid var(--line);border-radius:12px;
+  overflow-y:auto;padding:12px 0
+}
+.sidebar-title{
+  font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--text3);padding:4px 16px 10px
+}
+.rubro-item{
+  padding:9px 16px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;
+  font-size:12px;transition:background .12s;border-left:2px solid transparent
+}
+.rubro-item:hover{background:rgba(255,255,255,.04)}
+.rubro-item.active{
+  background:rgba(124,111,255,.1);border-left-color:var(--accent);color:var(--accent)
+}
+.rubro-item .rubro-count{
+  font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);
+  background:var(--bg3);padding:1px 5px;border-radius:3px
+}
+.rubro-item .rubro-done{color:var(--green);font-size:14px}
+
+.conteo-panel{
+  flex:1;background:var(--bg2);border:1px solid var(--line);border-radius:12px;
+  display:flex;flex-direction:column;overflow:hidden
+}
+.panel-header{
+  padding:14px 18px;border-bottom:1px solid var(--line);
+  display:flex;align-items:center;gap:12px;flex-shrink:0
+}
+.panel-header-title{font-size:15px;font-weight:700}
+.panel-header-meta{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace}
+.panel-header-encargado{
+  margin-left:auto;font-size:11px;color:var(--text2);
+  background:var(--bg3);border:1px solid var(--line);border-radius:4px;padding:3px 8px
+}
+.panel-search{
+  padding:12px 16px;border-bottom:1px solid var(--line);flex-shrink:0
+}
+.panel-search input{
+  width:100%;background:var(--bg3);border:1px solid var(--line);
+  color:var(--text);border-radius:6px;padding:8px 12px;font-size:13px;outline:none
+}
+.panel-search input:focus{border-color:var(--accent)}
+.panel-body{flex:1;overflow-y:auto;padding:0}
+
+/* ── ITEM ROW ── */
+.item-row{
+  display:grid;grid-template-columns:1fr 80px 80px 80px 100px 90px 90px 36px;
+  gap:8px;align-items:center;padding:8px 16px;border-bottom:1px solid rgba(255,255,255,.03);
+  transition:background .1s
+}
+.item-row:hover{background:rgba(255,255,255,.02)}
+.item-row.diff-neg{border-left:2px solid var(--red);padding-left:14px}
+.item-row.diff-pos{border-left:2px solid var(--amber);padding-left:14px}
+.item-row.diff-zero{border-left:2px solid transparent}
+.item-col-head{
+  display:grid;grid-template-columns:1fr 80px 80px 80px 100px 90px 90px 36px;
+  gap:8px;padding:8px 16px 6px;
+  font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--text3);border-bottom:1px solid var(--line);
+  position:sticky;top:0;background:var(--bg2);z-index:5
+}
+.item-desc{overflow:hidden}
+.item-desc .desc{font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item-desc .cod{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-top:1px}
+.qty-input{
+  background:var(--bg3);border:1px solid var(--line);color:var(--text);
+  border-radius:5px;padding:5px 7px;font-size:13px;font-family:'DM Mono',monospace;
+  text-align:center;width:100%;outline:none;transition:border-color .12s
+}
+.qty-input:focus{border-color:var(--accent)}
+.qty-input.changed{border-color:rgba(124,111,255,.5);background:rgba(124,111,255,.05)}
+.sist-val{
+  font-family:'DM Mono',monospace;font-size:12px;color:var(--text2);text-align:center
+}
+.diff-val{
+  font-family:'DM Mono',monospace;font-size:12px;font-weight:600;text-align:center
+}
+.diff-val.neg{color:var(--red)}
+.diff-val.pos{color:var(--amber)}
+.diff-val.zero{color:var(--text3)}
+.dif-money{font-family:'DM Mono',monospace;font-size:11px;text-align:right}
+.dif-money.neg{color:rgba(255,92,92,.7)}
+.dif-money.pos{color:rgba(255,201,92,.7)}
+.obs-btn{
+  background:transparent;border:1px solid var(--line);color:var(--text3);
+  border-radius:4px;width:28px;height:28px;font-size:14px;
+  display:flex;align-items:center;justify-content:center;
+  transition:border-color .12s,color .12s
+}
+.obs-btn:hover{border-color:var(--accent2);color:var(--accent2)}
+.obs-btn.has-note{border-color:rgba(124,111,255,.4);color:var(--accent2);background:rgba(124,111,255,.08)}
+
+/* ── NOTAS POPUP ── */
+.obs-popup{
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  background:var(--bg2);border:1px solid var(--line);border-radius:12px;
+  padding:20px;width:400px;max-width:90vw;z-index:500;
+  box-shadow:0 20px 60px rgba(0,0,0,.6)
+}
+.obs-popup h3{font-size:14px;margin-bottom:12px;color:var(--accent2)}
+.obs-popup textarea{
+  width:100%;background:var(--bg3);border:1px solid var(--line);color:var(--text);
+  border-radius:6px;padding:10px;font-size:13px;resize:vertical;min-height:100px;outline:none;
+  font-family:'Syne',sans-serif
+}
+.obs-popup textarea:focus{border-color:var(--accent)}
+.obs-popup-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+
+/* ── OVERLAY ── */
+.overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:400;display:none
+}
+.overlay.show{display:block}
+
+/* ── PANEL FOOTER ── */
+.panel-footer{
+  padding:12px 16px;border-top:1px solid var(--line);
+  display:flex;align-items:center;gap:12px;flex-shrink:0;
+  font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)
+}
+.footer-stat{display:flex;align-items:center;gap:6px}
+.footer-stat strong{color:var(--text2)}
+.footer-stat.danger strong{color:var(--red)}
+.footer-stat.warn strong{color:var(--amber)}
+.footer-stat.ok strong{color:var(--green)}
+
+/* ── NOTAS GLOBALES ── */
+.notas-section{
+  padding:20px 0;display:flex;flex-direction:column;gap:12px
+}
+.nota-card{
+  background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:14px;
+  display:flex;gap:12px;align-items:flex-start
+}
+.nota-dot{
+  width:8px;height:8px;border-radius:50%;margin-top:4px;flex-shrink:0
+}
+.nota-dot.info{background:var(--blue)}
+.nota-dot.warn{background:var(--amber)}
+.nota-dot.crit{background:var(--red)}
+.nota-body{flex:1}
+.nota-text{font-size:13px;color:var(--text)}
+.nota-meta{font-size:10px;color:var(--text3);margin-top:4px;font-family:'DM Mono',monospace}
+.nota-rm{background:transparent;border:none;color:var(--text3);font-size:16px;line-height:1;padding:0;margin-left:8px}
+.nota-rm:hover{color:var(--red)}
+.nota-add-form{
+  background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:14px;
+  display:flex;gap:10px;align-items:flex-end
+}
+.nota-add-form select{
+  background:var(--bg3);border:1px solid var(--line);color:var(--text);
+  border-radius:6px;padding:8px 10px;font-size:12px;outline:none
+}
+.nota-add-form textarea{
+  flex:1;background:var(--bg3);border:1px solid var(--line);color:var(--text);
+  border-radius:6px;padding:8px 10px;font-size:13px;resize:none;height:60px;outline:none;
+  font-family:'Syne',sans-serif
+}
+.nota-add-form textarea:focus,.nota-add-form select:focus{border-color:var(--accent)}
+
+/* ── ANALISIS SCREEN ── */
+.analisis-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.analisis-wide{grid-column:1/-1}
+.stat-row{display:flex;gap:12px;margin-bottom:16px}
+.stat-box{
+  flex:1;background:var(--bg2);border:1px solid var(--line);border-radius:10px;
+  padding:16px;display:flex;flex-direction:column;gap:4px
+}
+.stat-box .label{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3)}
+.stat-box .value{font-family:'DM Mono',monospace;font-size:22px;font-weight:500}
+.stat-box .sub{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace}
+.stat-box.red .value{color:var(--red)}
+.stat-box.amber .value{color:var(--amber)}
+.stat-box.green .value{color:var(--green)}
+.stat-box.purple .value{color:var(--purple)}
+
+.rotos-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
+.rotos-table th{
+  text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);
+  font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3)
+}
+.rotos-table td{padding:7px 10px;border-bottom:1px solid rgba(255,255,255,.03)}
+.rotos-table tr:hover td{background:rgba(255,255,255,.02)}
+.badge-roto{
+  background:rgba(255,92,92,.1);color:var(--red);border:1px solid rgba(255,92,92,.2);
+  border-radius:4px;padding:2px 7px;font-size:10px;font-family:'DM Mono',monospace
+}
+.badge-vencido{
+  background:rgba(255,201,92,.1);color:var(--amber);border:1px solid rgba(255,201,92,.2);
+  border-radius:4px;padding:2px 7px;font-size:10px;font-family:'DM Mono',monospace
+}
+.badge-sobrante{
+  background:rgba(92,168,255,.1);color:var(--blue);border:1px solid rgba(92,168,255,.2);
+  border-radius:4px;padding:2px 7px;font-size:10px;font-family:'DM Mono',monospace
+}
+
+/* ── AJUSTE MODAL ── */
+.modal{
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  background:var(--bg2);border:1px solid var(--line);border-radius:14px;
+  padding:24px;width:500px;max-width:95vw;z-index:600;
+  box-shadow:0 30px 80px rgba(0,0,0,.7)
+}
+.modal h2{font-size:16px;margin-bottom:6px}
+.modal .sub{font-size:12px;color:var(--text3);margin-bottom:20px}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+
+/* ── TOAST ── */
+.toast{
+  position:fixed;bottom:24px;right:24px;z-index:1000;
+  background:var(--bg2);border:1px solid var(--line);border-radius:8px;
+  padding:12px 18px;font-size:13px;display:flex;align-items:center;gap:8px;
+  box-shadow:0 8px 30px rgba(0,0,0,.5);
+  transform:translateY(20px);opacity:0;transition:all .25s
+}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.success{border-color:rgba(77,255,200,.3);color:var(--green)}
+.toast.error{border-color:rgba(255,92,92,.3);color:var(--red)}
+.toast.info{border-color:rgba(124,111,255,.3);color:var(--accent2)}
+
+/* ── EMPTY STATE ── */
+.empty{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:60px 20px;text-align:center;gap:12px
+}
+.empty-icon{font-size:40px;opacity:.4}
+.empty-title{font-size:16px;font-weight:700;color:var(--text2)}
+.empty-sub{font-size:12px;color:var(--text3);max-width:320px}
+
+/* ── RESUMEN RUBRO ── */
+.rubro-resumen{
+  display:flex;gap:8px;padding:12px 16px;background:var(--bg3);border-bottom:1px solid var(--line);
+  flex-wrap:wrap;flex-shrink:0
+}
+.rsm-item{
+  font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);
+  display:flex;align-items:center;gap:5px
+}
+.rsm-item strong{color:var(--text)}
+.rsm-sep{color:var(--line)}
+
+/* ── TOP DIFS LIST ── */
+.dif-list{display:flex;flex-direction:column;gap:4px;margin-top:8px}
+.dif-list-item{
+  display:flex;align-items:center;gap:10px;padding:8px 10px;
+  background:var(--bg3);border-radius:6px;font-size:12px
+}
+.dif-list-item .di-desc{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.dif-list-item .di-badge{
+  font-family:'DM Mono',monospace;font-size:11px;font-weight:600;
+  white-space:nowrap;padding:2px 7px;border-radius:4px
+}
+.di-badge.neg{background:rgba(255,92,92,.1);color:var(--red)}
+.di-badge.pos{background:rgba(255,201,92,.1);color:var(--amber)}
+
+/* ── RESPONSIVE ── */
+@media(max-width:800px){
+  .conteo-layout{flex-direction:column;height:auto}
+  .rubros-sidebar{width:100%;height:120px;display:flex;overflow-x:auto;overflow-y:hidden;padding:8px}
+  .rubro-item{flex-direction:column;gap:2px;padding:6px 12px;font-size:11px;min-width:100px;text-align:center}
+  .setup-grid{grid-template-columns:1fr}
+  .analisis-grid{grid-template-columns:1fr}
+  .item-row,.item-col-head{grid-template-columns:1fr 70px 70px 70px 80px 36px}
+  .item-row>:nth-child(6),.item-col-head>:nth-child(6){display:none}
+  .item-row>:nth-child(7),.item-col-head>:nth-child(7){display:none}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-logo">
+    BREAK <span>·</span> <span>INVENTARIO</span>
+  </div>
+  <div class="inv-meta" id="inv-meta-local">
+    <span>Local:</span><strong id="meta-local">—</strong>
+  </div>
+  <div class="inv-meta">
+    <span>Fecha:</span><strong id="meta-fecha">—</strong>
+  </div>
+  <div class="inv-meta">
+    <span>Responsable:</span><strong id="meta-resp">—</strong>
+  </div>
+  <div class="topbar-right">
+    <button class="btn-ghost" onclick="exportarResumen()">↓ Exportar</button>
+    <button class="btn-primary" onclick="goPhase('analisis')">Ver análisis →</button>
+  </div>
+</div>
+
+<!-- PROGRESS -->
+<div class="progress-wrap">
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+  <span class="progress-label" id="progress-label">0 / 0 artículos contados</span>
+</div>
+
+<!-- PHASES -->
+<div class="phases">
+  <div class="phase-tab active" id="tab-setup" onclick="goPhase('setup')">
+    <span class="phase-dot"></span> 1. Configurar
+  </div>
+  <div class="phase-tab" id="tab-conteo" onclick="goPhase('conteo')">
+    <span class="phase-dot"></span> 2. Conteo
+  </div>
+  <div class="phase-tab" id="tab-notas" onclick="goPhase('notas')">
+    <span class="phase-dot"></span> 3. Notas
+  </div>
+  <div class="phase-tab" id="tab-analisis" onclick="goPhase('analisis')">
+    <span class="phase-dot"></span> 4. Análisis
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+<!-- ════════════════════════════════════
+     SCREEN: SETUP
+════════════════════════════════════ -->
+<div class="screen active" id="screen-setup">
+  <div class="setup-grid">
+
+    <!-- Datos del inventario -->
+    <div class="card">
+      <div class="card-title">Datos del inventario</div>
+      <div class="field">
+        <label>LOCAL</label>
+        <select id="setup-local" onchange="updateMeta()">
+          <option value="">— seleccionar —</option>
+          <option value="palermo">Thames · Palermo</option>
+          <option value="belgrano">Roosevelt · Belgrano</option>
+          <option value="barrio_chino">Juramento · Barrio Chino</option>
+          <option value="san_telmo">Independencia · San Telmo</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>FECHA DEL INVENTARIO</label>
+        <input type="date" id="setup-fecha" onchange="updateMeta()">
+      </div>
+      <div class="field">
+        <label>RESPONSABLE GENERAL</label>
+        <select id="setup-resp" onchange="updateMeta()">
+          <option value="">— seleccionar encargado —</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>TIPO DE INVENTARIO</label>
+        <select id="setup-tipo">
+          <option value="semanal">Semanal (parcial por rubros)</option>
+          <option value="mensual">Mensual (inventario completo)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Carga de archivo -->
+    <div class="card">
+      <div class="card-title">Archivo de artículos (FacilVirtual)</div>
+      <div id="file-zone">
+        <div class="file-drop" id="drop-zone" onclick="document.getElementById('file-input').click()"
+          ondragover="event.preventDefault();this.classList.add('drag')"
+          ondragleave="this.classList.remove('drag')"
+          ondrop="handleFileDrop(event)">
+          <div class="file-drop-icon">📊</div>
+          <div class="file-drop-label">Arrastrá el Excel de stock</div>
+          <div class="file-drop-sub">Stock Valorizado · exportado de FacilVirtual</div>
+          <input type="file" id="file-input" accept=".xlsx,.xls,.csv" onchange="handleFileSelect(event)">
+        </div>
+      </div>
+    </div>
+
+    <!-- Filtros automáticos -->
+    <div class="card">
+      <div class="card-title">Artículos a excluir automáticamente</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:10px">Productos que no se cuentan en inventario físico</div>
+      <div class="filter-tags" id="filter-tags-container"></div>
+      <div class="tag-add-row">
+        <input type="text" id="tag-input" placeholder="Agregar keyword..." onkeydown="if(event.key==='Enter')addFilterTag()">
+        <button onclick="addFilterTag()">+ Agregar</button>
+      </div>
+    </div>
+
+    <!-- División por rubro -->
+    <div class="card">
+      <div class="card-title">Asignación de rubros a encargados</div>
+      <div style="max-height:280px;overflow-y:auto">
+        <table class="div-table">
+          <thead><tr>
+            <th>Rubro</th>
+            <th>Encargado</th>
+            <th>#</th>
+          </tr></thead>
+          <tbody id="division-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="margin-top:20px;display:flex;gap:10px;align-items:center">
+    <button class="btn-primary" onclick="iniciarConteo()" id="btn-iniciar">
+      ▶ Iniciar conteo
+    </button>
+    <span id="setup-info" style="font-size:12px;color:var(--text3);font-family:'DM Mono',monospace"></span>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     SCREEN: CONTEO
+════════════════════════════════════ -->
+<div class="screen" id="screen-conteo">
+  <div class="conteo-layout">
+
+    <!-- Sidebar rubros -->
+    <div class="rubros-sidebar">
+      <div class="sidebar-title">Rubros</div>
+      <div id="rubros-list"></div>
+    </div>
+
+    <!-- Panel de conteo -->
+    <div class="conteo-panel">
+      <div class="panel-header">
+        <div>
+          <div class="panel-header-title" id="panel-rubro-title">—</div>
+          <div class="panel-header-meta" id="panel-rubro-meta"></div>
+        </div>
+        <div class="panel-header-encargado" id="panel-encargado">—</div>
+      </div>
+      <div class="rubro-resumen" id="rubro-resumen"></div>
+      <div class="panel-search">
+        <input type="text" id="search-items" placeholder="Buscar artículo o código..." oninput="renderItems()">
+      </div>
+      <div class="item-col-head">
+        <span>Artículo</span>
+        <span style="text-align:center">Exhib.</span>
+        <span style="text-align:center">Depósito</span>
+        <span style="text-align:center">Total</span>
+        <span style="text-align:center">Sistema</span>
+        <span style="text-align:right">Diferencia</span>
+        <span style="text-align:right">$ Dif.</span>
+        <span></span>
+      </div>
+      <div class="panel-body" id="items-body"></div>
+      <div class="panel-footer" id="panel-footer"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     SCREEN: NOTAS
+════════════════════════════════════ -->
+<div class="screen" id="screen-notas">
+  <div style="max-width:800px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div>
+        <h2 style="font-size:18px;font-weight:700">Notas del inventario</h2>
+        <p style="font-size:12px;color:var(--text3);margin-top:4px">Observaciones generales, irregularidades y cosas para comunicar al supervisor</p>
+      </div>
+    </div>
+
+    <div class="nota-add-form">
+      <select id="nota-tipo">
+        <option value="info">ℹ️ Info</option>
+        <option value="warn">⚠️ Atención</option>
+        <option value="crit">🔴 Crítico</option>
+      </select>
+      <textarea id="nota-texto" placeholder="Escribí la observación..."></textarea>
+      <button class="btn-primary" onclick="addNota()" style="height:60px;white-space:nowrap">+ Agregar</button>
+    </div>
+
+    <div class="notas-section" id="notas-list"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     SCREEN: ANÁLISIS
+════════════════════════════════════ -->
+<div class="screen" id="screen-analisis">
+  <div style="max-width:1200px">
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div>
+        <h2 style="font-size:20px;font-weight:800">Análisis de inventario</h2>
+        <p style="font-size:12px;color:var(--text3);margin-top:4px" id="analisis-subtitle">—</p>
+      </div>
+      <button class="btn-primary" onclick="exportarResumen()">↓ Exportar resumen</button>
+    </div>
+
+    <!-- Stats -->
+    <div class="stat-row" id="stat-row"></div>
+
+    <div class="analisis-grid">
+
+      <!-- Diferencias más grandes -->
+      <div class="card">
+        <div class="card-title">Top diferencias negativas (faltantes)</div>
+        <div id="top-negativas" class="dif-list"></div>
+      </div>
+
+      <!-- Sobrantes -->
+      <div class="card">
+        <div class="card-title">Top diferencias positivas (sobrantes)</div>
+        <div id="top-positivas" class="dif-list"></div>
+      </div>
+
+      <!-- Rotos y vencidos -->
+      <div class="card analisis-wide">
+        <div class="card-title">Rotos y vencidos (últimos 30 días — reportes del local)</div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:12px">
+          Datos cruzados con el módulo de Reportes de Break. 
+          <span id="rotv-source-note"></span>
+        </div>
+        <div id="rotos-vencidos-content">
+          <div class="empty">
+            <div class="empty-icon">🔗</div>
+            <div class="empty-title">Sin conexión al módulo de reportes</div>
+            <div class="empty-sub">Para cruzar datos, este módulo necesita recibir los reportes de rotos/vencidos desde el sistema. Podés cargarlos manualmente abajo.</div>
+          </div>
+          <div style="margin-top:16px">
+            <div class="card-title">Carga manual de rotos / vencidos</div>
+            <div id="rv-manual-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px"></div>
+            <div style="display:flex;gap:8px;align-items:flex-end">
+              <div class="field" style="flex:2;margin:0">
+                <input type="text" id="rv-desc" placeholder="Descripción del artículo" style="width:100%;background:var(--bg3);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:8px 10px;font-size:12px;outline:none">
+              </div>
+              <div class="field" style="margin:0">
+                <select id="rv-tipo" style="background:var(--bg3);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:8px 10px;font-size:12px;outline:none">
+                  <option value="roto">Roto</option>
+                  <option value="vencido">Vencido</option>
+                </select>
+              </div>
+              <div class="field" style="width:80px;margin:0">
+                <input type="number" id="rv-qty" placeholder="Cant." min="1" value="1" style="width:100%;background:var(--bg3);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:8px 10px;font-size:12px;outline:none">
+              </div>
+              <div class="field" style="width:100px;margin:0">
+                <input type="number" id="rv-costo" placeholder="$ costo" min="0" style="width:100%;background:var(--bg3);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:8px 10px;font-size:12px;outline:none">
+              </div>
+              <button class="btn-primary" onclick="addRotVen()" style="white-space:nowrap">+ Agregar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Resumen por rubro -->
+      <div class="card analisis-wide">
+        <div class="card-title">Resumen por rubro</div>
+        <table class="rotos-table" id="rubro-table">
+          <thead><tr>
+            <th>Rubro</th>
+            <th>Encargado</th>
+            <th style="text-align:right">Artículos</th>
+            <th style="text-align:right">Contados</th>
+            <th style="text-align:right">Con diferencia</th>
+            <th style="text-align:right">Dif. total $</th>
+          </tr></thead>
+          <tbody id="rubro-table-body"></tbody>
+        </table>
+      </div>
+
+      <!-- Notas resumen -->
+      <div class="card analisis-wide" id="analisis-notas-card" style="display:none">
+        <div class="card-title">Notas registradas</div>
+        <div id="analisis-notas-list"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+</div><!-- /app -->
+
+<!-- OVERLAY + POPUP de observación -->
+<div class="overlay" id="overlay" onclick="closeObsPopup()"></div>
+<div class="obs-popup" id="obs-popup" style="display:none">
+  <h3 id="obs-popup-title">Observación</h3>
+  <textarea id="obs-textarea" placeholder="Escribí la observación del artículo..." rows="4"></textarea>
+  <div class="obs-popup-footer">
+    <button class="btn-ghost" onclick="closeObsPopup()">Cancelar</button>
+    <button class="btn-primary" onclick="saveObs()">Guardar</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════
+// SUPABASE CONFIG (igual que el resto del sistema)
+// ══════════════════════════════════════════
+const SB_URL = 'https://oiuualqixcccfhtpcist.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pdXVhbHFpeGNjY2ZodHBjaXN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NzUxNjEsImV4cCI6MjA4OTQ1MTE2MX0.ms4MHVhKDTKfID0WGi05EFPySf350SA66uNi4wPfsOo';
+const SB_HDR = {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};
+
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+let articulosRaw = [];      // todos los artículos del Excel limpio
+let articulosFilt = [];     // después de filtrar combos/promos/etc
+let rubros = [];            // lista de rubros únicos
+let division = {};          // {rubro: encargado}
+let items = {};             // {codigo: {desc,rubro,sist,exhib,dep,real,obs,encargado,costo,pventa}}
+let empleados = [];
+let currentRubro = null;
+let obsTarget = null;       // codigo del item en edición
+let notas = [];             // [{tipo,texto,ts}]
+let rotVen = [];            // [{desc,tipo,qty,costo}]
+let filterKeywords = ['PROMO','COMBO','RECARGA','COMISION','HIELO'];
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', async ()=>{
+  setTodayDate();
+  renderFilterTags();
+  await loadEmpleados();
+  updateMeta();
+});
+
+function setTodayDate(){
+  const d = new Date();
+  const iso = d.toISOString().split('T')[0];
+  document.getElementById('setup-fecha').value = iso;
+  document.getElementById('meta-fecha').textContent = formatDate(d);
+}
+
+function formatDate(d){
+  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+}
+
+async function loadEmpleados(){
+  try{
+    // Try to get local from parent context (when embedded in hub)
+    const params = new URLSearchParams(window.location.search);
+    const localParam = params.get('local');
+    if(localParam) document.getElementById('setup-local').value = localParam;
+
+    const r = await fetch(`${SB_URL}/rest/v1/cuentas?tipo=eq.empleado&order=nombre`, {headers:SB_HDR});
+    const data = await r.json();
+    empleados = (data||[]).map(e=>e.nombre).filter(Boolean).sort();
+  } catch(e){ empleados = ['CAMI','FACU','MATI','JULI','VALE','ROMI']; }
+  
+  const sel = document.getElementById('setup-resp');
+  sel.innerHTML = '<option value="">— seleccionar —</option>';
+  empleados.forEach(n=>{ sel.innerHTML += `<option value="${n}">${n}</option>`; });
+}
+
+function updateMeta(){
+  const local = document.getElementById('setup-local');
+  const fecha = document.getElementById('setup-fecha').value;
+  const resp  = document.getElementById('setup-resp').value;
+  document.getElementById('meta-local').textContent = local.options[local.selectedIndex]?.text || '—';
+  document.getElementById('meta-fecha').textContent = fecha ? formatDate(new Date(fecha+'T12:00:00')) : '—';
+  document.getElementById('meta-resp').textContent = resp || '—';
+}
+
+// ══════════════════════════════════════════
+// FILTER TAGS
+// ══════════════════════════════════════════
+function renderFilterTags(){
+  const c = document.getElementById('filter-tags-container');
+  c.innerHTML = filterKeywords.map((kw,i)=>`
+    <span class="filter-tag">${kw}<span class="rm" onclick="removeFilterTag(${i})">×</span></span>
+  `).join('');
+}
+function removeFilterTag(i){
+  filterKeywords.splice(i,1);
+  renderFilterTags();
+}
+function addFilterTag(){
+  const inp = document.getElementById('tag-input');
+  const val = inp.value.trim().toUpperCase();
+  if(val && !filterKeywords.includes(val)){
+    filterKeywords.push(val);
+    renderFilterTags();
+    inp.value='';
+  }
+}
+
+// ══════════════════════════════════════════
+// FILE HANDLING — SheetJS via CDN
+// ══════════════════════════════════════════
+function loadSheetJS(cb){
+  if(window.XLSX){ cb(); return; }
+  const s = document.createElement('script');
+  s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+  s.onload=cb; document.head.appendChild(s);
+}
+
+function handleFileDrop(e){
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if(file) processFile(file);
+}
+function handleFileSelect(e){
+  const file = e.target.files[0];
+  if(file) processFile(file);
+}
+
+function processFile(file){
+  loadSheetJS(()=>{
+    const reader = new FileReader();
+    reader.onload = (ev)=>{
+      try{
+        const wb = XLSX.read(ev.target.result, {type:'array'});
+        // Try "Stock valorizado" sheet first, then "DATOS", otherwise first sheet
+        let sheetName = wb.SheetNames.find(n=>/stock.valorizado/i.test(n))
+          || wb.SheetNames.find(n=>n.toUpperCase()==='DATOS')
+          || wb.SheetNames[0];
+        const ws = wb.Sheets[sheetName];
+        // Stock Valorizado has 2 header rows (row 0: date, row 1: blank, row 2: column names)
+        // Use raw mode and detect which row is the real header
+        let rows = XLSX.utils.sheet_to_json(ws, {defval:'', header:1});
+        // Find the header row: the one that contains "Código" or "Descripción"
+        let headerIdx = rows.findIndex(r=>r.some(c=>String(c).match(/c.digo|descripci/i)));
+        if(headerIdx === -1) headerIdx = 0;
+        const headers = rows[headerIdx].map(c=>String(c).trim());
+        // Convert remaining rows to objects
+        const dataRows = rows.slice(headerIdx+1)
+          .filter(r=>r.some(c=>c!==''))           // skip blank rows
+          .filter(r=>!String(r[0]).match(/^total$/i)) // skip total row
+          .map(r=>{
+            const obj={};
+            headers.forEach((h,i)=>{ obj[h]=r[i]??''; });
+            return obj;
+          });
+        parseArticulos(dataRows, file.name);
+      } catch(err){
+        showToast('Error al leer el archivo: '+err.message,'error');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+function parseArticulos(rows, filename){
+  // Detect column names — supports both Artículos Minorista and Stock Valorizado exports
+  const sample = rows[0]||{};
+  const keys = Object.keys(sample);
+  const colCod  = keys.find(k=>/c.digo|barras/i.test(k));
+  const colDesc = keys.find(k=>/descripci/i.test(k));
+  const colRub  = keys.find(k=>/rubro/i.test(k));
+  // Stock valorizado uses "Cantidad"; Artículos uses "Stock"
+  const colStock= keys.find(k=>/^cantidad$/i.test(k)) || keys.find(k=>/^stock$/i.test(k));
+  // Stock valorizado uses "Costo Unitario"; Artículos uses "Precio Costo"
+  const colCosto= keys.find(k=>/costo.unitario/i.test(k)) || keys.find(k=>/precio.costo|^costo$/i.test(k));
+  // Only in Artículos export
+  const colPV   = keys.find(k=>/precio.venta/i.test(k));
+  const colProv = keys.find(k=>/proveedor/i.test(k));
+
+  if(!colDesc){ showToast('No se encontró columna Descripción en el archivo','error'); return; }
+
+  // FacilVirtual uses comma as decimal separator in some exports — normalize
+  function parseNum(v){
+    if(v===null||v===undefined||v==='') return 0;
+    return parseFloat(String(v).replace(/\./g,'').replace(',','.')) || 0;
+  }
+
+  articulosRaw = rows.filter(r=>r[colDesc]);
+  
+  // Filter combos/promos/etc
+  articulosFilt = articulosRaw.filter(r=>{
+    const d = String(r[colDesc]||'').toUpperCase();
+    return !filterKeywords.some(kw=>d.includes(kw));
+  });
+
+  // Exclude non-countable rubros
+  const rubroExclude = ['Sin Clasificar'];
+  articulosFilt = articulosFilt.filter(r=>{
+    const rub = String(r[colRub]||'').trim();
+    return !rubroExclude.includes(rub);
+  });
+
+  // Build items map
+  items = {};
+  rubros = [];
+  const rubroSet = new Set();
+  
+  articulosFilt.forEach(r=>{
+    const cod  = String(r[colCod]||'').trim() || String(r[colDesc]).slice(0,20);
+    const desc = String(r[colDesc]||'').trim();
+    const rub  = String(r[colRub]||'Otros').trim();
+    const costo= colCosto ? parseNum(r[colCosto]) : 0;
+    const pventa= colPV   ? parseNum(r[colPV])    : 0;
+    const sist = colStock ? Math.round(parseNum(r[colStock])) : 0;
+    const prov = colProv  ? String(r[colProv]||'').trim() : '';
+
+    if(!items[cod]){
+      items[cod]={desc,rub,costo,pventa,sist,exhib:null,dep:null,real:null,obs:'',prov};
+      rubroSet.add(rub);
+    }
+  });
+
+  rubros = [...rubroSet].sort();
+  
+  // Init division from rubros
+  rubros.forEach(r=>{ if(!division[r]) division[r]=''; });
+  
+  renderDivision();
+
+  // Show file loaded state
+  const total = Object.keys(items).length;
+  document.getElementById('file-zone').innerHTML = `
+    <div class="file-loaded">
+      <div class="file-loaded-icon">✅</div>
+      <div class="file-loaded-info">
+        <div class="name">${filename}</div>
+        <div class="meta">${total} artículos · ${rubros.length} rubros · ${articulosRaw.length - articulosFilt.length} excluidos (combos/promos)</div>
+      </div>
+      <button class="btn-ghost" onclick="resetFile()" style="margin-left:auto;font-size:11px">Cambiar</button>
+    </div>`;
+  
+  document.getElementById('setup-info').textContent = `${total} artículos listos para contar`;
+  showToast(`Archivo cargado: ${total} artículos en ${rubros.length} rubros`,'success');
+}
+
+function resetFile(){
+  document.getElementById('file-zone').innerHTML = `
+    <div class="file-drop" id="drop-zone" onclick="document.getElementById('file-input').click()"
+      ondragover="event.preventDefault();this.classList.add('drag')"
+      ondragleave="this.classList.remove('drag')"
+      ondrop="handleFileDrop(event)">
+      <div class="file-drop-icon">📊</div>
+      <div class="file-drop-label">Arrastrá el Excel de stock</div>
+      <div class="file-drop-sub">Stock Valorizado · exportado de FacilVirtual</div>
+      <input type="file" id="file-input" accept=".xlsx,.xls,.csv" onchange="handleFileSelect(event)">
+    </div>`;
+  articulosFilt=[]; articulosRaw=[]; items={}; rubros=[];
+  document.getElementById('setup-info').textContent='';
+  document.getElementById('division-tbody').innerHTML='';
+}
+
+// ══════════════════════════════════════════
+// DIVISION TABLE
+// ══════════════════════════════════════════
+function renderDivision(){
+  const tbody = document.getElementById('division-tbody');
+  const counts = {};
+  Object.values(items).forEach(it=>{ counts[it.rub]=(counts[it.rub]||0)+1; });
+  
+  tbody.innerHTML = rubros.map(r=>`
+    <tr>
+      <td><span class="rubro-chip">${r}</span></td>
+      <td>
+        <select onchange="division['${r}']=this.value">
+          <option value="">—</option>
+          ${empleados.map(e=>`<option value="${e}" ${division[r]===e?'selected':''}>${e}</option>`).join('')}
+        </select>
+      </td>
+      <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)">${counts[r]||0}</td>
+    </tr>`).join('');
+}
+
+// ══════════════════════════════════════════
+// START CONTEO
+// ══════════════════════════════════════════
+function iniciarConteo(){
+  if(!Object.keys(items).length){ showToast('Primero cargá el archivo de artículos','error'); return; }
+  // Apply division to items
+  Object.values(items).forEach(it=>{
+    if(division[it.rub]) it.encargado = division[it.rub];
+  });
+  goPhase('conteo');
+  currentRubro = rubros[0]||null;
+  renderRubrosSidebar();
+  if(currentRubro) loadRubro(currentRubro);
+  showToast('¡Inventario iniciado! Comenzá contando por rubro.','success');
+}
+
+// ══════════════════════════════════════════
+// PHASES
+// ══════════════════════════════════════════
+function goPhase(name){
+  ['setup','conteo','notas','analisis'].forEach(s=>{
+    document.getElementById('screen-'+s).classList.remove('active');
+    document.getElementById('tab-'+s).classList.remove('active');
+  });
+  document.getElementById('screen-'+name).classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+  if(name==='analisis') renderAnalisis();
+  if(name==='notas') renderNotas();
+  updateProgress();
+}
+
+function updateProgress(){
+  const total = Object.keys(items).length;
+  if(!total){ 
+    document.getElementById('progress-fill').style.width='0%';
+    document.getElementById('progress-label').textContent='0 / 0 artículos contados';
+    return;
+  }
+  const done = Object.values(items).filter(it=>it.real!==null).length;
+  const pct = Math.round(done/total*100);
+  document.getElementById('progress-fill').style.width=pct+'%';
+  document.getElementById('progress-label').textContent=`${done} / ${total} artículos contados (${pct}%)`;
+  
+  // Update tab states
+  if(pct===100) document.getElementById('tab-conteo').classList.add('done');
+}
+
+// ══════════════════════════════════════════
+// RUBROS SIDEBAR
+// ══════════════════════════════════════════
+function renderRubrosSidebar(){
+  const list = document.getElementById('rubros-list');
+  list.innerHTML = rubros.map(r=>{
+    const ritems = Object.values(items).filter(it=>it.rub===r);
+    const done = ritems.filter(it=>it.real!==null).length;
+    const isDone = done===ritems.length && ritems.length>0;
+    return `<div class="rubro-item ${r===currentRubro?'active':''}" onclick="loadRubro('${r.replace(/'/g,"\\'")}')">
+      <span>${r}</span>
+      <span>${isDone?'<span class="rubro-done">✓</span>':`<span class="rubro-count">${done}/${ritems.length}</span>`}</span>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════
+// LOAD RUBRO
+// ══════════════════════════════════════════
+function loadRubro(rubro){
+  currentRubro = rubro;
+  document.getElementById('search-items').value='';
+  renderRubrosSidebar();
+  
+  const ritems = Object.values(items).filter(it=>it.rub===rubro);
+  const encargado = division[rubro]||'—';
+  const done = ritems.filter(it=>it.real!==null).length;
+  
+  document.getElementById('panel-rubro-title').textContent = rubro;
+  document.getElementById('panel-rubro-meta').textContent = `${ritems.length} artículos · ${done} contados`;
+  document.getElementById('panel-encargado').textContent = '👤 ' + encargado;
+  
+  renderItems();
+  renderRubroResumen();
+}
+
+function renderRubroResumen(){
+  if(!currentRubro) return;
+  const ritems = Object.values(items).filter(it=>it.rub===currentRubro);
+  const counted = ritems.filter(it=>it.real!==null);
+  const negDif = counted.filter(it=>(it.real-it.sist)<0);
+  const posDif = counted.filter(it=>(it.real-it.sist)>0);
+  const totalDifMoney = counted.reduce((s,it)=>s+((it.real-it.sist)*it.costo),0);
+  
+  document.getElementById('rubro-resumen').innerHTML = `
+    <span class="rsm-item"><strong>${counted.length}/${ritems.length}</strong> contados</span>
+    <span class="rsm-sep">·</span>
+    <span class="rsm-item" style="color:var(--red)"><strong>${negDif.length}</strong> faltantes</span>
+    <span class="rsm-sep">·</span>
+    <span class="rsm-item" style="color:var(--amber)"><strong>${posDif.length}</strong> sobrantes</span>
+    <span class="rsm-sep">·</span>
+    <span class="rsm-item" style="color:${totalDifMoney<0?'var(--red)':'var(--text2)'}">
+      <strong>${fmtPeso(totalDifMoney)}</strong> balance
+    </span>`;
+}
+
+// ══════════════════════════════════════════
+// RENDER ITEMS
+// ══════════════════════════════════════════
+function renderItems(){
+  const body = document.getElementById('items-body');
+  const search = (document.getElementById('search-items').value||'').toLowerCase();
+  if(!currentRubro){ body.innerHTML=''; return; }
+  
+  let list = Object.entries(items)
+    .filter(([,it])=>it.rub===currentRubro)
+    .filter(([cod,it])=>{
+      if(!search) return true;
+      return it.desc.toLowerCase().includes(search) || cod.toLowerCase().includes(search);
+    });
+
+  if(!list.length){
+    body.innerHTML='<div class="empty"><div class="empty-icon">🔍</div><div class="empty-title">Sin resultados</div></div>';
+    return;
+  }
+
+  body.innerHTML = list.map(([cod,it])=>{
+    const real = it.real!==null ? it.real : (it.exhib!==null||it.dep!==null ? (it.exhib||0)+(it.dep||0) : null);
+    const dif  = real!==null ? real - it.sist : null;
+    const difM = dif!==null ? dif * it.costo : null;
+    
+    const rowClass = dif===null?'diff-zero':(dif<0?'diff-neg':'diff-zero');
+    const difClass = dif===null?'zero':(dif<0?'neg':(dif>0?'pos':'zero'));
+    
+    const exhibVal = it.exhib!==null ? it.exhib : '';
+    const depVal   = it.dep!==null   ? it.dep   : '';
+
+    return `<div class="item-row ${rowClass}" id="row-${cod.replace(/[^a-z0-9]/gi,'_')}">
+      <div class="item-desc">
+        <div class="desc" title="${it.desc}">${it.desc}</div>
+        <div class="cod">${cod}</div>
+      </div>
+      <input type="number" class="qty-input ${it.exhib!==null?'changed':''}" 
+        min="0" placeholder="—" value="${exhibVal}"
+        title="Exhibición"
+        oninput="updateQty('${cod}','exhib',this.value)">
+      <input type="number" class="qty-input ${it.dep!==null?'changed':''}" 
+        min="0" placeholder="—" value="${depVal}"
+        title="Depósito"
+        oninput="updateQty('${cod}','dep',this.value)">
+      <div class="qty-input" style="background:var(--bg);border-color:transparent;font-size:13px;display:flex;align-items:center;justify-content:center;color:${real!==null?'var(--text)':'var(--text3)'};font-weight:600">
+        ${real!==null?real:'—'}
+      </div>
+      <div class="sist-val">${it.sist}</div>
+      <div class="diff-val ${difClass}">${dif!==null?(dif>0?'+':'')+dif:'—'}</div>
+      <div class="dif-money ${difClass}">${difM!==null?fmtPeso(difM):'—'}</div>
+      <button class="obs-btn ${it.obs?'has-note':''}" onclick="openObsPopup('${cod}')" title="${it.obs||'Agregar observación'}">
+        ${it.obs?'💬':'✏️'}
+      </button>
+    </div>`;
+  }).join('');
+
+  renderFooter(list);
+}
+
+function renderFooter(list){
+  const counted = list.filter(([,it])=>it.real!==null);
+  const neg = counted.filter(([,it])=>(it.real-it.sist)<0);
+  const totalM = counted.reduce((s,[,it])=>s+((it.real-it.sist)*it.costo),0);
+  
+  document.getElementById('panel-footer').innerHTML = `
+    <span class="footer-stat"><strong>${list.length}</strong> artículos</span>
+    <span style="color:var(--line)">·</span>
+    <span class="footer-stat ok"><strong>${counted.length}</strong> contados</span>
+    <span style="color:var(--line)">·</span>
+    <span class="footer-stat danger"><strong>${neg.length}</strong> faltantes</span>
+    <span style="margin-left:auto;font-family:'DM Mono',monospace;font-size:12px;color:${totalM<0?'var(--red)':'var(--text3)'}">
+      Balance: ${fmtPeso(totalM)}
+    </span>`;
+}
+
+// ══════════════════════════════════════════
+// UPDATE QUANTITY
+// ══════════════════════════════════════════
+function updateQty(cod, campo, val){
+  const it = items[cod];
+  if(!it) return;
+  const n = val===''?null:Math.max(0,parseInt(val)||0);
+  it[campo] = n;
+  // Recalculate real
+  if(it.exhib!==null || it.dep!==null){
+    it.real = (it.exhib||0)+(it.dep||0);
+  } else {
+    it.real = null;
+  }
+  // Re-render just this row's computed cells
+  const safe = cod.replace(/[^a-z0-9]/gi,'_');
+  const row = document.getElementById('row-'+safe);
+  if(row){
+    const dif  = it.real!==null ? it.real-it.sist : null;
+    const difM = dif!==null ? dif*it.costo : null;
+    const difClass = dif===null?'zero':(dif<0?'neg':(dif>0?'pos':'zero'));
+    row.querySelector('.item-row.diff-neg')?.classList.remove('diff-neg');
+    row.classList.remove('diff-neg','diff-pos','diff-zero');
+    row.classList.add(dif!==null&&dif<0?'diff-neg':'diff-zero');
+    
+    const cells = row.querySelectorAll('.qty-input');
+    // update total display (3rd input, index 2, is the div)
+    const totalDiv = row.children[3];
+    totalDiv.textContent = it.real!==null?it.real:'—';
+    totalDiv.style.color = it.real!==null?'var(--text)':'var(--text3)';
+    
+    row.querySelector('.diff-val').textContent = dif!==null?(dif>0?'+':'')+dif:'—';
+    row.querySelector('.diff-val').className = `diff-val ${difClass}`;
+    row.querySelector('.dif-money').textContent = difM!==null?fmtPeso(difM):'—';
+    row.querySelector('.dif-money').className = `dif-money ${difClass}`;
+  }
+  updateProgress();
+  renderRubroResumen();
+  // Mark input as changed
+  const inp = row?.querySelectorAll('.qty-input')[campo==='exhib'?0:1];
+  if(inp) inp.classList.toggle('changed', it[campo]!==null);
+}
+
+// ══════════════════════════════════════════
+// OBSERVACIONES POPUP
+// ══════════════════════════════════════════
+function openObsPopup(cod){
+  obsTarget = cod;
+  const it = items[cod];
+  document.getElementById('obs-popup-title').textContent = it.desc.slice(0,50);
+  document.getElementById('obs-textarea').value = it.obs||'';
+  document.getElementById('obs-popup').style.display='block';
+  document.getElementById('overlay').classList.add('show');
+  setTimeout(()=>document.getElementById('obs-textarea').focus(),50);
+}
+function closeObsPopup(){
+  document.getElementById('obs-popup').style.display='none';
+  document.getElementById('overlay').classList.remove('show');
+  obsTarget=null;
+}
+function saveObs(){
+  if(!obsTarget) return;
+  const val = document.getElementById('obs-textarea').value.trim();
+  items[obsTarget].obs = val;
+  // Update button in DOM
+  const safe = obsTarget.replace(/[^a-z0-9]/gi,'_');
+  const btn = document.getElementById('row-'+safe)?.querySelector('.obs-btn');
+  if(btn){
+    btn.classList.toggle('has-note',!!val);
+    btn.textContent = val?'💬':'✏️';
+  }
+  closeObsPopup();
+  showToast('Observación guardada','success');
+}
+
+// ══════════════════════════════════════════
+// NOTAS GLOBALES
+// ══════════════════════════════════════════
+function renderNotas(){
+  const list = document.getElementById('notas-list');
+  if(!notas.length){
+    list.innerHTML='<div class="empty"><div class="empty-icon">📝</div><div class="empty-title">Sin notas todavía</div><div class="empty-sub">Agregá observaciones generales del inventario para el supervisor</div></div>';
+    return;
+  }
+  list.innerHTML = notas.map((n,i)=>`
+    <div class="nota-card">
+      <div class="nota-dot ${n.tipo}"></div>
+      <div class="nota-body">
+        <div class="nota-text">${n.texto}</div>
+        <div class="nota-meta">${n.ts} · ${n.tipo.toUpperCase()}</div>
+      </div>
+      <button class="nota-rm" onclick="removeNota(${i})">×</button>
+    </div>`).join('');
+}
+function addNota(){
+  const tipo  = document.getElementById('nota-tipo').value;
+  const texto = document.getElementById('nota-texto').value.trim();
+  if(!texto){ showToast('Escribí algo antes de agregar','error'); return; }
+  const now = new Date();
+  notas.push({tipo,texto,ts:formatDate(now)+' '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')});
+  document.getElementById('nota-texto').value='';
+  renderNotas();
+  showToast('Nota agregada','success');
+}
+function removeNota(i){ notas.splice(i,1); renderNotas(); }
+
+// ══════════════════════════════════════════
+// ROTOS / VENCIDOS
+// ══════════════════════════════════════════
+function renderRVList(){
+  const list = document.getElementById('rv-manual-list');
+  if(!rotVen.length){ list.innerHTML=''; return; }
+  list.innerHTML = rotVen.map((r,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg3);border-radius:6px;font-size:12px">
+      <span class="${r.tipo==='roto'?'badge-roto':'badge-vencido'}">${r.tipo}</span>
+      <span style="flex:1">${r.desc}</span>
+      <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)">×${r.qty}</span>
+      <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text2)">${r.costo?fmtPeso(r.costo*r.qty):'—'}</span>
+      <button onclick="rotVen.splice(${i},1);renderRVList()" style="background:transparent;border:none;color:var(--text3);font-size:14px;cursor:pointer">×</button>
+    </div>`).join('');
+}
+function addRotVen(){
+  const desc = document.getElementById('rv-desc').value.trim();
+  const tipo = document.getElementById('rv-tipo').value;
+  const qty  = parseInt(document.getElementById('rv-qty').value)||1;
+  const costo= parseFloat(document.getElementById('rv-costo').value)||0;
+  if(!desc){ showToast('Ingresá una descripción','error'); return; }
+  rotVen.push({desc,tipo,qty,costo});
+  document.getElementById('rv-desc').value='';
+  document.getElementById('rv-qty').value='1';
+  document.getElementById('rv-costo').value='';
+  renderRVList();
+  showToast('Agregado','success');
+}
+
+// ══════════════════════════════════════════
+// ANÁLISIS
+// ══════════════════════════════════════════
+function renderAnalisis(){
+  const local = document.getElementById('setup-local');
+  const fecha = document.getElementById('setup-fecha').value;
+  document.getElementById('analisis-subtitle').textContent = 
+    `${local.options[local.selectedIndex]?.text||'—'} · ${fecha?formatDate(new Date(fecha+'T12:00:00')):'—'}`;
+
+  const allItems = Object.values(items);
+  const counted  = allItems.filter(it=>it.real!==null);
+  const diffs    = counted.map(it=>({...it,dif:it.real-it.sist,difM:(it.real-it.sist)*it.costo}));
+  const totalBalance = diffs.reduce((s,it)=>s+it.difM,0);
+  const totalNeg  = diffs.filter(it=>it.dif<0);
+  const totalPos  = diffs.filter(it=>it.dif>0);
+  const negMoney  = totalNeg.reduce((s,it)=>s+it.difM,0);
+  const rvRotos   = rotVen.filter(r=>r.tipo==='roto').reduce((s,r)=>s+r.qty*r.costo,0);
+  const rvVenc    = rotVen.filter(r=>r.tipo==='vencido').reduce((s,r)=>s+r.qty*r.costo,0);
+
+  // Stats
+  document.getElementById('stat-row').innerHTML = `
+    <div class="stat-box ${totalBalance<0?'red':'green'}">
+      <div class="label">Balance total</div>
+      <div class="value">${fmtPeso(totalBalance)}</div>
+      <div class="sub">${counted.length}/${allItems.length} contados</div>
+    </div>
+    <div class="stat-box red">
+      <div class="label">Faltantes</div>
+      <div class="value">${totalNeg.length}</div>
+      <div class="sub">${fmtPeso(negMoney)} en costo</div>
+    </div>
+    <div class="stat-box amber">
+      <div class="label">Sobrantes</div>
+      <div class="value">${totalPos.length}</div>
+      <div class="sub">${fmtPeso(totalPos.reduce((s,it)=>s+it.difM,0))}</div>
+    </div>
+    <div class="stat-box purple">
+      <div class="label">Rotos + Vencidos</div>
+      <div class="value">${fmtPeso(rvRotos+rvVenc)}</div>
+      <div class="sub">${rotVen.length} items registrados</div>
+    </div>`;
+
+  // Top negativas
+  const topNeg = [...diffs].filter(it=>it.dif<0).sort((a,b)=>a.difM-b.difM).slice(0,10);
+  document.getElementById('top-negativas').innerHTML = topNeg.length
+    ? topNeg.map(it=>`
+      <div class="dif-list-item">
+        <span class="di-desc" title="${it.desc}">${it.desc}</span>
+        <span class="di-badge neg">${it.dif} uds</span>
+        <span class="di-badge neg">${fmtPeso(it.difM)}</span>
+      </div>`).join('')
+    : '<div class="empty" style="padding:30px"><div class="empty-icon">✅</div><div class="empty-title">Sin faltantes</div></div>';
+
+  // Top positivas
+  const topPos = [...diffs].filter(it=>it.dif>0).sort((a,b)=>b.difM-a.difM).slice(0,10);
+  document.getElementById('top-positivas').innerHTML = topPos.length
+    ? topPos.map(it=>`
+      <div class="dif-list-item">
+        <span class="di-desc" title="${it.desc}">${it.desc}</span>
+        <span class="di-badge pos">+${it.dif} uds</span>
+        <span class="di-badge pos">${fmtPeso(it.difM)}</span>
+      </div>`).join('')
+    : '<div class="empty" style="padding:30px"><div class="empty-icon">✅</div><div class="empty-title">Sin sobrantes</div></div>';
+
+  // Rubro table
+  const tbody = document.getElementById('rubro-table-body');
+  tbody.innerHTML = rubros.map(r=>{
+    const ritems = Object.values(items).filter(it=>it.rub===r);
+    const rcounted = ritems.filter(it=>it.real!==null);
+    const rdifs = rcounted.filter(it=>(it.real-it.sist)!==0);
+    const rmoney = rcounted.reduce((s,it)=>s+((it.real-it.sist)*it.costo),0);
+    return `<tr>
+      <td><span class="rubro-chip">${r}</span></td>
+      <td style="color:var(--text2)">${division[r]||'—'}</td>
+      <td style="text-align:right;font-family:'DM Mono',monospace">${ritems.length}</td>
+      <td style="text-align:right;font-family:'DM Mono',monospace;color:${rcounted.length===ritems.length?'var(--green)':'var(--text)'}">${rcounted.length}</td>
+      <td style="text-align:right;font-family:'DM Mono',monospace;color:${rdifs.length>0?'var(--red)':'var(--text3)'}">${rdifs.length}</td>
+      <td style="text-align:right;font-family:'DM Mono',monospace;color:${rmoney<0?'var(--red)':rmoney>0?'var(--amber)':'var(--text3)'}">${fmtPeso(rmoney)}</td>
+    </tr>`;
+  }).join('');
+
+  // RV list
+  renderRVList();
+
+  // Notas
+  const nc = document.getElementById('analisis-notas-card');
+  if(notas.length){
+    nc.style.display='';
+    document.getElementById('analisis-notas-list').innerHTML = notas.map(n=>`
+      <div class="nota-card">
+        <div class="nota-dot ${n.tipo}"></div>
+        <div class="nota-body">
+          <div class="nota-text">${n.texto}</div>
+          <div class="nota-meta">${n.ts}</div>
+        </div>
+      </div>`).join('');
+  } else { nc.style.display='none'; }
+}
+
+// ══════════════════════════════════════════
+// EXPORT
+// ══════════════════════════════════════════
+function exportarResumen(){
+  loadSheetJS(()=>{
+    const wb = XLSX.utils.book_new();
+
+    // Sheet 1: Inventario completo
+    const rows = [['Código','Descripción','Rubro','Encargado','Exhibición','Depósito','Total Real','Sistema','Diferencia','$ Diferencia','Observación']];
+    Object.entries(items).forEach(([cod,it])=>{
+      const dif = it.real!==null?it.real-it.sist:null;
+      rows.push([cod,it.desc,it.rub,it.encargado||'',
+        it.exhib??'',it.dep??'',it.real??'',it.sist,
+        dif??'',dif!==null?dif*it.costo:'',it.obs]);
+    });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'Inventario');
+
+    // Sheet 2: Rotos y vencidos
+    if(rotVen.length){
+      const rv = [['Descripción','Tipo','Cantidad','Costo unit.','Total']];
+      rotVen.forEach(r=>rv.push([r.desc,r.tipo,r.qty,r.costo,r.qty*r.costo]));
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rv), 'Rotos y Vencidos');
+    }
+
+    // Sheet 3: Notas
+    if(notas.length){
+      const nn = [['Timestamp','Tipo','Nota']];
+      notas.forEach(n=>nn.push([n.ts,n.tipo.toUpperCase(),n.texto]));
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(nn), 'Notas');
+    }
+
+    // Sheet 4: Análisis
+    const allItems = Object.values(items);
+    const counted  = allItems.filter(it=>it.real!==null);
+    const balance  = counted.reduce((s,it)=>s+((it.real-it.sist)*it.costo),0);
+    const anal = [
+      ['ANÁLISIS DE INVENTARIO BREAK'],
+      ['Local', document.getElementById('setup-local').options[document.getElementById('setup-local').selectedIndex]?.text||''],
+      ['Fecha', document.getElementById('setup-fecha').value],
+      ['Responsable', document.getElementById('setup-resp').value],
+      [''],
+      ['Artículos totales', allItems.length],
+      ['Artículos contados', counted.length],
+      ['Balance total ($)', balance],
+      ['Faltantes', counted.filter(it=>(it.real-it.sist)<0).length],
+      ['Sobrantes', counted.filter(it=>(it.real-it.sist)>0).length],
+      ['Rotos + Vencidos ($)', rotVen.reduce((s,r)=>s+r.qty*r.costo,0)],
+    ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(anal), 'Análisis');
+
+    const fecha = document.getElementById('setup-fecha').value||'';
+    XLSX.writeFile(wb, `Inventario_Break_${fecha}.xlsx`);
+    showToast('Exportado correctamente','success');
+  });
+}
+
+// ══════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════
+function fmtPeso(n){
+  if(n==null||isNaN(n)) return '—';
+  const abs = Math.abs(Math.round(n));
+  const str = '$'+abs.toLocaleString('es-AR');
+  return n<0?`-${str}`:str;
+}
+
+function showToast(msg, type='info'){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  clearTimeout(t._t);
+  t._t = setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// Listen for hub context
+window.addEventListener('message', (ev)=>{
+  if(ev.data?.type==='break-context'){
+    const {local,localName,empleado,rol} = ev.data;
+    if(local) document.getElementById('setup-local').value = local;
+    updateMeta();
+    loadEmpleados();
+  }
+});
+</script>
+</body>
+</html>
