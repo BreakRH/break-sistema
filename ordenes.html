@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orden de Trabajo · Break</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --surface: #111111;
+    --surface2: #1a1a1a;
+    --surface3: #222222;
+    --border: #2a2a2a;
+    --border2: #333333;
+    --text: #e8e8e8;
+    --text2: #888888;
+    --text3: #555555;
+    --accent: #c8f135;
+    --accent-dim: rgba(200,241,53,0.12);
+    --accent-dim2: rgba(200,241,53,0.06);
+    --red: #ff4444;
+    --red-dim: rgba(255,68,68,0.12);
+    --yellow: #f5c518;
+    --yellow-dim: rgba(245,197,24,0.12);
+    --green: #4ade80;
+    --green-dim: rgba(74,222,128,0.12);
+    --blue: #60a5fa;
+    --blue-dim: rgba(96,165,250,0.12);
+    --radius: 8px;
+    --radius-lg: 12px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Mono', monospace;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 13px;
+  }
+
+  /* HEADER */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .header-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--accent);
+    letter-spacing: -0.3px;
+  }
+  .header-local {
+    font-size: 11px;
+    color: var(--text2);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 3px 8px;
+    border-radius: 4px;
+  }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 0;
+    padding: 0 20px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  .tab-btn {
+    padding: 10px 16px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text2);
+    cursor: pointer;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* MAIN */
+  .main { padding: 20px; max-width: 1200px; margin: 0 auto; }
+
+  /* SCREEN */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* TOOLBAR */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .toolbar-right { margin-left: auto; display: flex; gap: 8px; }
+
+  /* FILTERS */
+  .filter-group { display: flex; gap: 6px; flex-wrap: wrap; }
+  .filter-chip {
+    padding: 5px 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text2);
+    cursor: pointer;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    transition: all 0.15s;
+  }
+  .filter-chip:hover { border-color: var(--border2); color: var(--text); }
+  .filter-chip.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+
+  /* SEARCH */
+  .search-input {
+    padding: 6px 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    width: 200px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .search-input:focus { border-color: var(--accent); }
+  .search-input::placeholder { color: var(--text3); }
+
+  /* BTN */
+  .btn {
+    padding: 7px 14px;
+    border-radius: var(--radius);
+    border: none;
+    cursor: pointer;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-primary { background: var(--accent); color: #0a0a0a; }
+  .btn-primary:hover { background: #d4f54a; }
+  .btn-ghost { background: var(--surface2); border: 1px solid var(--border); color: var(--text2); }
+  .btn-ghost:hover { border-color: var(--border2); color: var(--text); }
+  .btn-danger { background: var(--red-dim); border: 1px solid var(--red); color: var(--red); }
+  .btn-sm { padding: 4px 8px; font-size: 11px; }
+
+  /* TABLE */
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
+
+  /* BADGES */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 7px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .badge-green { background: var(--green-dim); color: var(--green); }
+  .badge-yellow { background: var(--yellow-dim); color: var(--yellow); }
+  .badge-red { background: var(--red-dim); color: var(--red); }
+  .badge-blue { background: var(--blue-dim); color: var(--blue); }
+  .badge-gray { background: var(--surface3); color: var(--text2); }
+  .badge-accent { background: var(--accent-dim); color: var(--accent); }
+
+  /* PROGRESS DOTS */
+  .progress-dots { display: flex; gap: 3px; align-items: center; }
+  .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--surface3);
+    transition: background 0.2s;
+  }
+  .dot.done { background: var(--green); }
+  .dot.active-dot { background: var(--accent); }
+
+  /* EMPTY */
+  .empty {
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--text3);
+  }
+  .empty-icon { font-size: 32px; margin-bottom: 8px; }
+  .empty-text { font-size: 12px; }
+
+  /* MODAL OVERLAY */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    z-index: 200;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 20px;
+    overflow-y: auto;
+  }
+  .modal-overlay.open { display: flex; }
+
+  /* MODAL */
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-lg);
+    width: 100%;
+    max-width: 680px;
+    margin: auto;
+  }
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .modal-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+  }
+  .modal-close {
+    background: none;
+    border: none;
+    color: var(--text2);
+    cursor: pointer;
+    font-size: 18px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    line-height: 1;
+  }
+  .modal-close:hover { background: var(--surface2); color: var(--text); }
+  .modal-body { padding: 20px; }
+  .modal-footer {
+    padding: 14px 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+
+  /* FORM */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group.span-2 { grid-column: span 2; }
+  .form-group.span-3 { grid-column: span 3; }
+  .form-label { font-size: 10px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.6px; }
+  .form-input, .form-select, .form-textarea {
+    padding: 8px 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    outline: none;
+    transition: border-color 0.15s;
+    width: 100%;
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--accent); }
+  .form-select option { background: var(--surface2); }
+  .form-textarea { resize: vertical; min-height: 60px; }
+  .form-total {
+    padding: 8px 10px;
+    background: var(--accent-dim2);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius);
+    color: var(--accent);
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  /* SECTION DIVIDER */
+  .section-divider {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 4px 0;
+  }
+  .section-divider-label {
+    font-size: 10px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    white-space: nowrap;
+  }
+  .section-divider-line { flex: 1; height: 1px; background: var(--border); }
+
+  /* CHECKBOXES GRID */
+  .checks-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
+  .check-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .check-item:hover { border-color: var(--border2); }
+  .check-item.checked { background: var(--green-dim); border-color: var(--green); }
+  .check-item input[type="checkbox"] { display: none; }
+  .check-box {
+    width: 16px; height: 16px;
+    border: 1.5px solid var(--border2);
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.15s;
+  }
+  .check-item.checked .check-box { background: var(--green); border-color: var(--green); }
+  .check-box-tick { display: none; color: #0a0a0a; font-size: 10px; font-weight: 700; }
+  .check-item.checked .check-box-tick { display: block; }
+  .check-label { font-size: 12px; color: var(--text2); }
+  .check-item.checked .check-label { color: var(--green); }
+
+  /* DETAIL MODAL */
+  .detail-section { margin-bottom: 20px; }
+  .detail-section-title {
+    font-size: 10px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .detail-item { display: flex; flex-direction: column; gap: 2px; }
+  .detail-item-label { font-size: 10px; color: var(--text3); }
+  .detail-item-value { font-size: 13px; color: var(--text); }
+
+  /* LOADING */
+  .loading {
+    text-align: center;
+    padding: 48px;
+    color: var(--text3);
+    font-size: 12px;
+  }
+  .spinner {
+    width: 24px; height: 24px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* TOAST */
+  .toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 999; display: flex; flex-direction: column; gap: 8px; }
+  .toast {
+    padding: 10px 16px;
+    border-radius: var(--radius);
+    font-size: 12px;
+    animation: slideIn 0.2s ease;
+    max-width: 280px;
+  }
+  .toast-success { background: var(--green-dim); border: 1px solid var(--green); color: var(--green); }
+  .toast-error { background: var(--red-dim); border: 1px solid var(--red); color: var(--red); }
+  @keyframes slideIn { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+  /* STATS BAR */
+  .stats-bar {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 120px;
+  }
+  .stat-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.6px; }
+  .stat-value { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; color: var(--text); }
+  .stat-value.accent { color: var(--accent); }
+  .stat-value.red { color: var(--red); }
+  .stat-value.yellow { color: var(--yellow); }
+
+  /* RESPONSIVE */
+  @media (max-width: 600px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .form-grid.cols-3 { grid-template-columns: 1fr 1fr; }
+    .form-group.span-2, .form-group.span-3 { grid-column: span 1; }
+    .detail-grid { grid-template-columns: 1fr; }
+    td, th { padding: 8px 10px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="header-title">Orden de Trabajo</div>
+    <div class="header-local" id="header-local">—</div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <span id="header-date" style="font-size:11px;color:var(--text2);"></span>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('lista')">Lista</button>
+  <button class="tab-btn" onclick="switchTab('nueva')">+ Nueva OT</button>
+</div>
+
+<div class="main">
+
+  <!-- TAB: LISTA -->
+  <div class="screen active" id="tab-lista">
+    <div class="stats-bar" id="stats-bar"></div>
+    <div class="toolbar">
+      <div class="filter-group" id="filter-estado">
+        <button class="filter-chip active" data-filter="todos" onclick="setFilter('todos',this)">Todos</button>
+        <button class="filter-chip" data-filter="por_pagar" onclick="setFilter('por_pagar',this)">Por pagar</button>
+        <button class="filter-chip" data-filter="ya_pagado" onclick="setFilter('ya_pagado',this)">Pagadas</button>
+        <button class="filter-chip" data-filter="pendiente" onclick="setFilter('pendiente',this)">Incompletas</button>
+      </div>
+      <div class="toolbar-right">
+        <input class="search-input" type="text" placeholder="Buscar factura / proveedor..." id="search-input" oninput="renderTabla()">
+        <button class="btn btn-ghost btn-sm" onclick="loadOrdenes()">↺ Actualizar</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>N° Factura</th>
+            <th>Proveedor</th>
+            <th>Tipo</th>
+            <th>Pago</th>
+            <th>Total</th>
+            <th>Progreso</th>
+            <th>Recibido por</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tabla-body">
+          <tr><td colspan="9"><div class="loading"><div class="spinner"></div>Cargando...</div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB: NUEVA OT -->
+  <div class="screen" id="tab-nueva">
+    <div style="max-width:680px;">
+      <div style="margin-bottom:20px;">
+        <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;margin-bottom:4px;" id="form-titulo">Nueva Orden de Trabajo</div>
+        <div style="font-size:11px;color:var(--text2);">Registrá la factura o remito del proveedor</div>
+      </div>
+
+      <div class="form-grid" id="ot-form">
+        <!-- Datos de la factura -->
+        <div class="section-divider">
+          <span class="section-divider-label">Datos del comprobante</span>
+          <div class="section-divider-line"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Fecha</label>
+          <input class="form-input" type="date" id="f-fecha">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Hora</label>
+          <input class="form-input" type="time" id="f-hora">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">N° de Factura / Remito</label>
+          <input class="form-input" type="text" id="f-nro" placeholder="0001-00012345">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tipo de comprobante</label>
+          <select class="form-select" id="f-tipo">
+            <option value="">Seleccionar...</option>
+            <option value="remito">Remito</option>
+            <option value="factura_a">Factura A</option>
+            <option value="factura_b">Factura B</option>
+            <option value="nota_credito">Nota de crédito</option>
+          </select>
+        </div>
+
+        <div class="form-group span-2">
+          <label class="form-label">Proveedor</label>
+          <input class="form-input" type="text" id="f-proveedor" placeholder="Nombre del proveedor" list="proveedores-list">
+          <datalist id="proveedores-list"></datalist>
+        </div>
+
+        <!-- Montos -->
+        <div class="section-divider">
+          <span class="section-divider-label">Montos</span>
+          <div class="section-divider-line"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Subtotal</label>
+          <input class="form-input" type="number" id="f-subtotal" placeholder="0.00" oninput="calcTotal()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">IVA / Impuestos</label>
+          <input class="form-input" type="number" id="f-impuestos" placeholder="0.00" oninput="calcTotal()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Descuentos</label>
+          <input class="form-input" type="number" id="f-descuentos" placeholder="0.00" oninput="calcTotal()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Total</label>
+          <div class="form-total" id="f-total-display">$0.00</div>
+        </div>
+        <input type="hidden" id="f-total">
+
+        <div class="form-group span-2">
+          <label class="form-label">Estado de pago</label>
+          <select class="form-select" id="f-estado-pago">
+            <option value="">Seleccionar...</option>
+            <option value="efectivo">Efectivo</option>
+            <option value="transferencia">Transferencia</option>
+            <option value="mp">Mercado Pago</option>
+            <option value="qr">QR</option>
+            <option value="ya_pagado">Ya pagado</option>
+            <option value="por_pagar">Por pagar</option>
+          </select>
+        </div>
+
+        <!-- Recepción -->
+        <div class="section-divider">
+          <span class="section-divider-label">Recepción</span>
+          <div class="section-divider-line"></div>
+        </div>
+
+        <div class="form-group span-2">
+          <label class="form-label">Recibido por</label>
+          <input class="form-input" type="text" id="f-recepcion" placeholder="Nombre del empleado">
+        </div>
+
+        <div class="form-group span-2">
+          <label class="form-label">Notas</label>
+          <textarea class="form-textarea" id="f-notas" placeholder="Observaciones adicionales..."></textarea>
+        </div>
+
+        <!-- Checkboxes -->
+        <div class="section-divider">
+          <span class="section-divider-label">Estado de activación</span>
+          <div class="section-divider-line"></div>
+        </div>
+
+        <div class="form-group span-2">
+          <div class="checks-grid" id="checks-grid">
+            <label class="check-item" onclick="toggleCheck(this)">
+              <input type="checkbox" id="c-repuesto">
+              <div class="check-box"><span class="check-box-tick">✓</span></div>
+              <span class="check-label">Repuesto en góndola</span>
+            </label>
+            <label class="check-item" onclick="toggleCheck(this)">
+              <input type="checkbox" id="c-registrado">
+              <div class="check-box"><span class="check-box-tick">✓</span></div>
+              <span class="check-label">Registrado en sistema</span>
+            </label>
+            <label class="check-item" onclick="toggleCheck(this)">
+              <input type="checkbox" id="c-activo-pya">
+              <div class="check-box"><span class="check-box-tick">✓</span></div>
+              <span class="check-label">Activado PYA</span>
+            </label>
+            <label class="check-item" onclick="toggleCheck(this)">
+              <input type="checkbox" id="c-activo-mp">
+              <div class="check-box"><span class="check-box-tick">✓</span></div>
+              <span class="check-label">Activado MP</span>
+            </label>
+            <label class="check-item" onclick="toggleCheck(this)">
+              <input type="checkbox" id="c-activo-rappi">
+              <div class="check-box"><span class="check-box-tick">✓</span></div>
+              <span class="check-label">Activado Rappi</span>
+            </label>
+            <label class="check-item" onclick="toggleCheck(this)">
+              <input type="checkbox" id="c-check-factura">
+              <div class="check-box"><span class="check-box-tick">✓</span></div>
+              <span class="check-label">Check factura</span>
+            </label>
+            <label class="check-item" onclick="toggleCheck(this)">
+              <input type="checkbox" id="c-check-nocturno">
+              <div class="check-box"><span class="check-box-tick">✓</span></div>
+              <span class="check-label">Check nocturno</span>
+            </label>
+            <label class="check-item" onclick="toggleCheck(this)">
+              <input type="checkbox" id="c-revision-precios">
+              <div class="check-box"><span class="check-box-tick">✓</span></div>
+              <span class="check-label">Revisión de precios</span>
+            </label>
+          </div>
+        </div>
+
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:20px;">
+        <button class="btn btn-primary" onclick="submitOT()">
+          <span id="submit-icon">＋</span> <span id="submit-label">Guardar OT</span>
+        </button>
+        <button class="btn btn-ghost" onclick="cancelEdit()">Cancelar</button>
+        <button class="btn btn-danger btn-sm" id="btn-eliminar" style="display:none;margin-left:auto;" onclick="eliminarOT()">Eliminar</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL: DETALLE OT -->
+<div class="modal-overlay" id="modal-detalle">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-titulo">Orden de Trabajo</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cerrar</button>
+      <button class="btn btn-ghost" id="btn-modal-editar" onclick="editFromModal()" style="display:none;">✎ Editar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+const SUPABASE_URL = 'https://oiuualqixcccfhtpcist.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pdXVhbHFpeGNjY2ZodHBjaXN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDk4MjgwMDAsImV4cCI6MjAyNTQwNDAwMH0.placeholder';
+
+// ─── STATE ───────────────────────────────────────────────────
+let localKey = '';
+let localName = '';
+let rolActual = 'empleado'; // 'empleado' | 'encargado' | 'admin'
+let ordenes = [];
+let filtroActivo = 'todos';
+let editingId = null;
+let modalOrdenId = null;
+
+// ─── INIT ────────────────────────────────────────────────────
+window.addEventListener('message', e => {
+  if (e.data?.type === 'break-context') {
+    localKey = e.data.local || '';
+    localName = e.data.localName || localKey;
+    rolActual = e.data.rol || 'empleado';
+    updateHeader();
+    loadOrdenes();
+  }
+});
+
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('local')) {
+  localKey = urlParams.get('local');
+  localName = capitalizeLocal(localKey);
+  updateHeader();
+  loadOrdenes();
+} else {
+  // fallback: esperar postMessage o usar localStorage
+  const stored = localStorage.getItem('break_local');
+  if (stored) {
+    localKey = stored;
+    localName = capitalizeLocal(localKey);
+    updateHeader();
+    loadOrdenes();
+  } else {
+    updateHeader();
+    loadOrdenes();
+  }
+}
+
+// Fecha/hora inicial en form
+document.getElementById('f-fecha').value = today();
+document.getElementById('f-hora').value = nowTime();
+document.getElementById('header-date').textContent = formatDateDisplay(today());
+
+function capitalizeLocal(k) {
+  const map = { palermo:'Thames · Palermo', belgrano:'Roosevelt · Belgrano', barrio_chino:'Juramento · B. Chino', san_telmo:'Independencia · San Telmo' };
+  return map[k] || k;
+}
+
+function updateHeader() {
+  document.getElementById('header-local').textContent = localName || '—';
+}
+
+// ─── SUPABASE ────────────────────────────────────────────────
+async function sbFetch(path, opts = {}) {
+  const headers = {
+    'apikey': SUPABASE_KEY,
+    'Authorization': `Bearer ${SUPABASE_KEY}`,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=representation',
+    ...opts.headers
+  };
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, { ...opts, headers });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(err);
+  }
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+// ─── LOAD ────────────────────────────────────────────────────
+async function loadOrdenes() {
+  try {
+    let query = 'ordenes_trabajo?order=fecha.desc,created_at.desc';
+    if (localKey) query += `&local=eq.${localKey}`;
+    const data = await sbFetch(query);
+    ordenes = data || [];
+    renderStats();
+    renderTabla();
+    cargarProveedoresDatalist();
+  } catch(e) {
+    showToast('Error al cargar órdenes: ' + e.message, 'error');
+    renderTablaError();
+  }
+}
+
+// ─── STATS ───────────────────────────────────────────────────
+function renderStats() {
+  const total = ordenes.length;
+  const porPagar = ordenes.filter(o => o.estado_pago === 'por_pagar');
+  const totalPorPagar = porPagar.reduce((s,o) => s + (parseFloat(o.total)||0), 0);
+  const incompletas = ordenes.filter(o => !isComplete(o)).length;
+
+  document.getElementById('stats-bar').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">Total OT</div>
+      <div class="stat-value accent">${total}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Por pagar</div>
+      <div class="stat-value red">${porPagar.length}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Monto por pagar</div>
+      <div class="stat-value yellow">${formatMoney(totalPorPagar)}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Incompletas</div>
+      <div class="stat-value">${incompletas}</div>
+    </div>
+  `;
+}
+
+// ─── TABLA ───────────────────────────────────────────────────
+function renderTabla() {
+  const search = document.getElementById('search-input').value.toLowerCase();
+  let data = ordenes;
+
+  if (filtroActivo === 'por_pagar') data = data.filter(o => o.estado_pago === 'por_pagar');
+  else if (filtroActivo === 'ya_pagado') data = data.filter(o => o.estado_pago === 'ya_pagado');
+  else if (filtroActivo === 'pendiente') data = data.filter(o => !isComplete(o));
+
+  if (search) data = data.filter(o =>
+    (o.nro_factura||'').toLowerCase().includes(search) ||
+    (o.proveedor||'').toLowerCase().includes(search)
+  );
+
+  const tbody = document.getElementById('tabla-body');
+  if (!data.length) {
+    tbody.innerHTML = `<tr><td colspan="9"><div class="empty"><div class="empty-icon">📄</div><div class="empty-text">No hay órdenes</div></div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = data.map(o => {
+    const checks = checkCount(o);
+    const dots = buildDots(o);
+    return `
+      <tr style="cursor:pointer;" onclick="openDetalle('${o.id}')">
+        <td style="white-space:nowrap;">${formatDateDisplay(o.fecha)}<br><span style="font-size:10px;color:var(--text3);">${o.hora||''}</span></td>
+        <td style="font-weight:500;">${o.nro_factura||'—'}</td>
+        <td>${o.proveedor||'—'}</td>
+        <td>${badgeTipo(o.tipo_comprobante)}</td>
+        <td>${badgePago(o.estado_pago)}</td>
+        <td style="font-weight:500;color:var(--accent);">${formatMoney(o.total)}</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:6px;">
+            ${dots}
+            <span style="font-size:10px;color:var(--text3);">${checks.done}/${checks.total}</span>
+          </div>
+        </td>
+        <td style="color:var(--text2);font-size:11px;">${o.recepcion||'—'}</td>
+        <td onclick="event.stopPropagation();">
+          ${rolActual === 'admin' ? `<button class="btn btn-ghost btn-sm" onclick="editOT('${o.id}')">✎</button>` : ''}
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function renderTablaError() {
+  document.getElementById('tabla-body').innerHTML = `<tr><td colspan="9"><div class="empty"><div class="empty-icon">⚠</div><div class="empty-text">Error al cargar datos</div></div></td></tr>`;
+}
+
+function buildDots(o) {
+  const fields = ['repuesto','registrado','activo_pya','activo_mp','activo_rappi','check_factura','check_nocturno','revision_precios'];
+  return `<div class="progress-dots">${fields.map(f => `<div class="dot ${o[f] ? 'done' : ''}"></div>`).join('')}</div>`;
+}
+
+function checkCount(o) {
+  const fields = ['repuesto','registrado','activo_pya','activo_mp','activo_rappi','check_factura','check_nocturno','revision_precios'];
+  const done = fields.filter(f => o[f]).length;
+  return { done, total: fields.length };
+}
+
+function isComplete(o) {
+  const fields = ['repuesto','registrado','activo_pya','activo_mp','activo_rappi','check_factura','check_nocturno','revision_precios'];
+  return fields.every(f => o[f]);
+}
+
+// ─── BADGES ──────────────────────────────────────────────────
+function badgeTipo(t) {
+  const map = { remito:'gray', factura_a:'blue', factura_b:'blue', nota_credito:'yellow' };
+  const labels = { remito:'Remito', factura_a:'Fact. A', factura_b:'Fact. B', nota_credito:'N. Crédito' };
+  const cls = map[t] || 'gray';
+  return `<span class="badge badge-${cls}">${labels[t]||t||'—'}</span>`;
+}
+
+function badgePago(p) {
+  const map = { efectivo:'green', transferencia:'blue', mp:'blue', qr:'blue', ya_pagado:'green', por_pagar:'red' };
+  const labels = { efectivo:'Efectivo', transferencia:'Transf.', mp:'MP', qr:'QR', ya_pagado:'Pagado', por_pagar:'Por pagar' };
+  const cls = map[p] || 'gray';
+  return `<span class="badge badge-${cls}">${labels[p]||p||'—'}</span>`;
+}
+
+// ─── DETALLE MODAL ───────────────────────────────────────────
+function openDetalle(id) {
+  const o = ordenes.find(x => x.id === id);
+  if (!o) return;
+  modalOrdenId = id;
+
+  document.getElementById('modal-titulo').textContent = `${o.nro_factura || 'OT'} · ${o.proveedor || ''}`;
+
+  const checks = [
+    { key:'repuesto', label:'Repuesto en góndola' },
+    { key:'registrado', label:'Registrado en sistema' },
+    { key:'activo_pya', label:'Activado PYA' },
+    { key:'activo_mp', label:'Activado MP' },
+    { key:'activo_rappi', label:'Activado Rappi' },
+    { key:'check_factura', label:'Check factura' },
+    { key:'check_nocturno', label:'Check nocturno' },
+    { key:'revision_precios', label:'Revisión de precios' },
+  ];
+
+  document.getElementById('modal-body').innerHTML = `
+    <div class="detail-section">
+      <div class="detail-section-title">Datos del comprobante</div>
+      <div class="detail-grid">
+        <div class="detail-item"><div class="detail-item-label">Fecha</div><div class="detail-item-value">${formatDateDisplay(o.fecha)} ${o.hora||''}</div></div>
+        <div class="detail-item"><div class="detail-item-label">N° Factura</div><div class="detail-item-value">${o.nro_factura||'—'}</div></div>
+        <div class="detail-item"><div class="detail-item-label">Proveedor</div><div class="detail-item-value">${o.proveedor||'—'}</div></div>
+        <div class="detail-item"><div class="detail-item-label">Tipo</div><div class="detail-item-value">${badgeTipo(o.tipo_comprobante)}</div></div>
+      </div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">Montos</div>
+      <div class="detail-grid">
+        <div class="detail-item"><div class="detail-item-label">Subtotal</div><div class="detail-item-value">${formatMoney(o.subtotal)}</div></div>
+        <div class="detail-item"><div class="detail-item-label">IVA / Impuestos</div><div class="detail-item-value">${formatMoney(o.impuestos)}</div></div>
+        <div class="detail-item"><div class="detail-item-label">Descuentos</div><div class="detail-item-value">${formatMoney(o.descuentos)}</div></div>
+        <div class="detail-item"><div class="detail-item-label">Total</div><div class="detail-item-value" style="color:var(--accent);font-size:16px;font-weight:600;">${formatMoney(o.total)}</div></div>
+        <div class="detail-item"><div class="detail-item-label">Estado de pago</div><div class="detail-item-value">${badgePago(o.estado_pago)}</div></div>
+        <div class="detail-item"><div class="detail-item-label">Recibido por</div><div class="detail-item-value">${o.recepcion||'—'}</div></div>
+      </div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">Activación</div>
+      <div class="checks-grid">
+        ${checks.map(c => `
+          <div class="check-item ${o[c.key] ? 'checked' : ''}" style="cursor:default;">
+            <div class="check-box"><span class="check-box-tick">✓</span></div>
+            <span class="check-label">${c.label}</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+    ${o.notas ? `<div class="detail-section"><div class="detail-section-title">Notas</div><div style="font-size:12px;color:var(--text2);line-height:1.5;">${o.notas}</div></div>` : ''}
+  `;
+
+  document.getElementById('modal-detalle').classList.add('open');
+  const btnEditar = document.getElementById('btn-modal-editar');
+  if (btnEditar) btnEditar.style.display = rolActual === 'admin' ? '' : 'none';
+}
+
+function closeModal() {
+  document.getElementById('modal-detalle').classList.remove('open');
+  modalOrdenId = null;
+}
+
+function editFromModal() {
+  closeModal();
+  if (modalOrdenId) editOT(modalOrdenId);
+}
+
+// ─── FORM ────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(`tab-${tab}`).classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    if (b.textContent.includes(tab === 'lista' ? 'Lista' : 'Nueva')) b.classList.add('active');
+  });
+  if (tab === 'nueva' && !editingId) resetForm();
+}
+
+function resetForm() {
+  editingId = null;
+  document.getElementById('form-titulo').textContent = 'Nueva Orden de Trabajo';
+  document.getElementById('submit-icon').textContent = '＋';
+  document.getElementById('submit-label').textContent = 'Guardar OT';
+  document.getElementById('btn-eliminar').style.display = 'none';
+
+  document.getElementById('f-fecha').value = today();
+  document.getElementById('f-hora').value = nowTime();
+  document.getElementById('f-nro').value = '';
+  document.getElementById('f-tipo').value = '';
+  document.getElementById('f-proveedor').value = '';
+  document.getElementById('f-subtotal').value = '';
+  document.getElementById('f-impuestos').value = '';
+  document.getElementById('f-descuentos').value = '';
+  document.getElementById('f-total').value = '';
+  document.getElementById('f-total-display').textContent = '$0.00';
+  document.getElementById('f-estado-pago').value = '';
+  document.getElementById('f-recepcion').value = '';
+  document.getElementById('f-notas').value = '';
+
+  // Reset checks
+  const checkIds = ['c-repuesto','c-registrado','c-activo-pya','c-activo-mp','c-activo-rappi','c-check-factura','c-check-nocturno','c-revision-precios'];
+  checkIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.checked = false;
+      el.closest('.check-item').classList.remove('checked');
+    }
+  });
+}
+
+function editOT(id) {
+  if (rolActual !== 'admin') { showToast('Solo el admin puede editar órdenes', 'error'); return; }
+  const o = ordenes.find(x => x.id === id);
+  if (!o) return;
+  editingId = id;
+
+  switchTab('nueva');
+  document.getElementById('form-titulo').textContent = 'Editar Orden de Trabajo';
+  document.getElementById('submit-icon').textContent = '✓';
+  document.getElementById('submit-label').textContent = 'Guardar cambios';
+  document.getElementById('btn-eliminar').style.display = 'inline-flex';
+
+  document.getElementById('f-fecha').value = o.fecha || today();
+  document.getElementById('f-hora').value = o.hora || '';
+  document.getElementById('f-nro').value = o.nro_factura || '';
+  document.getElementById('f-tipo').value = o.tipo_comprobante || '';
+  document.getElementById('f-proveedor').value = o.proveedor || '';
+  document.getElementById('f-subtotal').value = o.subtotal || '';
+  document.getElementById('f-impuestos').value = o.impuestos || '';
+  document.getElementById('f-descuentos').value = o.descuentos || '';
+  document.getElementById('f-estado-pago').value = o.estado_pago || '';
+  document.getElementById('f-recepcion').value = o.recepcion || '';
+  document.getElementById('f-notas').value = o.notas || '';
+  calcTotal();
+
+  const map = {
+    'c-repuesto': o.repuesto,
+    'c-registrado': o.registrado,
+    'c-activo-pya': o.activo_pya,
+    'c-activo-mp': o.activo_mp,
+    'c-activo-rappi': o.activo_rappi,
+    'c-check-factura': o.check_factura,
+    'c-check-nocturno': o.check_nocturno,
+    'c-revision-precios': o.revision_precios,
+  };
+  Object.entries(map).forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.checked = !!val;
+      if (val) el.closest('.check-item').classList.add('checked');
+      else el.closest('.check-item').classList.remove('checked');
+    }
+  });
+}
+
+function cancelEdit() {
+  editingId = null;
+  resetForm();
+  switchTab('lista');
+}
+
+function calcTotal() {
+  const sub = parseFloat(document.getElementById('f-subtotal').value) || 0;
+  const imp = parseFloat(document.getElementById('f-impuestos').value) || 0;
+  const desc = parseFloat(document.getElementById('f-descuentos').value) || 0;
+  const total = sub + imp - desc;
+  document.getElementById('f-total').value = total;
+  document.getElementById('f-total-display').textContent = formatMoney(total);
+}
+
+function toggleCheck(el) {
+  el.classList.toggle('checked');
+  const cb = el.querySelector('input[type="checkbox"]');
+  if (cb) cb.checked = !cb.checked;
+}
+
+async function submitOT() {
+  const nro = document.getElementById('f-nro').value.trim();
+  const proveedor = document.getElementById('f-proveedor').value.trim();
+  const tipo = document.getElementById('f-tipo').value;
+  const estadoPago = document.getElementById('f-estado-pago').value;
+
+  if (!nro) { showToast('Ingresá el número de factura', 'error'); return; }
+  if (!proveedor) { showToast('Ingresá el proveedor', 'error'); return; }
+  if (!tipo) { showToast('Seleccioná el tipo de comprobante', 'error'); return; }
+  if (!estadoPago) { showToast('Seleccioná el estado de pago', 'error'); return; }
+
+  const payload = {
+    local: localKey,
+    fecha: document.getElementById('f-fecha').value,
+    hora: document.getElementById('f-hora').value,
+    nro_factura: nro,
+    tipo_comprobante: tipo,
+    proveedor: proveedor,
+    subtotal: parseFloat(document.getElementById('f-subtotal').value) || 0,
+    impuestos: parseFloat(document.getElementById('f-impuestos').value) || 0,
+    descuentos: parseFloat(document.getElementById('f-descuentos').value) || 0,
+    total: parseFloat(document.getElementById('f-total').value) || 0,
+    estado_pago: estadoPago,
+    recepcion: document.getElementById('f-recepcion').value.trim(),
+    notas: document.getElementById('f-notas').value.trim(),
+    repuesto: document.getElementById('c-repuesto').checked,
+    registrado: document.getElementById('c-registrado').checked,
+    activo_pya: document.getElementById('c-activo-pya').checked,
+    activo_mp: document.getElementById('c-activo-mp').checked,
+    activo_rappi: document.getElementById('c-activo-rappi').checked,
+    check_factura: document.getElementById('c-check-factura').checked,
+    check_nocturno: document.getElementById('c-check-nocturno').checked,
+    revision_precios: document.getElementById('c-revision-precios').checked,
+    updated_at: new Date().toISOString(),
+  };
+
+  try {
+    if (editingId) {
+      await sbFetch(`ordenes_trabajo?id=eq.${editingId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      });
+      showToast('Orden actualizada', 'success');
+    } else {
+      payload.created_at = new Date().toISOString();
+      await sbFetch('ordenes_trabajo', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      showToast('Orden creada', 'success');
+    }
+    cancelEdit();
+    loadOrdenes();
+  } catch(e) {
+    showToast('Error al guardar: ' + e.message, 'error');
+  }
+}
+
+async function eliminarOT() {
+  if (!editingId) return;
+  if (!confirm('¿Eliminar esta orden de trabajo? Esta acción no se puede deshacer.')) return;
+  try {
+    await sbFetch(`ordenes_trabajo?id=eq.${editingId}`, { method: 'DELETE' });
+    showToast('Orden eliminada', 'success');
+    cancelEdit();
+    loadOrdenes();
+  } catch(e) {
+    showToast('Error al eliminar: ' + e.message, 'error');
+  }
+}
+
+// ─── FILTERS ─────────────────────────────────────────────────
+function setFilter(f, el) {
+  filtroActivo = f;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderTabla();
+}
+
+// ─── DATALIST PROVEEDORES ────────────────────────────────────
+// Fuente principal: proveedores_pago. Fallback: nombres ya usados en órdenes.
+let proveedoresPago = [];
+
+async function cargarProveedoresDatalist() {
+  try {
+    const data = await sbFetch('proveedores_pago?activo=eq.true&order=nombre.asc');
+    proveedoresPago = data || [];
+  } catch(e) {
+    proveedoresPago = [];
+  }
+  const desdeTabla   = proveedoresPago.map(p => p.nombre);
+  const desdeOrdenes = ordenes.map(o => o.proveedor).filter(Boolean);
+  const todos = [...new Set([...desdeTabla, ...desdeOrdenes])].sort();
+  const dl = document.getElementById('proveedores-list');
+  dl.innerHTML = todos.map(n => `<option value="${n}">`).join('');
+}
+
+// ─── UTILS ───────────────────────────────────────────────────
+function today() {
+  return new Date().toISOString().split('T')[0];
+}
+
+function nowTime() {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+function formatDateDisplay(d) {
+  if (!d) return '—';
+  const [y,m,day] = d.split('-');
+  return `${day}/${m}/${y}`;
+}
+
+function formatMoney(v) {
+  const n = parseFloat(v) || 0;
+  return '$' + n.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function showToast(msg, type = 'success') {
+  const c = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = `toast toast-${type}`;
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+
+// Close modal on overlay click
+document.getElementById('modal-detalle').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+</script>
+</body>
+</html>

@@ -1510,6 +1510,24 @@
       <div class="module-desc">panel completo · dashboard · tickets</div>
     </div>
 
+    <div class="module-card" id="card-ordenes"
+         style="--card-accent:var(--blue);--icon-bg:var(--blue-bg)"
+         onclick="openModule('ordenes')">
+      <div class="module-badge badge-new">nuevo</div>
+      <div class="module-icon">🧾</div>
+      <div class="module-name">Orden de Trabajo</div>
+      <div class="module-desc">facturas · recepción · activación</div>
+    </div>
+
+    <div class="module-card" id="card-pagos"
+         style="--card-accent:var(--red);--icon-bg:var(--red-bg);display:none"
+         onclick="openModule('pagos')">
+      <div class="module-badge badge-new">nuevo</div>
+      <div class="module-icon">💳</div>
+      <div class="module-name">Cuentas por Pagar</div>
+      <div class="module-desc">semáforo · vencimientos · proveedores</div>
+    </div>
+
     <div class="module-card wide" id="card-turno-admin"
          style="--card-accent:var(--blue);--icon-bg:var(--blue-bg);display:none"
          onclick="admAbrirPanelTurno()">
@@ -2780,6 +2798,8 @@ function goTo(screen) {
     'deudas':  'screen-deudas',
     'remitos': 'screen-remitos',
     'inventario': 'screen-inventario',
+    'ordenes': 'screen-ordenes',
+    'pagos':   'screen-pagos',
   };
   const id = map[screen] || screen;
   const el = document.getElementById(id);
@@ -2802,6 +2822,8 @@ function openModule(mod) {
   if (mod === 'pedidos') { pedidosOpen(); return; }
   if (mod === 'remitos') { remitosOpen(); return; }
   if (mod === 'inventario') { inventarioOpen(); return; }
+  if (mod === 'ordenes') { ordenesOpen(); return; }
+  if (mod === 'pagos') { pagosOpen(); return; }
 }
 
 function openForm(tipo) {
@@ -3009,6 +3031,8 @@ async function admValidarPin() {
     if (cardAdmin) cardAdmin.style.display = 'block';
     const cardPedidos = document.getElementById('card-pedidos');
     if (cardPedidos) cardPedidos.style.display = 'block';
+    const cardPagos = document.getElementById('card-pagos');
+    if (cardPagos) cardPagos.style.display = 'block';
     admActualizarCardTurno();
 
     document.getElementById('hub-emp-name').textContent = 'Administrador';
@@ -3065,6 +3089,8 @@ function selRol(rol) {
     if (cardAdmin) cardAdmin.style.display = 'none';
     const cardPedidos = document.getElementById('card-pedidos');
     if (cardPedidos) cardPedidos.style.display = 'none';
+    const cardPagos = document.getElementById('card-pagos');
+    if (cardPagos) cardPagos.style.display = 'none';
     admPinInput = '';
     const admInput = document.getElementById('adm-pin-input');
     if (admInput) { admInput.value = ''; admInput.style.borderColor = ''; }
@@ -5327,9 +5353,53 @@ function inventarioOpen() {
   }, 0);
 }
 
-// ═══════════════════════════════════════
-// NOTIFICACIÓN PEDIDOS EN HUB
-// ═══════════════════════════════════════
+// === MODULO ORDENES DE TRABAJO ===
+function ordenesOpen() {
+  goTo('ordenes');
+  const badge = document.getElementById('badge-ordenes-local');
+  if (badge) badge.textContent = LOCALES[state.local] || '--';
+  const iframe = document.getElementById('ordenes-iframe');
+  const ctx = {
+    type: 'break-context',
+    local: state.local,
+    localName: LOCALES[state.local] || '',
+    turno: state.turno,
+    empleado: state.empleado_nombre,
+    rol: state.rol
+  };
+  iframe.src = '';
+  setTimeout(() => {
+    iframe.src = 'ordenes.html';
+    iframe.onload = function() {
+      try { iframe.contentWindow.postMessage(ctx, '*'); } catch(e) {}
+    };
+  }, 0);
+}
+
+// === MODULO CUENTAS POR PAGAR ===
+function pagosOpen() {
+  goTo('pagos');
+  const badge = document.getElementById('badge-pagos-local');
+  if (badge) badge.textContent = LOCALES[state.local] || '--';
+  const iframe = document.getElementById('pagos-iframe');
+  const ctx = {
+    type: 'break-context',
+    local: state.local,
+    localName: LOCALES[state.local] || '',
+    turno: state.turno,
+    empleado: state.empleado_nombre,
+    rol: state.rol
+  };
+  iframe.src = '';
+  setTimeout(() => {
+    iframe.src = 'pagos.html';
+    iframe.onload = function() {
+      try { iframe.contentWindow.postMessage(ctx, '*'); } catch(e) {}
+    };
+  }, 0);
+}
+
+
 async function checkPedidosPendientes() {
   const localMap = {palermo:'T', belgrano:'R', barrio_chino:'J', san_telmo:'S'};
   const tk = state.local ? localMap[state.local] : null;
@@ -5412,6 +5482,36 @@ async function checkPedidosPendientes() {
   <iframe
     id="inventario-iframe"
     src="inventario.html"
+    style="flex:1;border:none;width:100%;min-height:0"
+    allow="clipboard-write"
+  ></iframe>
+</div>
+
+<!-- SCREEN: ORDENES DE TRABAJO -->
+<div class="screen" id="screen-ordenes" style="flex-direction:column">
+  <div class="topbar">
+    <div class="topbar-back" onclick="goTo('hub')">&#8592;</div>
+    <span class="topbar-title">Orden de Trabajo</span>
+    <span class="topbar-badge" id="badge-ordenes-local">--</span>
+  </div>
+  <iframe
+    id="ordenes-iframe"
+    src="ordenes.html"
+    style="flex:1;border:none;width:100%;min-height:0"
+    allow="clipboard-write"
+  ></iframe>
+</div>
+
+<!-- SCREEN: CUENTAS POR PAGAR -->
+<div class="screen" id="screen-pagos" style="flex-direction:column">
+  <div class="topbar">
+    <div class="topbar-back" onclick="goTo('hub')">&#8592;</div>
+    <span class="topbar-title">Cuentas por Pagar</span>
+    <span class="topbar-badge" id="badge-pagos-local">--</span>
+  </div>
+  <iframe
+    id="pagos-iframe"
+    src="pagos.html"
     style="flex:1;border:none;width:100%;min-height:0"
     allow="clipboard-write"
   ></iframe>

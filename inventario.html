@@ -486,9 +486,21 @@ input,select,textarea{font-family:'Syne',sans-serif}
     <span>Responsable:</span><strong id="meta-resp">—</strong>
   </div>
   <div class="topbar-right">
+    <span id="sync-indicator" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3)"></span>
     <button class="btn-ghost" onclick="exportarResumen()">↓ Exportar</button>
     <button class="btn-primary" onclick="goPhase('analisis')">Ver análisis →</button>
   </div>
+</div>
+
+<!-- RESTORE BANNER -->
+<div id="restore-banner" style="display:none;align-items:center;gap:12px;padding:10px 24px;background:rgba(124,111,255,.12);border-bottom:1px solid rgba(124,111,255,.25)">
+  <span style="font-size:18px">🔄</span>
+  <div style="flex:1">
+    <div style="font-size:12px;font-weight:700;color:var(--accent2)">Sesión de inventario guardada encontrada</div>
+    <div style="font-size:11px;color:var(--text3);margin-top:2px;font-family:'DM Mono',monospace" id="restore-info"></div>
+  </div>
+  <button class="btn-primary" onclick="doRestore()" style="font-size:12px">↩ Restaurar</button>
+  <button class="btn-ghost" onclick="dismissRestore()" style="font-size:12px">Ignorar</button>
 </div>
 
 <!-- PROGRESS -->
@@ -765,6 +777,19 @@ input,select,textarea{font-family:'Syne',sans-serif}
         <div id="analisis-notas-list"></div>
       </div>
 
+      <!-- RECONTEO AUTOMÁTICO -->
+      <div class="card analisis-wide">
+        <div class="card-title">Reconteo sugerido — 30 artículos prioritarios</div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:12px">
+          Artículos seleccionados por: diferencia negativa, alto valor en costo, y artículos clave por rubro sin contar. Recontar estos para validar el inventario.
+        </div>
+        <div id="reconteo-list" class="dif-list"></div>
+        <div style="margin-top:12px;display:flex;gap:8px">
+          <button class="btn-ghost" onclick="generarReconteo()" style="font-size:12px">⟳ Regenerar lista</button>
+          <button class="btn-ghost" onclick="exportarReconteo()" style="font-size:12px">↓ Exportar lista</button>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -795,19 +820,363 @@ const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 const SB_HDR = {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};
 
 // ══════════════════════════════════════════
+// ══════════════════════════════════════════
 // STATE
 // ══════════════════════════════════════════
-let articulosRaw = [];      // todos los artículos del Excel limpio
-let articulosFilt = [];     // después de filtrar combos/promos/etc
-let rubros = [];            // lista de rubros únicos
-let division = {};          // {rubro: encargado}
-let items = {};             // {codigo: {desc,rubro,sist,exhib,dep,real,obs,encargado,costo,pventa}}
+let articulosRaw = [];
+let articulosFilt = [];
+let rubros = [];
+let division = {};
+let items = {};
 let empleados = [];
 let currentRubro = null;
-let obsTarget = null;       // codigo del item en edición
-let notas = [];             // [{tipo,texto,ts}]
-let rotVen = [];            // [{desc,tipo,qty,costo}]
+let obsTarget = null;
+let notas = [];
+let rotVen = [];
 let filterKeywords = ['PROMO','COMBO','RECARGA','COMISION','HIELO'];
+
+// ID único de sesión de inventario activo (local + fecha)
+let sessionKey = null;   // ej: "palermo_2026-04-01"
+let sbSessionId = null;  // UUID de la fila en Supabase
+let saveTimer = null;    // debounce para guardado automático
+let lastSyncAt = null;
+
+// ══════════════════════════════════════════
+// PERSISTENCIA — CAPA 1: localStorage
+// ══════════════════════════════════════════
+function lsKey(){ return 'break_inv_' + (sessionKey||'draft'); }
+
+function saveLocal(){
+  if(!sessionKey) return;
+  try{
+    const snap = {
+      sessionKey,
+      meta:{
+        local: document.getElementById('setup-local').value,
+        fecha: document.getElementById('setup-fecha').value,
+        resp:  document.getElementById('setup-resp').value,
+        tipo:  document.getElementById('setup-tipo').value,
+      },
+      items, rubros, division, notas, rotVen,
+      currentPhase: document.querySelector('.phase-tab.active')?.id?.replace('tab-','') || 'setup',
+      savedAt: new Date().toISOString()
+    };
+    localStorage.setItem(lsKey(), JSON.stringify(snap));
+  } catch(e){ console.warn('localStorage save failed', e); }
+}
+
+function loadLocal(){
+  const allKeys = Object.keys(localStorage).filter(k=>k.startsWith('break_inv_'));
+  if(!allKeys.length) return null;
+  let latest = null;
+  allKeys.forEach(k=>{
+    try{
+      const s = JSON.parse(localStorage.getItem(k));
+      if(!latest || s.savedAt > latest.savedAt) latest = s;
+    }catch(e){}
+  });
+  return latest;
+}
+
+function clearLocalSession(){
+  if(sessionKey) localStorage.removeItem(lsKey());
+}
+
+// ══════════════════════════════════════════
+// PERSISTENCIA — CAPA 2: Supabase por rubro
+// Cada rubro = 1 fila → dos tablets nunca se pisan
+// ══════════════════════════════════════════
+
+// Cache de IDs de Supabase por rubro: { rubro → uuid }
+const sbRubroIds = {};
+
+// Guarda UN rubro específico. Si no existe lo inserta, si existe lo actualiza.
+async function sbSaveRubro(rubro){
+  if(!sessionKey) return;
+  const itemsRubro = {};
+  Object.entries(items).forEach(([cod, it])=>{ if(it.rub === rubro) itemsRubro[cod] = it; });
+
+  const payload = {
+    session_key: sessionKey,
+    local:       document.getElementById('setup-local').value,
+    fecha:       document.getElementById('setup-fecha').value,
+    responsable: document.getElementById('setup-resp').value,
+    rubro:       rubro,
+    items_rubro: itemsRubro,
+    encargado:   division[rubro] || '',
+    updated_at:  new Date().toISOString()
+  };
+
+  try{
+    if(sbRubroIds[rubro]){
+      // UPDATE — solo toca esta fila
+      await fetch(`${SB_URL}/rest/v1/inventarios_rubros?id=eq.${sbRubroIds[rubro]}`,{
+        method:'PATCH',
+        headers:{...SB_HDR,'Prefer':'return=minimal'},
+        body: JSON.stringify(payload)
+      });
+    } else {
+      // INSERT — upsert por session_key + rubro para evitar duplicados
+      const r = await fetch(`${SB_URL}/rest/v1/inventarios_rubros`,{
+        method:'POST',
+        headers:{...SB_HDR,'Prefer':'return=representation','Resolution':'merge-duplicates'},
+        body: JSON.stringify(payload)
+      });
+      const data = await r.json();
+      if(data?.[0]?.id) sbRubroIds[rubro] = data[0].id;
+    }
+  } catch(e){ console.warn('sbSaveRubro failed:', rubro, e); }
+}
+
+// Guarda la cabecera de la sesión (meta + notas + rotVen + division)
+// Esta sí es una sola fila — no tiene conflictos porque solo admin la edita
+async function sbSaveMeta(){
+  if(!sessionKey) return;
+  const payload = {
+    session_key: sessionKey,
+    local:       document.getElementById('setup-local').value,
+    fecha:       document.getElementById('setup-fecha').value,
+    responsable: document.getElementById('setup-resp').value,
+    rubros:      rubros,
+    division:    division,
+    notas:       notas,
+    rot_ven:     rotVen,
+    updated_at:  new Date().toISOString()
+  };
+  try{
+    if(sbSessionId){
+      await fetch(`${SB_URL}/rest/v1/inventarios?id=eq.${sbSessionId}`,{
+        method:'PATCH', headers:{...SB_HDR,'Prefer':'return=minimal'},
+        body: JSON.stringify(payload)
+      });
+    } else {
+      const r = await fetch(`${SB_URL}/rest/v1/inventarios`,{
+        method:'POST', headers:{...SB_HDR,'Prefer':'return=representation'},
+        body: JSON.stringify(payload)
+      });
+      const data = await r.json();
+      if(data?.[0]?.id) sbSessionId = data[0].id;
+    }
+  } catch(e){ console.warn('sbSaveMeta failed', e); }
+}
+
+// Guarda todo: primero meta, luego el rubro que se está contando ahora
+async function sbSaveSession(){
+  if(!sessionKey || !Object.keys(items).length) return;
+  try{
+    await sbSaveMeta();
+    // Guardar solo el rubro activo para no sobrecargar
+    if(currentRubro) await sbSaveRubro(currentRubro);
+    lastSyncAt = new Date();
+    updateSyncIndicator();
+  } catch(e){ console.warn('Supabase save failed', e); }
+}
+
+// Carga todos los rubros de Supabase y hace merge en `items`
+// Si un rubro ya está en items (cargado por esta tablet), gana el más reciente
+async function sbLoadSession(sKey){
+  try{
+    // Cargar cabecera
+    const rm = await fetch(
+      `${SB_URL}/rest/v1/inventarios?session_key=eq.${encodeURIComponent(sKey)}&order=updated_at.desc&limit=1`,
+      {headers: SB_HDR}
+    );
+    const metaRows = await rm.json();
+    const meta = metaRows?.[0] || null;
+
+    // Cargar rubros
+    const rr = await fetch(
+      `${SB_URL}/rest/v1/inventarios_rubros?session_key=eq.${encodeURIComponent(sKey)}&order=rubro`,
+      {headers: SB_HDR}
+    );
+    const rubroRows = await rr.json();
+
+    if(!meta && (!rubroRows || !rubroRows.length)) return null;
+
+    // Reconstruir items desde todos los rubros
+    const mergedItems = {};
+    (rubroRows||[]).forEach(row=>{
+      if(row.id) sbRubroIds[row.rubro] = row.id;
+      Object.assign(mergedItems, row.items_rubro || {});
+    });
+
+    return {
+      id:          meta?.id,
+      session_key: sKey,
+      local:       meta?.local,
+      fecha:       meta?.fecha,
+      responsable: meta?.responsable,
+      rubros:      meta?.rubros   || [],
+      division:    meta?.division || {},
+      notas:       meta?.notas    || [],
+      rot_ven:     meta?.rot_ven  || [],
+      items:       mergedItems,
+      updated_at:  meta?.updated_at,
+    };
+  } catch(e){ console.warn('sbLoadSession failed', e); return null; }
+}
+
+// Sync periódico: cada 20s descarga cambios de otros dispositivos y hace merge
+async function syncFromOthers(){
+  if(!sessionKey) return;
+  try{
+    const rr = await fetch(
+      `${SB_URL}/rest/v1/inventarios_rubros?session_key=eq.${encodeURIComponent(sessionKey)}&order=rubro`,
+      {headers: SB_HDR}
+    );
+    const rubroRows = await rr.json();
+    if(!rubroRows?.length) return;
+
+    let changed = false;
+    rubroRows.forEach(row=>{
+      if(row.id) sbRubroIds[row.rubro] = row.id;
+      Object.entries(row.items_rubro || {}).forEach(([cod, remoto])=>{
+        const local = items[cod];
+        if(!local) return;
+        // Gana el que tiene conteo real más reciente
+        // Si el remoto tiene real y el local no → adoptar remoto
+        if(remoto.real !== null && local.real === null){
+          items[cod] = {...local, exhib: remoto.exhib, dep: remoto.dep, real: remoto.real, obs: remoto.obs};
+          changed = true;
+        }
+      });
+    });
+
+    if(changed){
+      // Re-renderizar el rubro actual si cambió
+      if(currentRubro) loadRubro(currentRubro);
+      updateProgress();
+      saveLocal(); // Actualizar localStorage con datos mergeados
+      showToast('↓ Datos sincronizados desde otro dispositivo', 'info');
+    }
+  } catch(e){ console.warn('syncFromOthers failed', e); }
+}
+
+function updateSyncIndicator(){
+  const el = document.getElementById('sync-indicator');
+  if(!el) return;
+  if(!lastSyncAt){ el.textContent='Sin sincronizar'; el.style.color='var(--amber)'; return; }
+  const sec = Math.round((new Date()-lastSyncAt)/1000);
+  el.textContent = `✓ Guardado hace ${sec<60?sec+'s':Math.round(sec/60)+'min'}`;
+  el.style.color = 'var(--green)';
+}
+
+// Guardado: localStorage inmediato + Supabase con debounce 2s (solo rubro activo)
+function scheduleSave(){
+  saveLocal();
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async ()=>{
+    await sbSaveMeta();
+    if(currentRubro) await sbSaveRubro(currentRubro);
+    lastSyncAt = new Date();
+    updateSyncIndicator();
+  }, 2000);
+}
+
+// Cada 30s: guardar el rubro activo
+setInterval(()=>{ if(sessionKey) sbSaveSession(); }, 30000);
+// Cada 20s: bajar cambios de otros dispositivos y mergear
+setInterval(()=>{ if(sessionKey) syncFromOthers(); }, 20000);
+setInterval(updateSyncIndicator, 10000);
+
+// ══════════════════════════════════════════
+// RESTORE SESSION al recargar
+// ══════════════════════════════════════════
+async function checkRestoreSession(){
+  // 1. Intentar restaurar desde localStorage primero (más rápido)
+  const local = loadLocal();
+  if(local && local.sessionKey && Object.keys(local.items||{}).length > 0){
+    showRestoreBanner(local, 'local');
+    return;
+  }
+  // 2. Si no hay local, intentar desde Supabase (para otros dispositivos)
+  // Solo si tenemos local configurado
+  const localParam = new URLSearchParams(window.location.search).get('local');
+  if(localParam){
+    const today = new Date().toISOString().split('T')[0];
+    const sKey = `${localParam}_${today}`;
+    const sbData = await sbLoadSession(sKey);
+    if(sbData && Object.keys(sbData.items||{}).length > 0){
+      showRestoreBanner(sbData, 'supabase');
+    }
+  }
+}
+
+function showRestoreBanner(snap, source){
+  const local = snap.meta?.local || snap.local || '?';
+  const fecha = snap.meta?.fecha || snap.fecha || '?';
+  const resp  = snap.meta?.resp  || snap.responsable || '?';
+  const count = Object.keys(snap.items||{}).length;
+  const done  = Object.values(snap.items||{}).filter(i=>i.real!==null).length;
+  const savedAt = snap.savedAt || snap.updated_at || '';
+  const savedStr = savedAt ? new Date(savedAt).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}) : '?';
+
+  const banner = document.getElementById('restore-banner');
+  document.getElementById('restore-info').innerHTML =
+    `<strong>${resp}</strong> · ${fecha} · ${done}/${count} artículos contados · guardado a las ${savedStr}`;
+  banner.style.display='flex';
+
+  // Store snap temporarily
+  window._pendingRestore = {snap, source};
+}
+
+async function doRestore(){
+  const {snap, source} = window._pendingRestore || {};
+  if(!snap) return;
+  document.getElementById('restore-banner').style.display='none';
+
+  // Si viene de Supabase, usar esos datos directamente
+  const data = source === 'supabase' ? snap : snap;
+  items    = data.items    || {};
+  rubros   = data.rubros   || [];
+  division = data.division || {};
+  notas    = data.notas    || [];
+  rotVen   = data.rot_ven  || data.rotVen || [];
+
+  // Restaurar ID de Supabase si viene de ahí
+  if(source === 'supabase' && data.id) sbSessionId = data.id;
+
+  // Restaurar meta en formulario
+  const meta = data.meta || {local:data.local, fecha:data.fecha, resp:data.responsable, tipo:'semanal'};
+  if(meta.local) document.getElementById('setup-local').value = meta.local;
+  if(meta.fecha) document.getElementById('setup-fecha').value = meta.fecha;
+  if(meta.resp)  { await loadEmpleados(); document.getElementById('setup-resp').value = meta.resp; }
+  if(meta.tipo)  document.getElementById('setup-tipo').value = meta.tipo;
+  updateMeta();
+
+  // Restaurar sessionKey
+  sessionKey = data.sessionKey || `${meta.local}_${meta.fecha}`;
+
+  // Mostrar archivo como cargado
+  const total = Object.keys(items).length;
+  document.getElementById('file-zone').innerHTML = `
+    <div class="file-loaded">
+      <div class="file-loaded-icon">🔄</div>
+      <div class="file-loaded-info">
+        <div class="name">Sesión restaurada (${source === 'supabase' ? 'sincronizado' : 'guardado local'})</div>
+        <div class="meta">${total} artículos · ${rubros.length} rubros</div>
+      </div>
+      <button class="btn-ghost" onclick="resetFile()" style="margin-left:auto;font-size:11px">Nueva sesión</button>
+    </div>`;
+  document.getElementById('setup-info').textContent = `${total} artículos restaurados`;
+
+  renderDivision();
+
+  // Ir a la fase donde estaba
+  const phase = data.currentPhase || 'conteo';
+  if(phase !== 'setup'){
+    currentRubro = rubros[0] || null;
+    renderRubrosSidebar();
+    if(currentRubro) loadRubro(currentRubro);
+  }
+  goPhase(phase);
+  showToast(`Sesión restaurada — ${Object.values(items).filter(i=>i.real!==null).length}/${total} artículos contados`, 'success');
+}
+
+function dismissRestore(){
+  document.getElementById('restore-banner').style.display='none';
+  window._pendingRestore = null;
+}
 
 // ══════════════════════════════════════════
 // INIT
@@ -817,6 +1186,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   renderFilterTags();
   await loadEmpleados();
   updateMeta();
+  await checkRestoreSession();
 });
 
 function setTodayDate(){
@@ -1059,6 +1429,10 @@ function renderDivision(){
 // ══════════════════════════════════════════
 function iniciarConteo(){
   if(!Object.keys(items).length){ showToast('Primero cargá el archivo de artículos','error'); return; }
+  // Setear sessionKey con local + fecha
+  const local = document.getElementById('setup-local').value || 'sin_local';
+  const fecha = document.getElementById('setup-fecha').value || new Date().toISOString().split('T')[0];
+  sessionKey = `${local}_${fecha}`;
   // Apply division to items
   Object.values(items).forEach(it=>{
     if(division[it.rub]) it.encargado = division[it.rub];
@@ -1067,7 +1441,8 @@ function iniciarConteo(){
   currentRubro = rubros[0]||null;
   renderRubrosSidebar();
   if(currentRubro) loadRubro(currentRubro);
-  showToast('¡Inventario iniciado! Comenzá contando por rubro.','success');
+  scheduleSave();
+  showToast('¡Inventario iniciado! Los cambios se guardan automáticamente.','success');
 }
 
 // ══════════════════════════════════════════
@@ -1121,6 +1496,10 @@ function renderRubrosSidebar(){
 // LOAD RUBRO
 // ══════════════════════════════════════════
 function loadRubro(rubro){
+  // Guardar el rubro que se deja antes de cambiar
+  if(currentRubro && currentRubro !== rubro && sessionKey){
+    sbSaveRubro(currentRubro);
+  }
   currentRubro = rubro;
   document.getElementById('search-items').value='';
   renderRubrosSidebar();
@@ -1273,6 +1652,7 @@ function updateQty(cod, campo, val){
   // Mark input as changed
   const inp = row?.querySelectorAll('.qty-input')[campo==='exhib'?0:1];
   if(inp) inp.classList.toggle('changed', it[campo]!==null);
+  scheduleSave();
 }
 
 // ══════════════════════════════════════════
@@ -1305,6 +1685,7 @@ function saveObs(){
   }
   closeObsPopup();
   showToast('Observación guardada','success');
+  scheduleSave();
 }
 
 // ══════════════════════════════════════════
@@ -1335,8 +1716,9 @@ function addNota(){
   document.getElementById('nota-texto').value='';
   renderNotas();
   showToast('Nota agregada','success');
+  scheduleSave();
 }
-function removeNota(i){ notas.splice(i,1); renderNotas(); }
+function removeNota(i){ notas.splice(i,1); renderNotas(); scheduleSave(); }
 
 // ══════════════════════════════════════════
 // ROTOS / VENCIDOS
@@ -1365,6 +1747,7 @@ function addRotVen(){
   document.getElementById('rv-costo').value='';
   renderRVList();
   showToast('Agregado','success');
+  scheduleSave();
 }
 
 // ══════════════════════════════════════════
@@ -1464,6 +1847,105 @@ function renderAnalisis(){
         </div>
       </div>`).join('');
   } else { nc.style.display='none'; }
+
+  // Reconteo
+  generarReconteo();
+}
+
+// ══════════════════════════════════════════
+// RECONTEO AUTOMÁTICO — 30 artículos clave
+// ══════════════════════════════════════════
+function generarReconteo(){
+  const lista = document.getElementById('reconteo-list');
+  if(!lista) return;
+
+  const allItems = Object.values(items);
+  if(!allItems.length){
+    lista.innerHTML='<div class="empty" style="padding:20px"><div class="empty-title">Sin datos de inventario</div></div>';
+    return;
+  }
+
+  const seleccionados = [];
+  const agregados = new Set();
+
+  function push(it, razon){
+    if(agregados.has(it.desc)) return;
+    agregados.add(it.desc);
+    seleccionados.push({...it, razon});
+  }
+
+  // CRITERIO 1: Diferencias negativas ordenadas por impacto $ (top 12)
+  const negativas = allItems
+    .filter(it=>it.real!==null && (it.real-it.sist)<0)
+    .sort((a,b)=>((a.real-a.sist)*a.costo)-((b.real-b.sist)*b.costo))
+    .slice(0,12);
+  negativas.forEach(it=>push(it,'Diferencia negativa'));
+
+  // CRITERIO 2: Sin contar, alto costo en sistema (top 8)
+  const sinContar = allItems
+    .filter(it=>it.real===null && it.sist>0)
+    .sort((a,b)=>(b.sist*b.costo)-(a.sist*a.costo))
+    .slice(0,8);
+  sinContar.forEach(it=>push(it,'Sin contar · alto valor'));
+
+  // CRITERIO 3: Un artículo representativo por rubro que tenga diferencia (máx 1 por rubro)
+  const rubrosCubiertos = new Set(seleccionados.map(it=>it.rub));
+  rubros.forEach(r=>{
+    if(rubrosCubiertos.has(r)) return;
+    const candidato = allItems
+      .filter(it=>it.rub===r && it.real!==null && (it.real-it.sist)!==0)
+      .sort((a,b)=>Math.abs((b.real-b.sist)*b.costo)-Math.abs((a.real-a.sist)*a.costo))[0];
+    if(candidato) push(candidato, `Representativo · ${r}`);
+  });
+
+  // Completar hasta 30 con los de mayor costo sin diferencia
+  if(seleccionados.length < 30){
+    allItems
+      .filter(it=>it.real!==null && (it.real-it.sist)===0)
+      .sort((a,b)=>(b.sist*b.costo)-(a.sist*a.costo))
+      .slice(0, 30-seleccionados.length)
+      .forEach(it=>push(it,'Alto valor · verificar'));
+  }
+
+  const final = seleccionados.slice(0,30);
+
+  if(!final.length){
+    lista.innerHTML='<div class="empty" style="padding:20px"><div class="empty-title">No hay datos suficientes para generar reconteo</div></div>';
+    return;
+  }
+
+  lista.innerHTML = final.map((it,idx)=>{
+    const dif = it.real!==null ? it.real-it.sist : null;
+    const difClass = dif===null?'zero':(dif<0?'neg':(dif>0?'pos':'zero'));
+    const difStr = dif!==null?(dif>0?'+':'')+dif+' uds':'-';
+    return `<div class="dif-list-item" style="border-left:2px solid ${dif!==null&&dif<0?'var(--red)':dif!==null&&dif>0?'var(--amber)':'var(--line)'};padding-left:10px">
+      <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);width:20px;flex-shrink:0">${idx+1}</span>
+      <span class="di-desc" title="${it.desc}">${it.desc}</span>
+      <span style="font-size:10px;color:var(--text3);white-space:nowrap;margin-right:4px">${it.razon}</span>
+      ${dif!==null?`<span class="di-badge ${difClass}">${difStr}</span>`:'<span class="di-badge" style="background:var(--bg3);color:var(--text3)">sin contar</span>'}
+      <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3)">${it.rub}</span>
+    </div>`;
+  }).join('');
+
+  // Guardar en state para exportar
+  window._reconteoList = final;
+}
+
+function exportarReconteo(){
+  const lista = window._reconteoList;
+  if(!lista?.length){ showToast('Generá la lista primero','error'); return; }
+  loadSheetJS(()=>{
+    const rows = [['#','Descripción','Rubro','Encargado','Razón','Stock sistema','Conteo anterior','Diferencia']];
+    lista.forEach((it,i)=>{
+      const dif = it.real!==null ? it.real-it.sist : '';
+      rows.push([i+1, it.desc, it.rub, it.encargado||'', it.razon, it.sist, it.real??'', dif]);
+    });
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'Reconteo');
+    const fecha = document.getElementById('setup-fecha').value||'';
+    XLSX.writeFile(wb, `Reconteo_Break_${fecha}.xlsx`);
+    showToast('Lista de reconteo exportada','success');
+  });
 }
 
 // ══════════════════════════════════════════
@@ -1549,6 +2031,53 @@ window.addEventListener('message', (ev)=>{
     loadEmpleados();
   }
 });
+
+/*
+  ── SUPABASE SQL ──────────────────────────────────────────────
+  Ejecutar una sola vez en el panel SQL de Supabase:
+
+  -- Tabla principal: cabecera de sesión (meta, notas, rotVen, division)
+  create table inventarios (
+    id uuid primary key default gen_random_uuid(),
+    session_key text not null unique,
+    local text,
+    fecha text,
+    responsable text,
+    rubros jsonb default '[]',
+    division jsonb default '{}',
+    notas jsonb default '[]',
+    rot_ven jsonb default '[]',
+    updated_at timestamptz default now(),
+    created_at timestamptz default now()
+  );
+
+  -- Tabla de rubros: UN rubro por fila → dos tablets no se pisan nunca
+  create table inventarios_rubros (
+    id uuid primary key default gen_random_uuid(),
+    session_key text not null,
+    local text,
+    fecha text,
+    responsable text,
+    rubro text not null,
+    encargado text,
+    items_rubro jsonb default '{}',
+    updated_at timestamptz default now(),
+    created_at timestamptz default now(),
+    unique(session_key, rubro)
+  );
+
+  create index on inventarios(session_key);
+  create index on inventarios_rubros(session_key);
+  create index on inventarios_rubros(session_key, rubro);
+
+  -- RLS: acceso público como el resto del sistema
+  alter table inventarios enable row level security;
+  create policy "public access" on inventarios for all using (true) with check (true);
+
+  alter table inventarios_rubros enable row level security;
+  create policy "public access" on inventarios_rubros for all using (true) with check (true);
+  ─────────────────────────────────────────────────────────────
+*/
 </script>
 </body>
 </html>

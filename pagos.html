@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cuentas por Pagar · Break</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --surface: #111111;
+    --surface2: #1a1a1a;
+    --surface3: #222222;
+    --border: #2a2a2a;
+    --border2: #333333;
+    --text: #e8e8e8;
+    --text2: #888888;
+    --text3: #555555;
+    --accent: #c8f135;
+    --accent-dim: rgba(200,241,53,0.12);
+    --accent-dim2: rgba(200,241,53,0.06);
+    --red: #ff4444;
+    --red-dim: rgba(255,68,68,0.12);
+    --red-dim2: rgba(255,68,68,0.06);
+    --yellow: #f5c518;
+    --yellow-dim: rgba(245,197,24,0.12);
+    --green: #4ade80;
+    --green-dim: rgba(74,222,128,0.12);
+    --blue: #60a5fa;
+    --blue-dim: rgba(96,165,250,0.12);
+    --orange: #fb923c;
+    --orange-dim: rgba(251,146,60,0.12);
+    --radius: 8px;
+    --radius-lg: 12px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Mono', monospace;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 13px;
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .header-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--accent);
+  }
+  .header-local {
+    font-size: 11px;
+    color: var(--text2);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 3px 8px;
+    border-radius: 4px;
+  }
+  .admin-badge {
+    font-size: 10px;
+    color: var(--red);
+    background: var(--red-dim);
+    border: 1px solid var(--red);
+    padding: 2px 7px;
+    border-radius: 3px;
+  }
+
+  .tabs {
+    display: flex;
+    padding: 0 20px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  .tab-btn {
+    padding: 10px 16px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text2);
+    cursor: pointer;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .main { padding: 20px; max-width: 1100px; margin: 0 auto; }
+
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* STATS */
+  .stats-bar { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 130px;
+    flex: 1;
+    max-width: 200px;
+  }
+  .stat-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.6px; }
+  .stat-value { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 700; }
+  .stat-value.accent { color: var(--accent); }
+  .stat-value.red { color: var(--red); }
+  .stat-value.yellow { color: var(--yellow); }
+  .stat-value.green { color: var(--green); }
+  .stat-sub { font-size: 10px; color: var(--text3); margin-top: 1px; }
+
+  /* SEMAFORO CARDS */
+  .semaforo-section { margin-bottom: 24px; }
+  .semaforo-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .semaforo-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .semaforo-count {
+    font-size: 11px;
+    color: var(--text2);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 2px 7px;
+    border-radius: 3px;
+  }
+  .semaforo-line { flex: 1; height: 1px; background: var(--border); }
+
+  /* TABLA */
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  tr:last-child td { border-bottom: none; }
+
+  /* ROW COLORS */
+  tr.row-vencido td { background: var(--red-dim2); }
+  tr.row-vencido:hover td { background: var(--red-dim); }
+  tr.row-proximo td { background: rgba(245,197,24,0.04); }
+  tr.row-proximo:hover td { background: var(--yellow-dim); }
+  tr.row-ok:hover td { background: var(--surface2); }
+
+  /* SEMAFORO DOT */
+  .semaforo-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: inline-block;
+  }
+  .dot-rojo { background: var(--red); box-shadow: 0 0 6px var(--red); }
+  .dot-amarillo { background: var(--yellow); box-shadow: 0 0 6px var(--yellow); }
+  .dot-verde { background: var(--green); box-shadow: 0 0 6px var(--green); }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 7px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .badge-red { background: var(--red-dim); color: var(--red); }
+  .badge-yellow { background: var(--yellow-dim); color: var(--yellow); }
+  .badge-green { background: var(--green-dim); color: var(--green); }
+  .badge-gray { background: var(--surface3); color: var(--text2); }
+  .badge-orange { background: var(--orange-dim); color: var(--orange); }
+
+  /* DÍAS CHIP */
+  .dias-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .dias-rojo { background: var(--red-dim); color: var(--red); border: 1px solid rgba(255,68,68,0.3); }
+  .dias-amarillo { background: var(--yellow-dim); color: var(--yellow); border: 1px solid rgba(245,197,24,0.3); }
+  .dias-verde { background: var(--green-dim); color: var(--green); border: 1px solid rgba(74,222,128,0.3); }
+
+  /* BTN */
+  .btn {
+    padding: 7px 14px;
+    border-radius: var(--radius);
+    border: none;
+    cursor: pointer;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-primary { background: var(--accent); color: #0a0a0a; }
+  .btn-primary:hover { background: #d4f54a; }
+  .btn-ghost { background: var(--surface2); border: 1px solid var(--border); color: var(--text2); }
+  .btn-ghost:hover { border-color: var(--border2); color: var(--text); }
+  .btn-danger { background: var(--red-dim); border: 1px solid var(--red); color: var(--red); }
+  .btn-sm { padding: 4px 8px; font-size: 11px; }
+  .btn-success { background: var(--green-dim); border: 1px solid var(--green); color: var(--green); }
+  .btn-success:hover { background: rgba(74,222,128,0.2); }
+
+  /* TOOLBAR */
+  .toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+  .toolbar-right { margin-left: auto; display: flex; gap: 8px; }
+
+  /* PROVEEDORES TAB */
+  .prov-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+  .prov-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    transition: border-color 0.15s;
+  }
+  .prov-row:hover { border-color: var(--border2); }
+  .prov-name { font-weight: 500; flex: 1; }
+  .prov-plazo { font-size: 11px; color: var(--text2); }
+  .prov-activo { margin-left: auto; }
+
+  /* FORM INLINE */
+  .form-inline {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    padding: 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 16px;
+  }
+  .form-group-inline { display: flex; flex-direction: column; gap: 4px; }
+  .form-label { font-size: 10px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.6px; }
+  .form-input, .form-select {
+    padding: 7px 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .form-input:focus, .form-select:focus { border-color: var(--accent); }
+  .form-select option { background: var(--surface2); }
+  .form-input-sm { width: 90px; }
+  .form-input-md { width: 160px; }
+  .form-input-lg { width: 220px; }
+
+  /* EMPTY */
+  .empty { text-align: center; padding: 40px 20px; color: var(--text3); }
+  .empty-icon { font-size: 32px; margin-bottom: 8px; }
+
+  /* CALENDAR */
+  .calendar-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+  .calendar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+  .calendar-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; }
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0;
+  }
+  .cal-day-header {
+    padding: 8px 4px;
+    text-align: center;
+    font-size: 10px;
+    color: var(--text3);
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+  .cal-day {
+    min-height: 64px;
+    padding: 4px;
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    vertical-align: top;
+  }
+  .cal-day:nth-child(7n) { border-right: none; }
+  .cal-day.other-month { opacity: 0.3; }
+  .cal-day.today { background: var(--accent-dim2); }
+  .cal-day-num {
+    font-size: 11px;
+    color: var(--text2);
+    margin-bottom: 3px;
+    display: block;
+  }
+  .cal-day.today .cal-day-num { color: var(--accent); font-weight: 600; }
+  .cal-event {
+    display: block;
+    font-size: 9px;
+    padding: 2px 4px;
+    border-radius: 2px;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: default;
+  }
+  .cal-event-red { background: var(--red-dim); color: var(--red); border-left: 2px solid var(--red); }
+  .cal-event-yellow { background: var(--yellow-dim); color: var(--yellow); border-left: 2px solid var(--yellow); }
+  .cal-event-green { background: var(--green-dim); color: var(--green); border-left: 2px solid var(--green); }
+
+  /* LOADING */
+  .loading { text-align: center; padding: 48px; color: var(--text3); font-size: 12px; }
+  .spinner { width: 24px; height: 24px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* TOAST */
+  .toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 999; display: flex; flex-direction: column; gap: 8px; }
+  .toast { padding: 10px 16px; border-radius: var(--radius); font-size: 12px; animation: slideIn 0.2s ease; max-width: 280px; }
+  .toast-success { background: var(--green-dim); border: 1px solid var(--green); color: var(--green); }
+  .toast-error { background: var(--red-dim); border: 1px solid var(--red); color: var(--red); }
+  @keyframes slideIn { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+  @media (max-width:600px) {
+    .stats-bar { gap: 8px; }
+    .stat-card { min-width: 100px; padding: 10px 12px; }
+    td, th { padding: 8px 10px; }
+    .calendar-grid { font-size: 10px; }
+    .cal-day { min-height: 44px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="header-title">Cuentas por Pagar</div>
+    <div class="header-local" id="header-local">—</div>
+    <span class="admin-badge">ADMIN</span>
+  </div>
+  <button class="btn btn-ghost btn-sm" onclick="loadAll()">↺ Actualizar</button>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('pendientes')">Pendientes</button>
+  <button class="tab-btn" onclick="switchTab('calendario')">Calendario</button>
+  <button class="tab-btn" onclick="switchTab('historial')">Historial</button>
+  <button class="tab-btn" onclick="switchTab('proveedores')">Proveedores</button>
+</div>
+
+<div class="main">
+
+  <!-- TAB: PENDIENTES -->
+  <div class="screen active" id="tab-pendientes">
+    <div class="stats-bar" id="stats-bar"></div>
+
+    <!-- Vencidas -->
+    <div class="semaforo-section" id="section-vencidas">
+      <div class="semaforo-header">
+        <span class="semaforo-dot dot-rojo"></span>
+        <span class="semaforo-title" style="color:var(--red);">Vencidas</span>
+        <span class="semaforo-count" id="count-vencidas">0</span>
+        <div class="semaforo-line"></div>
+      </div>
+      <div class="table-wrap" id="tabla-vencidas-wrap">
+        <table><tbody id="tabla-vencidas"></tbody></table>
+      </div>
+    </div>
+
+    <!-- Próximas a vencer -->
+    <div class="semaforo-section" id="section-proximas">
+      <div class="semaforo-header">
+        <span class="semaforo-dot dot-amarillo"></span>
+        <span class="semaforo-title" style="color:var(--yellow);">Próximas a vencer</span>
+        <span class="semaforo-count" id="count-proximas">0</span>
+        <div class="semaforo-line"></div>
+        <span style="font-size:10px;color:var(--text3);">≤ 3 días</span>
+      </div>
+      <div class="table-wrap" id="tabla-proximas-wrap">
+        <table><tbody id="tabla-proximas"></tbody></table>
+      </div>
+    </div>
+
+    <!-- Al día -->
+    <div class="semaforo-section">
+      <div class="semaforo-header">
+        <span class="semaforo-dot dot-verde"></span>
+        <span class="semaforo-title" style="color:var(--green);">Al día</span>
+        <span class="semaforo-count" id="count-ok">0</span>
+        <div class="semaforo-line"></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th></th>
+              <th>Proveedor</th>
+              <th>Factura</th>
+              <th>Fecha factura</th>
+              <th>Vence</th>
+              <th>Días restantes</th>
+              <th>Total</th>
+              <th>Local</th>
+              <th>Recibido por</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tabla-ok"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: CALENDARIO -->
+  <div class="screen" id="tab-calendario">
+    <div class="calendar-wrap">
+      <div class="calendar-header">
+        <button class="btn btn-ghost btn-sm" onclick="prevMes()">← Anterior</button>
+        <div class="calendar-title" id="cal-titulo"></div>
+        <button class="btn btn-ghost btn-sm" onclick="nextMes()">Siguiente →</button>
+      </div>
+      <div class="calendar-grid" id="calendar-grid">
+        <div class="cal-day-header">Dom</div>
+        <div class="cal-day-header">Lun</div>
+        <div class="cal-day-header">Mar</div>
+        <div class="cal-day-header">Mié</div>
+        <div class="cal-day-header">Jue</div>
+        <div class="cal-day-header">Vie</div>
+        <div class="cal-day-header">Sáb</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:16px;font-size:11px;color:var(--text2);">
+      <span><span class="semaforo-dot dot-rojo" style="display:inline-block;margin-right:4px;"></span>Vencida</span>
+      <span><span class="semaforo-dot dot-amarillo" style="display:inline-block;margin-right:4px;"></span>Próxima</span>
+      <span><span class="semaforo-dot dot-verde" style="display:inline-block;margin-right:4px;"></span>Al día</span>
+    </div>
+  </div>
+
+  <!-- TAB: HISTORIAL -->
+  <div class="screen" id="tab-historial">
+    <div class="toolbar">
+      <div style="font-size:11px;color:var(--text2);">Facturas ya pagadas</div>
+      <div class="toolbar-right">
+        <input class="form-input" type="text" placeholder="Buscar..." id="search-historial" oninput="renderHistorial()" style="width:200px;">
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha pago</th>
+            <th>Proveedor</th>
+            <th>Factura</th>
+            <th>Tipo</th>
+            <th>Forma de pago</th>
+            <th>Total</th>
+            <th>Local</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-historial"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB: PROVEEDORES -->
+  <div class="screen" id="tab-proveedores">
+    <div class="form-inline" id="form-proveedor">
+      <div class="form-group-inline">
+        <label class="form-label">Proveedor</label>
+        <input class="form-input form-input-lg" type="text" id="p-nombre" placeholder="Nombre del proveedor">
+      </div>
+      <div class="form-group-inline">
+        <label class="form-label">Plazo (días)</label>
+        <input class="form-input form-input-sm" type="number" id="p-plazo" placeholder="30" min="0">
+      </div>
+      <div class="form-group-inline">
+        <label class="form-label">Notas</label>
+        <input class="form-input form-input-md" type="text" id="p-notas" placeholder="Observaciones">
+      </div>
+      <div class="form-group-inline">
+        <label class="form-label">Activo</label>
+        <select class="form-select" id="p-activo">
+          <option value="true">Sí</option>
+          <option value="false">No</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" onclick="submitProveedor()" style="align-self:flex-end;">
+        <span id="p-submit-label">+ Agregar</span>
+      </button>
+      <button class="btn btn-ghost" id="p-cancel" style="align-self:flex-end;display:none;" onclick="cancelProveedor()">Cancelar</button>
+    </div>
+
+    <div class="prov-list" id="prov-list">
+      <div class="loading"><div class="spinner"></div>Cargando...</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+const SUPABASE_URL = 'https://oiuualqixcccfhtpcist.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pdXVhbHFpeGNjY2ZodHBjaXN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDk4MjgwMDAsImV4cCI6MjAyNTQwNDAwMH0.placeholder';
+
+let localKey = '';
+let localName = '';
+let ordenes = [];         // todas las por_pagar
+let historialData = [];   // ya_pagado
+let proveedores = [];     // tabla proveedores_pago
+let editingProvId = null;
+let calMes = new Date();
+calMes.setDate(1);
+
+// ─── CONTEXT ─────────────────────────────────────────────────
+window.addEventListener('message', e => {
+  if (e.data?.type === 'break-context') {
+    localKey = e.data.local || '';
+    localName = e.data.localName || localKey;
+    updateHeader();
+    loadAll();
+  }
+});
+
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('local')) {
+  localKey = urlParams.get('local');
+  localName = capitalizeLocal(localKey);
+  updateHeader();
+  loadAll();
+} else {
+  const stored = localStorage.getItem('break_local');
+  if (stored) {
+    localKey = stored;
+    localName = capitalizeLocal(localKey);
+  }
+  updateHeader();
+  loadAll();
+}
+
+function capitalizeLocal(k) {
+  const map = { palermo:'Thames · Palermo', belgrano:'Roosevelt · Belgrano', barrio_chino:'Juramento · B. Chino', san_telmo:'Independencia · San Telmo' };
+  return map[k] || k;
+}
+
+function updateHeader() {
+  document.getElementById('header-local').textContent = localName || 'Todos los locales';
+}
+
+// ─── SUPABASE ────────────────────────────────────────────────
+async function sbFetch(path, opts = {}) {
+  const headers = {
+    'apikey': SUPABASE_KEY,
+    'Authorization': `Bearer ${SUPABASE_KEY}`,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=representation',
+    ...opts.headers
+  };
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, { ...opts, headers });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(err);
+  }
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+// ─── LOAD ALL ────────────────────────────────────────────────
+async function loadAll() {
+  await Promise.all([loadOrdenes(), loadProveedores()]);
+}
+
+async function loadOrdenes() {
+  try {
+    // Por pagar — filtra por local
+    let q = 'ordenes_trabajo?estado_pago=eq.por_pagar&order=fecha.asc';
+    if (localKey) q += `&local=eq.${localKey}`;
+    ordenes = await sbFetch(q) || [];
+
+    // Historial pagado
+    let qh = 'ordenes_trabajo?order=updated_at.desc&limit=100';
+    if (localKey) qh += `&local=eq.${localKey}`;
+    qh += '&not.estado_pago=eq.por_pagar';
+    const allData = await sbFetch(qh) || [];
+    historialData = allData.filter(o => o.estado_pago !== 'por_pagar');
+
+    renderPendientes();
+    renderHistorial();
+    renderCalendario();
+  } catch(e) {
+    showToast('Error al cargar: ' + e.message, 'error');
+  }
+}
+
+async function loadProveedores() {
+  try {
+    proveedores = await sbFetch('proveedores_pago?order=nombre.asc') || [];
+    renderProveedores();
+  } catch(e) {
+    // tabla puede no existir aún
+    proveedores = [];
+    renderProveedores();
+  }
+}
+
+// ─── CALCULAR VENCIMIENTO ────────────────────────────────────
+function calcVencimiento(orden) {
+  if (!orden.proveedor || !orden.fecha) return null;
+  const needle = orden.proveedor.toLowerCase().trim();
+  // Match fuzzy: busca el proveedor cuyo nombre contiene el texto de la orden,
+  // o cuyo texto está contenido en el nombre de la orden.
+  // Ejemplo: "ñuke" matchea "ñuke mapu", "pampa" matchea "pampa blends".
+  const prov = proveedores.find(p => {
+    if (!p.nombre) return false;
+    const hay = p.nombre.toLowerCase().trim();
+    return hay === needle || hay.includes(needle) || needle.includes(hay);
+  });
+  if (!prov || !prov.plazo_dias) return null;
+  const d = new Date(orden.fecha + 'T00:00:00');
+  d.setDate(d.getDate() + parseInt(prov.plazo_dias));
+  return d;
+}
+
+function diasRestantes(venc) {
+  if (!venc) return null;
+  const hoy = new Date();
+  hoy.setHours(0,0,0,0);
+  const diff = Math.round((venc - hoy) / (1000 * 60 * 60 * 24));
+  return diff;
+}
+
+function semaforo(dias) {
+  if (dias === null) return 'sin-plazo';
+  if (dias < 0) return 'vencido';
+  if (dias <= 3) return 'proximo';
+  return 'ok';
+}
+
+// ─── PENDIENTES ──────────────────────────────────────────────
+function renderPendientes() {
+  // Enriquecer órdenes con vencimiento
+  const enriquecidas = ordenes.map(o => {
+    const venc = calcVencimiento(o);
+    const dias = diasRestantes(venc);
+    return { ...o, _venc: venc, _dias: dias, _sem: semaforo(dias) };
+  });
+
+  const vencidas = enriquecidas.filter(o => o._sem === 'vencido');
+  const proximas = enriquecidas.filter(o => o._sem === 'proximo');
+  const ok = enriquecidas.filter(o => o._sem === 'ok' || o._sem === 'sin-plazo');
+
+  const totalPorPagar = enriquecidas.reduce((s,o) => s + (parseFloat(o.total)||0), 0);
+  const totalVencido = vencidas.reduce((s,o) => s + (parseFloat(o.total)||0), 0);
+
+  // Stats
+  document.getElementById('stats-bar').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">Total pendiente</div>
+      <div class="stat-value accent">${formatMoney(totalPorPagar)}</div>
+      <div class="stat-sub">${enriquecidas.length} facturas</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Vencido</div>
+      <div class="stat-value red">${formatMoney(totalVencido)}</div>
+      <div class="stat-sub">${vencidas.length} facturas</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Próximas a vencer</div>
+      <div class="stat-value yellow">${proximas.length}</div>
+      <div class="stat-sub">en ≤ 3 días</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Al día</div>
+      <div class="stat-value green">${ok.length}</div>
+    </div>
+  `;
+
+  document.getElementById('count-vencidas').textContent = vencidas.length;
+  document.getElementById('count-proximas').textContent = proximas.length;
+  document.getElementById('count-ok').textContent = ok.length;
+
+  // Mostrar/ocultar secciones vacías
+  document.getElementById('section-vencidas').style.display = vencidas.length ? '' : 'none';
+  document.getElementById('section-proximas').style.display = proximas.length ? '' : 'none';
+
+  const theadHtml = `<thead><tr>
+    <th></th><th>Proveedor</th><th>Factura</th>
+    <th>Fecha factura</th><th>Vence</th><th>Días</th>
+    <th>Total</th><th>Local</th><th>Recibido por</th><th></th>
+  </tr></thead>`;
+
+  document.getElementById('tabla-vencidas-wrap').innerHTML = `<table>${theadHtml}<tbody>${renderFilasPendiente(vencidas, 'vencido')}</tbody></table>`;
+  document.getElementById('tabla-proximas-wrap').innerHTML = `<table>${theadHtml}<tbody>${renderFilasPendiente(proximas, 'proximo')}</tbody></table>`;
+  document.getElementById('tabla-ok').innerHTML = renderFilasPendiente(ok, 'ok');
+}
+
+function renderFilasPendiente(data, tipo) {
+  if (!data.length) return `<tr><td colspan="10"><div class="empty"><div class="empty-icon">✓</div><div style="font-size:11px;">Sin facturas en esta categoría</div></div></td></tr>`;
+
+  return data.map(o => {
+    const dotClass = tipo === 'vencido' ? 'dot-rojo' : tipo === 'proximo' ? 'dot-amarillo' : 'dot-verde';
+    const diasChip = o._dias === null
+      ? '<span class="badge badge-gray">Sin plazo</span>'
+      : o._dias < 0
+        ? `<span class="dias-chip dias-rojo">⚠ ${Math.abs(o._dias)}d vencida</span>`
+        : o._dias <= 3
+          ? `<span class="dias-chip dias-amarillo">⚡ ${o._dias}d</span>`
+          : `<span class="dias-chip dias-verde">${o._dias}d</span>`;
+
+    const vencStr = o._venc ? formatDateDisplay(o._venc.toISOString().split('T')[0]) : '—';
+
+    return `
+      <tr class="row-${tipo === 'vencido' ? 'vencido' : tipo === 'proximo' ? 'proximo' : 'ok'}">
+        <td><span class="semaforo-dot ${dotClass}"></span></td>
+        <td style="font-weight:500;">${o.proveedor||'—'}</td>
+        <td style="color:var(--text2);">${o.nro_factura||'—'}</td>
+        <td>${formatDateDisplay(o.fecha)}</td>
+        <td>${vencStr}</td>
+        <td>${diasChip}</td>
+        <td style="font-weight:500;color:var(--accent);">${formatMoney(o.total)}</td>
+        <td style="font-size:11px;color:var(--text2);">${localLabel(o.local)}</td>
+        <td style="font-size:11px;color:var(--text2);">${o.recepcion||'—'}</td>
+        <td>
+          <button class="btn btn-success btn-sm" onclick="marcarPagado('${o.id}')">✓ Pagar</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+// ─── MARCAR PAGADO ───────────────────────────────────────────
+async function marcarPagado(id) {
+  const o = ordenes.find(x => x.id === id);
+  if (!o) return;
+
+  const formas = ['Efectivo','Transferencia','MP','QR'];
+  const forma = prompt(`Marcar como pagada.\nProveedor: ${o.proveedor}\nTotal: ${formatMoney(o.total)}\n\nForma de pago:\n${formas.map((f,i)=>`${i+1}. ${f}`).join('\n')}\n\nIngresá el número:`);
+  if (!forma) return;
+
+  const idx = parseInt(forma) - 1;
+  const formaStr = formas[idx] ? formas[idx].toLowerCase().replace(' ','') : 'efectivo';
+  const estadoMap = { efectivo:'efectivo', transferencia:'transferencia', mp:'mp', qr:'qr' };
+  const nuevoEstado = estadoMap[formaStr] || formaStr;
+
+  try {
+    await sbFetch(`ordenes_trabajo?id=eq.${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ estado_pago: nuevoEstado, updated_at: new Date().toISOString() })
+    });
+    showToast('Factura marcada como pagada', 'success');
+    loadOrdenes();
+  } catch(e) {
+    showToast('Error: ' + e.message, 'error');
+  }
+}
+
+// ─── HISTORIAL ───────────────────────────────────────────────
+function renderHistorial() {
+  const search = (document.getElementById('search-historial')?.value || '').toLowerCase();
+  let data = historialData;
+  if (search) data = data.filter(o =>
+    (o.proveedor||'').toLowerCase().includes(search) ||
+    (o.nro_factura||'').toLowerCase().includes(search)
+  );
+
+  const tbody = document.getElementById('tabla-historial');
+  if (!data.length) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty"><div class="empty-icon">📋</div><div style="font-size:11px;">Sin historial</div></div></td></tr>`;
+    return;
+  }
+
+  const pagoBadge = (p) => {
+    const map = { efectivo:['green','Efectivo'], transferencia:['blue','Transf.'], mp:['blue','MP'], qr:['blue','QR'], ya_pagado:['green','Pagado'] };
+    const [cls, lbl] = map[p] || ['gray', p||'—'];
+    return `<span class="badge badge-${cls}">${lbl}</span>`;
+  };
+  const tipoBadge = (t) => {
+    const labels = { remito:'Remito', factura_a:'Fact. A', factura_b:'Fact. B', nota_credito:'N. Crédito' };
+    return `<span class="badge badge-gray">${labels[t]||t||'—'}</span>`;
+  };
+
+  tbody.innerHTML = data.map(o => `
+    <tr>
+      <td style="color:var(--text2);font-size:11px;">${formatDateDisplay(o.updated_at?.split('T')[0])}</td>
+      <td style="font-weight:500;">${o.proveedor||'—'}</td>
+      <td style="color:var(--text2);">${o.nro_factura||'—'}</td>
+      <td>${tipoBadge(o.tipo_comprobante)}</td>
+      <td>${pagoBadge(o.estado_pago)}</td>
+      <td style="color:var(--accent);font-weight:500;">${formatMoney(o.total)}</td>
+      <td style="font-size:11px;color:var(--text2);">${localLabel(o.local)}</td>
+    </tr>
+  `).join('');
+}
+
+// ─── CALENDARIO ──────────────────────────────────────────────
+function renderCalendario() {
+  const year = calMes.getFullYear();
+  const month = calMes.getMonth();
+  const months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  document.getElementById('cal-titulo').textContent = `${months[month]} ${year}`;
+
+  // Enriquecer órdenes
+  const enriquecidas = ordenes.map(o => {
+    const venc = calcVencimiento(o);
+    const dias = diasRestantes(venc);
+    return { ...o, _venc: venc, _dias: dias, _sem: semaforo(dias) };
+  }).filter(o => o._venc);
+
+  // Primer día del mes y número de días
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  const startDow = firstDay.getDay(); // 0=Dom
+  const totalDays = lastDay.getDate();
+  const hoy = new Date();
+
+  let html = `
+    <div class="cal-day-header">Dom</div>
+    <div class="cal-day-header">Lun</div>
+    <div class="cal-day-header">Mar</div>
+    <div class="cal-day-header">Mié</div>
+    <div class="cal-day-header">Jue</div>
+    <div class="cal-day-header">Vie</div>
+    <div class="cal-day-header">Sáb</div>
+  `;
+
+  // Días del mes anterior
+  for (let i = 0; i < startDow; i++) {
+    const d = new Date(year, month, -startDow + i + 1);
+    html += `<div class="cal-day other-month"><span class="cal-day-num">${d.getDate()}</span></div>`;
+  }
+
+  // Días del mes
+  for (let d = 1; d <= totalDays; d++) {
+    const isToday = hoy.getFullYear() === year && hoy.getMonth() === month && hoy.getDate() === d;
+    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+
+    const eventos = enriquecidas.filter(o => {
+      if (!o._venc) return false;
+      const v = o._venc;
+      return v.getFullYear() === year && v.getMonth() === month && v.getDate() === d;
+    });
+
+    const eventosHtml = eventos.map(o => {
+      const cls = o._sem === 'vencido' ? 'red' : o._sem === 'proximo' ? 'yellow' : 'green';
+      return `<span class="cal-event cal-event-${cls}" title="${o.proveedor} · ${formatMoney(o.total)}">${o.proveedor}</span>`;
+    }).join('');
+
+    html += `<div class="cal-day ${isToday ? 'today' : ''}">
+      <span class="cal-day-num">${d}</span>
+      ${eventosHtml}
+    </div>`;
+  }
+
+  // Días del mes siguiente
+  const totalCells = startDow + totalDays;
+  const remaining = (7 - (totalCells % 7)) % 7;
+  for (let i = 1; i <= remaining; i++) {
+    html += `<div class="cal-day other-month"><span class="cal-day-num">${i}</span></div>`;
+  }
+
+  document.getElementById('calendar-grid').innerHTML = html;
+}
+
+function prevMes() {
+  calMes.setMonth(calMes.getMonth() - 1);
+  renderCalendario();
+}
+function nextMes() {
+  calMes.setMonth(calMes.getMonth() + 1);
+  renderCalendario();
+}
+
+// ─── PROVEEDORES ─────────────────────────────────────────────
+function renderProveedores() {
+  const list = document.getElementById('prov-list');
+  if (!proveedores.length) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">🏭</div><div style="font-size:11px;">Sin proveedores configurados. Agregá uno arriba para definir plazos de pago.</div></div>`;
+    return;
+  }
+
+  list.innerHTML = proveedores.map(p => `
+    <div class="prov-row">
+      <div class="prov-name">${p.nombre}</div>
+      <div class="prov-plazo" style="color:var(--text2);">
+        ${p.plazo_dias ? `${p.plazo_dias} días` : '<span style="color:var(--text3);">Sin plazo</span>'}
+      </div>
+      ${p.notas ? `<div style="font-size:11px;color:var(--text3);">${p.notas}</div>` : ''}
+      <div class="prov-activo">
+        ${p.activo ? '<span class="badge badge-green">Activo</span>' : '<span class="badge badge-gray">Inactivo</span>'}
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="editProveedor('${p.id}')">✎</button>
+      <button class="btn btn-danger btn-sm" onclick="eliminarProveedor('${p.id}')">✕</button>
+    </div>
+  `).join('');
+}
+
+function editProveedor(id) {
+  const p = proveedores.find(x => x.id === id);
+  if (!p) return;
+  editingProvId = id;
+  document.getElementById('p-nombre').value = p.nombre || '';
+  document.getElementById('p-plazo').value = p.plazo_dias || '';
+  document.getElementById('p-notas').value = p.notas || '';
+  document.getElementById('p-activo').value = p.activo ? 'true' : 'false';
+  document.getElementById('p-submit-label').textContent = '✓ Guardar';
+  document.getElementById('p-cancel').style.display = 'inline-flex';
+  document.getElementById('p-nombre').focus();
+}
+
+function cancelProveedor() {
+  editingProvId = null;
+  document.getElementById('p-nombre').value = '';
+  document.getElementById('p-plazo').value = '';
+  document.getElementById('p-notas').value = '';
+  document.getElementById('p-activo').value = 'true';
+  document.getElementById('p-submit-label').textContent = '+ Agregar';
+  document.getElementById('p-cancel').style.display = 'none';
+}
+
+async function submitProveedor() {
+  const nombre = document.getElementById('p-nombre').value.trim();
+  const plazo = parseInt(document.getElementById('p-plazo').value) || null;
+  if (!nombre) { showToast('Ingresá el nombre del proveedor', 'error'); return; }
+
+  const payload = {
+    nombre,
+    plazo_dias: plazo,
+    notas: document.getElementById('p-notas').value.trim() || null,
+    activo: document.getElementById('p-activo').value === 'true',
+  };
+
+  try {
+    if (editingProvId) {
+      await sbFetch(`proveedores_pago?id=eq.${editingProvId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      });
+      showToast('Proveedor actualizado', 'success');
+    } else {
+      payload.created_at = new Date().toISOString();
+      await sbFetch('proveedores_pago', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      showToast('Proveedor agregado', 'success');
+    }
+    cancelProveedor();
+    await loadProveedores();
+    renderPendientes();
+    renderCalendario();
+  } catch(e) {
+    showToast('Error: ' + e.message, 'error');
+  }
+}
+
+async function eliminarProveedor(id) {
+  if (!confirm('¿Eliminar este proveedor? Se perderá la configuración de plazo.')) return;
+  try {
+    await sbFetch(`proveedores_pago?id=eq.${id}`, { method: 'DELETE' });
+    showToast('Proveedor eliminado', 'success');
+    await loadProveedores();
+    renderPendientes();
+  } catch(e) {
+    showToast('Error: ' + e.message, 'error');
+  }
+}
+
+// ─── TABS ────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(`tab-${tab}`).classList.add('active');
+  const labels = { pendientes:'Pendientes', calendario:'Calendario', historial:'Historial', proveedores:'Proveedores' };
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    if (b.textContent === labels[tab]) b.classList.add('active');
+  });
+  if (tab === 'calendario') renderCalendario();
+}
+
+// ─── UTILS ───────────────────────────────────────────────────
+function formatDateDisplay(d) {
+  if (!d) return '—';
+  const [y,m,day] = d.split('-');
+  return `${day}/${m}/${y}`;
+}
+
+function formatMoney(v) {
+  const n = parseFloat(v) || 0;
+  return '$' + n.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function localLabel(k) {
+  const map = { palermo:'Palermo', belgrano:'Belgrano', barrio_chino:'B. Chino', san_telmo:'San Telmo' };
+  return map[k] || k || '—';
+}
+
+function showToast(msg, type = 'success') {
+  const c = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = `toast toast-${type}`;
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+</script>
+</body>
+</html>
