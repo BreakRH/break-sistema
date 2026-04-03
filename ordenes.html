@@ -922,10 +922,13 @@ function openDetalle(id) {
       </div>
     </div>
     <div class="detail-section">
-      <div class="detail-section-title">Activación</div>
+      <div class="detail-section-title">Activación <span style="font-size:10px;color:var(--text3);font-weight:400;">— tocá para marcar</span></div>
       <div class="checks-grid">
         ${checks.map(c => `
-          <div class="check-item ${o[c.key] ? 'checked' : ''}" style="cursor:default;">
+          <div class="check-item ${o[c.key] ? 'checked' : ''}"
+               id="modal-check-${c.key}"
+               onclick="toggleCheckModal('${o.id}', '${c.key}', this)"
+               style="cursor:pointer;">
             <div class="check-box"><span class="check-box-tick">✓</span></div>
             <span class="check-label">${c.label}</span>
           </div>
@@ -943,6 +946,32 @@ function openDetalle(id) {
 function closeModal() {
   document.getElementById('modal-detalle').classList.remove('open');
   modalOrdenId = null;
+}
+
+async function toggleCheckModal(ordenId, campo, el) {
+  // Estado actual del elemento
+  const estaChecked = el.classList.contains('checked');
+  const nuevoValor = !estaChecked;
+
+  // Feedback visual inmediato
+  el.classList.toggle('checked', nuevoValor);
+
+  // Guardar en Supabase
+  try {
+    await sbFetch(`ordenes_trabajo?id=eq.${ordenId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ [campo]: nuevoValor, updated_at: new Date().toISOString() })
+    });
+    // Actualizar el array local para que la tabla y los dots reflejen el cambio
+    const orden = ordenes.find(o => o.id === ordenId);
+    if (orden) orden[campo] = nuevoValor;
+    renderTabla();
+    renderStats();
+  } catch(e) {
+    // Revertir visual si falló
+    el.classList.toggle('checked', estaChecked);
+    showToast('Error al guardar: ' + e.message, 'error');
+  }
 }
 
 function editFromModal() {
