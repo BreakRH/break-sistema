@@ -640,7 +640,7 @@ async function loadOrdenes() {
     // Historial pagado
     let qh = 'ordenes_trabajo?order=updated_at.desc&limit=100';
     if (localKey) qh += `&local=eq.${localKey}`;
-    qh += '&not.estado_pago=eq.por_pagar';
+    qh += '&estado_pago=neq.por_pagar';
     const allData = await sbFetch(qh) || [];
     historialData = allData.filter(o => o.estado_pago !== 'por_pagar');
 
