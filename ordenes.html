@@ -250,7 +250,14 @@
     border-radius: var(--radius-lg);
     width: 100%;
     max-width: 680px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
     margin: auto;
+  }
+  .modal-body {
+    overflow-y: auto;
+    flex: 1;
   }
   .modal-header {
     display: flex;
@@ -275,7 +282,7 @@
     line-height: 1;
   }
   .modal-close:hover { background: var(--surface2); color: var(--text); }
-  .modal-body { padding: 20px; }
+  .modal-body { padding: 20px; overflow-y: auto; flex: 1; }
   .modal-footer {
     padding: 14px 20px;
     border-top: 1px solid var(--border);
@@ -459,6 +466,8 @@
 
 <div class="tabs">
   <button class="tab-btn active" onclick="switchTab('lista')">Lista</button>
+  <button class="tab-btn" onclick="switchTab('calendario')">📅 Calendario</button>
+  <button class="tab-btn" onclick="switchTab('historial')">Historial</button>
   <button class="tab-btn" onclick="switchTab('nueva')">+ Nueva OT</button>
 </div>
 
@@ -470,6 +479,7 @@
     <div class="toolbar">
       <div class="filter-group" id="filter-estado">
         <button class="filter-chip active" data-filter="todos" onclick="setFilter('todos',this)">Todos</button>
+        <button class="filter-chip" data-filter="por_recibir" onclick="setFilter('por_recibir',this)">📦 Por recibir</button>
         <button class="filter-chip" data-filter="por_pagar" onclick="setFilter('por_pagar',this)">Por pagar</button>
         <button class="filter-chip" data-filter="ya_pagado" onclick="setFilter('ya_pagado',this)">Pagadas</button>
         <button class="filter-chip" data-filter="pendiente" onclick="setFilter('pendiente',this)">Incompletas</button>
@@ -483,10 +493,10 @@
       <table>
         <thead>
           <tr>
-            <th>Fecha</th>
+            <th>Fecha llegada</th>
             <th>N° Factura</th>
             <th>Proveedor</th>
-            <th>Tipo</th>
+            <th>Origen</th>
             <th>Pago</th>
             <th>Total</th>
             <th>Progreso</th>
@@ -599,6 +609,56 @@
           <textarea class="form-textarea" id="f-notas" placeholder="Observaciones adicionales..."></textarea>
         </div>
 
+        <!-- Recepción de mercadería -->
+        <div class="section-divider">
+          <span class="section-divider-label">Recepción de mercadería</span>
+          <div class="section-divider-line"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Cantidad pedida</label>
+          <input class="form-input" type="number" id="f-qty-pedida" placeholder="0" min="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cantidad recibida</label>
+          <input class="form-input" type="number" id="f-qty-recibida" placeholder="0" min="0">
+        </div>
+
+        <div class="form-group span-2">
+          <label class="form-label">Artículos extra recibidos</label>
+          <textarea class="form-textarea" id="f-extras" placeholder="Ej: 2x Fernet Branca 700ml, 1x Sprite 1.5L (no estaban en el pedido)..."></textarea>
+        </div>
+
+        <div class="form-group span-2">
+          <label class="form-label">Observaciones de recepción</label>
+          <textarea class="form-textarea" id="f-observaciones" placeholder="Ej: Faltaron 3 unidades de Brahma, precio de Quilmes subió $150..."></textarea>
+        </div>
+
+        <!-- Recepción operativa -->
+        <div class="section-divider">
+          <span class="section-divider-label">Recepción</span>
+          <div class="section-divider-line"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Cant. pedida</label>
+          <input class="form-input" type="number" id="f-cant-pedida" placeholder="0" min="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cant. recibida</label>
+          <input class="form-input" type="number" id="f-cant-recibida" placeholder="0" min="0">
+        </div>
+
+        <div class="form-group span-2">
+          <label class="form-label">Artículos extra recibidos</label>
+          <input class="form-input" type="text" id="f-extras" placeholder="Ej: 2 Fernet 750ml, 6 Sprite lata...">
+        </div>
+
+        <div class="form-group span-2">
+          <label class="form-label">Observaciones de recepción</label>
+          <textarea class="form-textarea" id="f-obs-recepcion" placeholder="Diferencias, faltantes, cambios de precio, etc."></textarea>
+        </div>
+
         <!-- Checkboxes -->
         <div class="section-divider">
           <span class="section-divider-label">Estado de activación</span>
@@ -662,6 +722,46 @@
     </div>
   </div>
 
+
+  <!-- TAB: CALENDARIO -->
+  <div class="screen" id="tab-calendario">
+    <div style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:2px;">Pedidos por llegar esta semana</div>
+        <div style="font-size:11px;color:var(--text3);">Desde pedidos enviados con fecha estimada de llegada</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="loadCalendario()">↺ Actualizar</button>
+    </div>
+    <div id="calendario-semana"></div>
+  </div>
+
+  <!-- TAB: HISTORIAL -->
+  <div class="screen" id="tab-historial">
+    <div class="toolbar" style="margin-bottom:16px;">
+      <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;">OT cerradas</div>
+      <div class="toolbar-right">
+        <input class="search-input" type="text" placeholder="Buscar proveedor / factura..." id="search-historial-ot" oninput="renderHistorialOT()" style="width:220px;">
+        <button class="btn btn-ghost btn-sm" onclick="loadHistorialOT()">↺ Actualizar</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Proveedor</th>
+            <th>Factura</th>
+            <th>Recibido</th>
+            <th>Monto</th>
+            <th>Pago</th>
+            <th>Progreso</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-historial-ot"></tbody>
+      </table>
+    </div>
+  </div>
+
 </div>
 
 <!-- MODAL: DETALLE OT -->
@@ -684,6 +784,38 @@
 <script>
 const SUPABASE_URL = 'https://oiuualqixcccfhtpcist.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pdXVhbHFpeGNjY2ZodHBjaXN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NzUxNjEsImV4cCI6MjA4OTQ1MTE2MX0.ms4MHVhKDTKfID0WGi05EFPySf350SA66uNi4wPfsOo';
+
+// ─── SUPABASE ────────────────────────────────────────────────
+// IMPORTANTE: declarar _sbSecret y sbFetch ANTES del bloque init
+// para evitar temporal dead zone (init llama loadOrdenes → sbFetch)
+let _sbSecret = null;
+(async () => {
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/config?clave=eq.app_secret&select=valor`, {
+      headers: {'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json'}
+    });
+    const d = await r.json();
+    if (d?.[0]?.valor) _sbSecret = d[0].valor;
+  } catch(e) { console.warn('[ordenes] app_secret no disponible', e); }
+})();
+
+async function sbFetch(path, opts = {}) {
+  const headers = {
+    'apikey': SUPABASE_KEY,
+    'Authorization': `Bearer ${SUPABASE_KEY}`,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=representation',
+    ...(_sbSecret ? { 'x-app-secret': _sbSecret } : {}),
+    ...opts.headers
+  };
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, { ...opts, headers });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(err);
+  }
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
 
 // ─── STATE ───────────────────────────────────────────────────
 let localKey = '';
@@ -739,24 +871,6 @@ function updateHeader() {
   document.getElementById('header-local').textContent = localName || '—';
 }
 
-// ─── SUPABASE ────────────────────────────────────────────────
-async function sbFetch(path, opts = {}) {
-  const headers = {
-    'apikey': SUPABASE_KEY,
-    'Authorization': `Bearer ${SUPABASE_KEY}`,
-    'Content-Type': 'application/json',
-    'Prefer': 'return=representation',
-    ...opts.headers
-  };
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, { ...opts, headers });
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(err);
-  }
-  const text = await res.text();
-  return text ? JSON.parse(text) : null;
-}
-
 // ─── LOAD ────────────────────────────────────────────────────
 async function loadOrdenes() {
   try {
@@ -808,6 +922,7 @@ function renderTabla() {
   if (filtroActivo === 'por_pagar') data = data.filter(o => o.estado_pago === 'por_pagar');
   else if (filtroActivo === 'ya_pagado') data = data.filter(o => o.estado_pago === 'ya_pagado');
   else if (filtroActivo === 'pendiente') data = data.filter(o => !isComplete(o));
+  else if (filtroActivo === 'por_recibir') data = data.filter(o => !o.registrado && o.estado_pago !== 'ya_pagado');
 
   if (search) data = data.filter(o =>
     (o.nro_factura||'').toLowerCase().includes(search) ||
@@ -816,7 +931,8 @@ function renderTabla() {
 
   const tbody = document.getElementById('tabla-body');
   if (!data.length) {
-    tbody.innerHTML = `<tr><td colspan="9"><div class="empty"><div class="empty-icon">📄</div><div class="empty-text">No hay órdenes</div></div></td></tr>`;
+    const emptyMsg = filtroActivo === 'por_recibir' ? 'No hay pedidos pendientes de recibir' : 'No hay órdenes';
+    tbody.innerHTML = `<tr><td colspan="9"><div class="empty"><div class="empty-icon">📄</div><div class="empty-text">${emptyMsg}</div></div></td></tr>`;
     return;
   }
 
@@ -826,9 +942,9 @@ function renderTabla() {
     return `
       <tr style="cursor:pointer;" onclick="openDetalle('${o.id}')">
         <td style="white-space:nowrap;">${formatDateDisplay(o.fecha)}<br><span style="font-size:10px;color:var(--text3);">${o.hora||''}</span></td>
-        <td style="font-weight:500;">${o.nro_factura||'—'}</td>
+        <td style="font-weight:500;">${o.nro_factura||'<span style="color:var(--text3);font-size:11px;">Sin factura</span>'}</td>
         <td>${o.proveedor||'—'}</td>
-        <td>${badgeTipo(o.tipo_comprobante)}</td>
+        <td>${getOrigenBadge(o)}</td>
         <td>${badgePago(o.estado_pago)}</td>
         <td style="font-weight:500;color:var(--accent);">${formatMoney(o.total)}</td>
         <td>
@@ -916,11 +1032,11 @@ function openDetalle(id) {
         <div class="detail-item"><div class="detail-item-label">Subtotal</div><div class="detail-item-value">${formatMoney(o.subtotal)}</div></div>
         <div class="detail-item"><div class="detail-item-label">IVA / Impuestos</div><div class="detail-item-value">${formatMoney(o.impuestos)}</div></div>
         <div class="detail-item"><div class="detail-item-label">Descuentos</div><div class="detail-item-value">${formatMoney(o.descuentos)}</div></div>
-        <div class="detail-item"><div class="detail-item-label">Total</div><div class="detail-item-value" style="color:var(--accent);font-size:16px;font-weight:600;">${formatMoney(o.total)}</div></div>
-        <div class="detail-item"><div class="detail-item-label">Estado de pago</div><div class="detail-item-value">${badgePago(o.estado_pago)}</div></div>
+        <div class="detail-item"><div class="detail-item-label">Total pedido</div><div class="detail-item-value" style="color:var(--accent);font-size:16px;font-weight:600;">${formatMoney(o.total)}</div></div>
         <div class="detail-item"><div class="detail-item-label">Recibido por</div><div class="detail-item-value">${o.recepcion||'—'}</div></div>
       </div>
     </div>
+    ${buildPagoSection(o)}
     <div class="detail-section">
       <div class="detail-section-title">Activación <span style="font-size:10px;color:var(--text3);font-weight:400;">— tocá para marcar</span></div>
       <div class="checks-grid">
@@ -941,6 +1057,104 @@ function openDetalle(id) {
   document.getElementById('modal-detalle').classList.add('open');
   const btnEditar = document.getElementById('btn-modal-editar');
   if (btnEditar) btnEditar.style.display = rolActual === 'admin' ? '' : 'none';
+}
+
+// ─── SECCIÓN PAGO MODAL (6.3) ────────────────────────────────
+function buildPagoSection(o) {
+  const METODO_LABELS = { efectivo:'Efectivo', transferencia:'Transferencia', mp:'Mercado Pago', qr:'QR', ya_pagado:'Ya pagado', por_pagar:'Por pagar' };
+  const METODO_COLOR  = { efectivo:'var(--green)', transferencia:'var(--blue)', mp:'var(--blue)', qr:'var(--blue)', ya_pagado:'var(--green)', por_pagar:'var(--red)' };
+  const estadoLabel   = METODO_LABELS[o.estado_pago] || o.estado_pago || '—';
+  const estadoColor   = METODO_COLOR[o.estado_pago]  || 'var(--text3)';
+
+  // Si ya está pagado: mostrar resumen de lo confirmado
+  if (o.estado_pago !== 'por_pagar') {
+    const yaConfirmado = o.metodo_confirmado
+      ? `<div class="detail-item"><div class="detail-item-label">Método confirmado</div><div class="detail-item-value" style="color:${METODO_COLOR[o.metodo_confirmado]||'var(--text)'};">${METODO_LABELS[o.metodo_confirmado]||o.metodo_confirmado}</div></div>`
+      : '';
+    const montoConf = o.monto_pagado != null
+      ? `<div class="detail-item"><div class="detail-item-label">Monto abonado</div><div class="detail-item-value" style="color:var(--green);font-weight:600;">${formatMoney(o.monto_pagado)}</div></div>`
+      : '';
+    return `
+    <div class="detail-section">
+      <div class="detail-section-title">Estado de pago</div>
+      <div class="detail-grid">
+        <div class="detail-item"><div class="detail-item-label">Estado</div><div class="detail-item-value"><span style="color:${estadoColor};font-weight:600;">${estadoLabel}</span></div></div>
+        ${yaConfirmado}
+        ${montoConf}
+      </div>
+    </div>`;
+  }
+
+  // Estado por_pagar → mostrar formulario de confirmación
+  const metodoPlanificado = o.notas
+    ? '' // si hay notas puede venir de pedido
+    : '';
+  // Buscar método planificado del pedido (viene en notas o en estado_pago inicial)
+  const planLabel = o.pago_planificado
+    ? `<div style="font-size:11px;color:var(--text3);margin-bottom:12px;">Método planificado al pedir: <strong style="color:var(--text);">${METODO_LABELS[o.pago_planificado]||o.pago_planificado}</strong></div>`
+    : `<div style="font-size:11px;color:var(--text3);margin-bottom:12px;">Método planificado: <strong style="color:var(--amber);">Por pagar</strong></div>`;
+
+  return `
+    <div class="detail-section" style="border:1px solid var(--amber);border-radius:var(--r2);padding:16px 20px;background:rgba(255,180,0,0.04);">
+      <div class="detail-section-title" style="color:var(--amber);">⚠ Pago pendiente — confirmar al abonar</div>
+      ${planLabel}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div>
+          <div class="detail-item-label" style="margin-bottom:6px;">Método usado</div>
+          <select id="modal-metodo-pago" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:8px 10px;color:var(--text);font-size:13px;outline:none;">
+            <option value="">Seleccionar...</option>
+            <option value="efectivo">Efectivo</option>
+            <option value="transferencia">Transferencia</option>
+            <option value="mp">Mercado Pago</option>
+            <option value="qr">QR</option>
+          </select>
+        </div>
+        <div>
+          <div class="detail-item-label" style="margin-bottom:6px;">Monto abonado</div>
+          <input id="modal-monto-pagado" type="number" min="0" step="1"
+            placeholder="${o.total ? Math.round(o.total) : 'Monto...'}"
+            style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:8px 10px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box;">
+        </div>
+      </div>
+      <button onclick="confirmarPago('${o.id}')"
+        style="width:100%;padding:10px;background:var(--green);color:#0a0a0a;border:none;border-radius:var(--r);font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
+        ✓ Confirmar pago
+      </button>
+    </div>`;
+}
+
+async function confirmarPago(ordenId) {
+  const metodo = document.getElementById('modal-metodo-pago')?.value;
+  const montoRaw = document.getElementById('modal-monto-pagado')?.value;
+  if (!metodo) { showToast('Seleccioná el método de pago', 'error'); return; }
+
+  const monto = montoRaw ? parseFloat(montoRaw) : null;
+  const payload = {
+    estado_pago: metodo,
+    metodo_confirmado: metodo,
+    updated_at: new Date().toISOString(),
+  };
+  if (monto !== null) payload.monto_pagado = monto;
+
+  try {
+    await sbFetch(`ordenes_trabajo?id=eq.${ordenId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload)
+    });
+    // Actualizar local
+    const orden = ordenes.find(o => o.id === ordenId);
+    if (orden) {
+      orden.estado_pago = metodo;
+      orden.metodo_confirmado = metodo;
+      if (monto !== null) orden.monto_pagado = monto;
+    }
+    renderTabla();
+    renderStats();
+    closeModal();
+    showToast('Pago confirmado ✓', 'success');
+  } catch(e) {
+    showToast('Error al confirmar pago: ' + e.message, 'error');
+  }
 }
 
 function closeModal() {
@@ -983,11 +1197,19 @@ function editFromModal() {
 function switchTab(tab) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById(`tab-${tab}`).classList.add('active');
+  const el = document.getElementById(`tab-${tab}`);
+  if (el) el.classList.add('active');
+  // Activar botón correcto
   document.querySelectorAll('.tab-btn').forEach(b => {
-    if (b.textContent.includes(tab === 'lista' ? 'Lista' : 'Nueva')) b.classList.add('active');
+    const txt = b.textContent.trim();
+    if (tab === 'lista' && txt === 'Lista') b.classList.add('active');
+    else if (tab === 'nueva' && txt.includes('Nueva')) b.classList.add('active');
+    else if (tab === 'calendario' && txt.includes('Calendario')) b.classList.add('active');
+    else if (tab === 'historial' && txt === 'Historial') b.classList.add('active');
   });
   if (tab === 'nueva' && !editingId) resetForm();
+  if (tab === 'calendario') loadCalendario();
+  if (tab === 'historial') loadHistorialOT();
 }
 
 function resetForm() {
@@ -1010,6 +1232,10 @@ function resetForm() {
   document.getElementById('f-estado-pago').value = '';
   document.getElementById('f-recepcion').value = '';
   document.getElementById('f-notas').value = '';
+  document.getElementById('f-qty-pedida').value = '';
+  document.getElementById('f-qty-recibida').value = '';
+  document.getElementById('f-extras').value = '';
+  document.getElementById('f-observaciones').value = '';
 
   // Reset checks
   const checkIds = ['c-repuesto','c-registrado','c-activo-pya','c-activo-mp','c-activo-rappi','c-check-factura','c-check-nocturno','c-revision-precios'];
@@ -1032,7 +1258,9 @@ function editOT(id) {
   document.getElementById('form-titulo').textContent = 'Editar Orden de Trabajo';
   document.getElementById('submit-icon').textContent = '✓';
   document.getElementById('submit-label').textContent = 'Guardar cambios';
-  document.getElementById('btn-eliminar').style.display = 'inline-flex';
+  // Solo mostrar eliminar a admin Y solo si la OT no vino de un pedido
+  const puedeEliminar = rolActual === 'admin' && !o.pedido_id;
+  document.getElementById('btn-eliminar').style.display = puedeEliminar ? 'inline-flex' : 'none';
 
   document.getElementById('f-fecha').value = o.fecha || today();
   document.getElementById('f-hora').value = o.hora || '';
@@ -1045,6 +1273,10 @@ function editOT(id) {
   document.getElementById('f-estado-pago').value = o.estado_pago || '';
   document.getElementById('f-recepcion').value = o.recepcion || '';
   document.getElementById('f-notas').value = o.notas || '';
+  document.getElementById('f-qty-pedida').value = o.qty_pedida || '';
+  document.getElementById('f-qty-recibida').value = o.qty_recibida || '';
+  document.getElementById('f-extras').value = o.extras || '';
+  document.getElementById('f-observaciones').value = o.obs_recepcion || '';
   calcTotal();
 
   const map = {
@@ -1113,6 +1345,10 @@ async function submitOT() {
     estado_pago: estadoPago,
     recepcion: document.getElementById('f-recepcion').value.trim(),
     notas: document.getElementById('f-notas').value.trim(),
+    qty_pedida: parseFloat(document.getElementById('f-qty-pedida').value) || null,
+    qty_recibida: parseFloat(document.getElementById('f-qty-recibida').value) || null,
+    extras: document.getElementById('f-extras').value.trim() || null,
+    obs_recepcion: document.getElementById('f-observaciones').value.trim() || null,
     repuesto: document.getElementById('c-repuesto').checked,
     registrado: document.getElementById('c-registrado').checked,
     activo_pya: document.getElementById('c-activo-pya').checked,
@@ -1148,6 +1384,17 @@ async function submitOT() {
 
 async function eliminarOT() {
   if (!editingId) return;
+  // Solo admin puede eliminar
+  if (rolActual !== 'admin') {
+    showToast('Solo el administrador puede eliminar órdenes', 'error');
+    return;
+  }
+  // No permitir eliminar OT vinculada a un pedido
+  const orden = ordenes.find(o => o.id === editingId);
+  if (orden && orden.pedido_id) {
+    showToast('Esta OT fue generada desde un pedido y no puede eliminarse. Marcala como recibida.', 'error');
+    return;
+  }
   if (!confirm('¿Eliminar esta orden de trabajo? Esta acción no se puede deshacer.')) return;
   try {
     await sbFetch(`ordenes_trabajo?id=eq.${editingId}`, { method: 'DELETE' });
@@ -1219,6 +1466,117 @@ function showToast(msg, type = 'success') {
 document.getElementById('modal-detalle').addEventListener('click', function(e) {
   if (e.target === this) closeModal();
 });
+
+// ─── CALENDARIO SEMANAL ──────────────────────────────────────
+let pedidosSemana = [];
+
+async function loadCalendario() {
+  const cont = document.getElementById('calendario-semana');
+  if (!cont) return;
+  cont.innerHTML = '<div class="loading"><div class="spinner"></div>Cargando pedidos...</div>';
+  try {
+    // Buscar pedidos con fecha_llegada en los próximos 14 días del local actual
+    const tiendaMap = { palermo:'T', belgrano:'R', barrio_chino:'J', san_telmo:'S' };
+    const tiendaKey = tiendaMap[localKey] || null;
+    const hoy = new Date(); hoy.setHours(0,0,0,0);
+    const en14 = new Date(hoy); en14.setDate(en14.getDate()+14);
+    const hoyStr = hoy.toISOString().split('T')[0];
+    const en14Str = en14.toISOString().split('T')[0];
+
+    let q = `pedidos?fecha_llegada=gte.${hoyStr}&fecha_llegada=lte.${en14Str}&status=in.(enviado,en-camino)&order=fecha_llegada.asc`;
+    if (tiendaKey) q += `&tienda=eq.${tiendaKey}`;
+    const data = await sbFetch(q);
+    pedidosSemana = data || [];
+    renderCalendario();
+  } catch(e) {
+    cont.innerHTML = `<div class="empty"><div class="empty-icon">⚠</div><div class="empty-text">Error al cargar: ${e.message}</div></div>`;
+  }
+}
+
+function renderCalendario() {
+  const cont = document.getElementById('calendario-semana');
+  if (!cont) return;
+
+  // Construir 7 días desde hoy
+  const dias = [];
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(hoy); d.setDate(d.getDate() + i);
+    dias.push(d);
+  }
+
+  const diasSemana = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+  const html = dias.map(dia => {
+    const dateStr = dia.toISOString().split('T')[0];
+    const esHoy = dia.getTime() === hoy.getTime();
+    const pedidosDia = pedidosSemana.filter(p => p.fecha_llegada === dateStr);
+
+    const pedidosHtml = pedidosDia.length === 0
+      ? '<div style="font-size:11px;color:var(--text3);padding:8px 0;">Sin pedidos</div>'
+      : pedidosDia.map(p => {
+          const statusColors = { enviado:'var(--blue)', 'en-camino':'var(--yellow)' };
+          const color = statusColors[p.status] || 'var(--text2)';
+          return `<div style="padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;margin-bottom:6px;border-left:3px solid ${color}">
+            <div style="font-size:12px;font-weight:500;color:var(--text)">${p.proveedor}</div>
+            <div style="font-size:10px;color:var(--text3);margin-top:2px;font-family:'DM Mono',monospace;">
+              ${p.pago || 'Pago no especificado'} · ${formatMoney(p.total)}
+            </div>
+            <div style="margin-top:4px;">
+              <span style="font-size:10px;padding:1px 6px;border-radius:3px;background:${color}20;color:${color};font-family:'DM Mono',monospace;">${p.status === 'en-camino' ? 'En camino' : 'Enviado'}</span>
+            </div>
+          </div>`;
+        }).join('');
+
+    return `<div style="flex:1;min-width:120px;background:var(--surface);border:1px solid ${esHoy ? 'var(--accent)' : 'var(--border)'};border-radius:8px;padding:12px;${esHoy ? 'box-shadow:0 0 0 1px var(--accent-dim)' : ''}">
+      <div style="margin-bottom:10px;">
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;">${diasSemana[dia.getDay()]}</div>
+        <div style="font-size:18px;font-weight:700;font-family:'Syne',sans-serif;color:${esHoy ? 'var(--accent)' : 'var(--text)'};">${dia.getDate()}</div>
+        <div style="font-size:10px;color:var(--text3);">${meses[dia.getMonth()]}</div>
+      </div>
+      ${pedidosHtml}
+    </div>`;
+  }).join('');
+
+  cont.innerHTML = `<div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;">${html}</div>
+    <div style="margin-top:12px;display:flex;gap:16px;font-size:11px;color:var(--text3);">
+      <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--blue);margin-right:4px;"></span>Enviado</span>
+      <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--yellow);margin-right:4px;"></span>En camino</span>
+    </div>`;
+}
+
+// ─── HISTORIAL OT ────────────────────────────────────────────
+let historialOT = [];
+async function loadHistorialOT() {
+  try {
+    let q = 'ordenes_trabajo?order=fecha.desc,created_at.desc&limit=150';
+    if (localKey) q += '&local=eq.'+localKey;
+    const data = await sbFetch(q) || [];
+    historialOT = data.filter(o => isComplete(o) || ['efectivo','transferencia','mp','qr','ya_pagado'].includes(o.estado_pago));
+    renderHistorialOT();
+  } catch(e) { showToast('Error al cargar historial','error'); }
+}
+function renderHistorialOT() {
+  const search = (document.getElementById('search-historial-ot')?.value||'').toLowerCase();
+  let data = historialOT;
+  if (search) data = data.filter(o=>(o.proveedor||'').toLowerCase().includes(search)||(o.nro_factura||'').toLowerCase().includes(search));
+  const tbody = document.getElementById('tabla-historial-ot');
+  if (!tbody) return;
+  if (!data.length) { tbody.innerHTML='<tr><td colspan="7"><div class="empty"><div class="empty-icon">📋</div><div class="empty-text">Sin OT en historial</div></div></td></tr>'; return; }
+  tbody.innerHTML = data.map(o=>{
+    const checks=checkCount(o);
+    return '<tr><td>'+formatDateDisplay(o.fecha)+'</td><td style="color:var(--text2);font-size:11px;">'+(o.proveedor||'—')+'</td><td style="color:var(--text2);font-size:11px;">'+(o.nro_factura||'—')+'</td><td style="font-size:11px;">'+(o.recepcion||'—')+'</td><td style="color:var(--accent);font-weight:500;">'+formatMoney(o.total)+'</td><td>'+badgePago(o.estado_pago)+'</td><td><div style="display:flex;align-items:center;gap:4px;">'+buildDots(o)+'<span style="font-size:10px;color:var(--text3);">'+checks.done+'/'+checks.total+'</span></div></td></tr>';
+  }).join('');
+}
+
+// ─── ORIGEN BADGE ─────────────────────────────────────────────
+function getOrigenBadge(o) {
+  return o.pedido_id
+    ? '<span class="badge badge-accent" style="font-size:9px;">📦 Pedido</span>'
+    : '<span class="badge badge-gray" style="font-size:9px;">Manual</span>';
+}
+
 </script>
 </body>
 </html>

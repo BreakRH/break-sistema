@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Break · Registrar dispositivo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f0f0f;
+      --bg2: #161616;
+      --bg3: #1e1e1e;
+      --bg4: #262626;
+      --border: rgba(255,255,255,0.08);
+      --border2: rgba(255,255,255,0.14);
+      --text: #f0ede8;
+      --text2: #9a9690;
+      --text3: #5a5754;
+      --accent: #e8c547;
+      --accent2: #b89b2e;
+      --red: #e85d4a;
+      --red-bg: rgba(232,93,74,0.12);
+      --green: #4caf82;
+      --green-bg: rgba(76,175,130,0.12);
+      --radius: 10px;
+      --mono: 'DM Mono', monospace;
+      --sans: 'Syne', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 20px;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 360px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    /* ── Header ── */
+    .header {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+    .header-logo {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--accent);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    .header-title {
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1.2;
+    }
+    .header-sub {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--text3);
+      margin-top: 8px;
+      line-height: 1.5;
+    }
+
+    /* ── Form box ── */
+    .box {
+      background: var(--bg2);
+      border: 0.5px solid var(--border2);
+      border-radius: var(--radius);
+      padding: 24px 20px;
+    }
+
+    .box-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      margin-bottom: 10px;
+    }
+
+    /* ── Code input — big digits ── */
+    .code-wrapper {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .code-digit {
+      width: 48px;
+      height: 60px;
+      background: var(--bg3);
+      border: 0.5px solid var(--border2);
+      border-radius: 8px;
+      font-family: var(--mono);
+      font-size: 26px;
+      font-weight: 500;
+      color: var(--accent);
+      text-align: center;
+      caret-color: var(--accent);
+      outline: none;
+      transition: border-color 0.15s;
+      -webkit-appearance: none;
+      /* hide arrows on number inputs */
+      -moz-appearance: textfield;
+    }
+    .code-digit::-webkit-outer-spin-button,
+    .code-digit::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+    .code-digit:focus {
+      border-color: var(--accent);
+      background: var(--bg4);
+    }
+    .code-digit.filled {
+      border-color: rgba(232,197,71,0.4);
+    }
+    .code-digit.error {
+      border-color: var(--red);
+      color: var(--red);
+      animation: shake 0.3s ease;
+    }
+
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      25%      { transform: translateX(-4px); }
+      75%      { transform: translateX(4px); }
+    }
+
+    /* ── Button ── */
+    .btn-primary {
+      width: 100%;
+      background: var(--accent);
+      border: none;
+      border-radius: var(--radius);
+      padding: 14px;
+      font-family: var(--sans);
+      font-size: 14px;
+      font-weight: 600;
+      color: #0f0f0f;
+      cursor: pointer;
+      transition: opacity 0.15s, background 0.15s;
+      letter-spacing: 0.02em;
+    }
+    .btn-primary:hover { opacity: 0.88; }
+    .btn-primary:disabled { opacity: 0.35; cursor: default; }
+    .btn-primary.loading { opacity: 0.6; cursor: wait; }
+
+    /* ── Status messages ── */
+    .msg {
+      margin-top: 16px;
+      padding: 11px 14px;
+      border-radius: 8px;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.5;
+      display: none;
+    }
+    .msg.error   { background: var(--red-bg);   border: 0.5px solid var(--red);   color: var(--red);   display: block; }
+    .msg.success { background: var(--green-bg); border: 0.5px solid var(--green); color: var(--green); display: block; }
+    .msg.info    { background: rgba(91,156,246,0.1); border: 0.5px solid rgba(91,156,246,0.3); color: #5b9cf6; display: block; }
+
+    /* ── Success screen ── */
+    #screen-success {
+      display: none;
+      text-align: center;
+    }
+    #screen-success .success-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+    #screen-success .success-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--green);
+      margin-bottom: 8px;
+    }
+    #screen-success .success-sub {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--text3);
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+    #screen-success .btn-go {
+      width: 100%;
+      background: var(--accent);
+      border: none;
+      border-radius: var(--radius);
+      padding: 14px;
+      font-family: var(--sans);
+      font-size: 14px;
+      font-weight: 600;
+      color: #0f0f0f;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    #screen-success .btn-go:hover { opacity: 0.88; }
+
+    /* ── Already enrolled ── */
+    #screen-enrolled {
+      display: none;
+      text-align: center;
+    }
+    #screen-enrolled .enrolled-icon {
+      font-size: 40px;
+      margin-bottom: 14px;
+    }
+    #screen-enrolled .enrolled-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+    #screen-enrolled .enrolled-sub {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--text3);
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+
+    .footer-note {
+      text-align: center;
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text3);
+      margin-top: 20px;
+      line-height: 1.5;
+    }
+
+    /* spinner inline */
+    .spin {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid rgba(15,15,15,0.3);
+      border-top-color: #0f0f0f;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<div class="card">
+
+  <!-- ── HEADER ── -->
+  <div class="header">
+    <div class="header-logo">◈ Break</div>
+    <div class="header-title">Registrar dispositivo</div>
+    <div class="header-sub">Ingresá el código que te dio el admin<br>para autorizar este teléfono.</div>
+  </div>
+
+  <!-- ── SCREEN: FORM ── -->
+  <div id="screen-form">
+    <div class="box">
+      <div class="box-label">Código de acceso</div>
+
+      <!-- 6 individual digit inputs -->
+      <div class="code-wrapper" id="code-wrapper">
+        <input class="code-digit" type="number" maxlength="1" inputmode="numeric" id="d0" autocomplete="off">
+        <input class="code-digit" type="number" maxlength="1" inputmode="numeric" id="d1" autocomplete="off">
+        <input class="code-digit" type="number" maxlength="1" inputmode="numeric" id="d2" autocomplete="off">
+        <input class="code-digit" type="number" maxlength="1" inputmode="numeric" id="d3" autocomplete="off">
+        <input class="code-digit" type="number" maxlength="1" inputmode="numeric" id="d4" autocomplete="off">
+        <input class="code-digit" type="number" maxlength="1" inputmode="numeric" id="d5" autocomplete="off">
+      </div>
+
+      <button class="btn-primary" id="btn-verificar" onclick="verificarCodigo()" disabled>
+        Verificar código
+      </button>
+
+      <div class="msg" id="msg-form"></div>
+    </div>
+
+    <div class="footer-note">
+      El código expira a los 30 minutos<br>y funciona una sola vez.
+    </div>
+  </div>
+
+  <!-- ── SCREEN: SUCCESS ── -->
+  <div id="screen-success">
+    <div class="success-icon">✓</div>
+    <div class="success-title">Dispositivo autorizado</div>
+    <div class="success-sub">Este teléfono ya puede acceder<br>al sistema Break.</div>
+    <button class="btn-go" onclick="irAlSistema()">Ir al sistema →</button>
+  </div>
+
+  <!-- ── SCREEN: ALREADY ENROLLED ── -->
+  <div id="screen-enrolled">
+    <div class="enrolled-icon">◈</div>
+    <div class="enrolled-title">Ya registrado</div>
+    <div class="enrolled-sub">Este dispositivo ya está autorizado<br>y puede acceder al sistema.</div>
+    <button class="btn-go" style="width:100%;background:var(--accent);border:none;border-radius:var(--radius);padding:14px;font-family:var(--sans);font-size:14px;font-weight:600;color:#0f0f0f;cursor:pointer;" onclick="irAlSistema()">
+      Ir al sistema →
+    </button>
+  </div>
+
+</div>
+
+<script>
+  // ── CONSTANTES ──────────────────────────────────────────────────────────────
+  const SUPABASE_URL = 'https://oiuualqixcccfhtpcist.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pdXVhbHFpeGNjY2ZodHBjaXN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NzUxNjEsImV4cCI6MjA4OTQ1MTE2MX0.ms4MHVhKDTKfID0WGi05EFPySf350SA66uNi4wPfsOo';
+
+  const DE_TOKEN_KEY  = 'break_device_token';
+  const DE_TOKENS_CFG = 'device_tokens';
+  const ENROLL_CODE_CFG = 'enroll_code';
+  const ENROLL_EXP_CFG  = 'enroll_code_exp';
+
+  let _appSecret = null;
+
+  // ── SUPABASE HELPERS ────────────────────────────────────────────────────────
+  async function loadAppSecret() {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/config?clave=eq.app_secret&select=valor`, {
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json',
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        _appSecret = data?.[0]?.valor || null;
+      }
+    } catch(e) {
+      console.warn('[Enroll] No se pudo cargar app_secret:', e);
+    }
+  }
+
+  async function sbFetch(path, opts = {}) {
+    if (!_appSecret) await loadAppSecret();
+    const { extraHeaders, ...fetchOpts } = opts;
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation',
+        ...(_appSecret ? { 'x-app-secret': _appSecret } : {}),
+        ...(opts.headers || {}),
+        ...(extraHeaders || {}),
+      },
+      ...fetchOpts
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(err);
+    }
+    return res.status === 204 ? null : res.json();
+  }
+
+  // ── DEVICE ID ───────────────────────────────────────────────────────────────
+  function getDeviceId() {
+    let id = localStorage.getItem('break_device_id');
+    if (!id) {
+      id = 'dev_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+      localStorage.setItem('break_device_id', id);
+    }
+    return id;
+  }
+
+  // ── DIGIT INPUT LOGIC ────────────────────────────────────────────────────────
+  const digits = [
+    document.getElementById('d0'),
+    document.getElementById('d1'),
+    document.getElementById('d2'),
+    document.getElementById('d3'),
+    document.getElementById('d4'),
+    document.getElementById('d5'),
+  ];
+  const btnVerificar = document.getElementById('btn-verificar');
+
+  digits.forEach((el, i) => {
+    el.addEventListener('input', (e) => {
+      // Extract only the last character (handles paste edge case)
+      let val = el.value.toString().replace(/\D/g, '').slice(-1);
+      el.value = val;
+
+      if (val) {
+        el.classList.add('filled');
+        el.classList.remove('error');
+        if (i < 5) digits[i + 1].focus();
+      } else {
+        el.classList.remove('filled');
+      }
+      checkFull();
+    });
+
+    el.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace' && !el.value && i > 0) {
+        digits[i - 1].value = '';
+        digits[i - 1].classList.remove('filled');
+        digits[i - 1].focus();
+        checkFull();
+      }
+      if (e.key === 'Enter' && !btnVerificar.disabled) {
+        verificarCodigo();
+      }
+    });
+
+    // Handle paste on any digit — distribute across all
+    el.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const pasted = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').slice(0, 6);
+      if (!pasted) return;
+      pasted.split('').forEach((ch, j) => {
+        if (digits[j]) {
+          digits[j].value = ch;
+          digits[j].classList.add('filled');
+        }
+      });
+      const next = Math.min(pasted.length, 5);
+      digits[next].focus();
+      checkFull();
+    });
+  });
+
+  function checkFull() {
+    const code = getCode();
+    btnVerificar.disabled = code.length < 6;
+  }
+
+  function getCode() {
+    return digits.map(d => d.value).join('');
+  }
+
+  function setError(txt) {
+    const msg = document.getElementById('msg-form');
+    msg.className = 'msg error';
+    msg.textContent = txt;
+    digits.forEach(d => d.classList.add('error'));
+    setTimeout(() => digits.forEach(d => d.classList.remove('error')), 600);
+  }
+
+  function setInfo(txt) {
+    const msg = document.getElementById('msg-form');
+    msg.className = 'msg info';
+    msg.textContent = txt;
+  }
+
+  function clearMsg() {
+    const msg = document.getElementById('msg-form');
+    msg.className = 'msg';
+    msg.textContent = '';
+  }
+
+  // ── VERIFICAR CÓDIGO ─────────────────────────────────────────────────────────
+  async function verificarCodigo() {
+    const btn = document.getElementById('btn-verificar');
+    const code = getCode();
+    if (code.length < 6) return;
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spin"></span>Verificando...';
+    btn.classList.add('loading');
+    clearMsg();
+
+    try {
+      // 1. Cargar el código y expiración desde Supabase
+      const rows = await sbFetch(`config?clave=in.(${ENROLL_CODE_CFG},${ENROLL_EXP_CFG})&select=clave,valor`);
+
+      const rowMap = {};
+      (rows || []).forEach(r => { rowMap[r.clave] = r.valor; });
+
+      const storedCode = rowMap[ENROLL_CODE_CFG] || null;
+      const storedExp  = rowMap[ENROLL_EXP_CFG]  || null;
+
+      // 2. Validar existencia
+      if (!storedCode) {
+        setError('No hay código activo. Pedile al admin que genere uno nuevo.');
+        resetBtn();
+        return;
+      }
+
+      // 3. Validar expiración
+      if (storedExp) {
+        const expTs = parseInt(storedExp, 10);
+        if (Date.now() > expTs) {
+          setError('El código expiró. Pedile al admin que genere uno nuevo.');
+          resetBtn();
+          return;
+        }
+      }
+
+      // 4. Validar el código
+      if (code !== storedCode) {
+        setError('Código incorrecto. Verificá con el admin.');
+        resetBtn();
+        return;
+      }
+
+      // 5. ✅ Código válido — generar token y enrolar
+      setInfo('Código válido. Registrando dispositivo...');
+
+      let token = localStorage.getItem(DE_TOKEN_KEY);
+      if (!token) {
+        token = 'bkt_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);
+        localStorage.setItem(DE_TOKEN_KEY, token);
+      }
+
+      // Cargar lista actual de tokens
+      let tokensActuales = [];
+      try {
+        const tRows = await sbFetch(`config?clave=eq.${DE_TOKENS_CFG}&select=valor`);
+        if (tRows && tRows.length) tokensActuales = JSON.parse(tRows[0].valor) || [];
+      } catch(e) {}
+
+      // Agregar token si no está
+      if (!tokensActuales.includes(token)) {
+        tokensActuales.push(token);
+        await sbFetch('config', {
+          method: 'POST',
+          body: JSON.stringify({ clave: DE_TOKENS_CFG, valor: JSON.stringify(tokensActuales) }),
+          extraHeaders: { 'Prefer': 'resolution=merge-duplicates' }
+        });
+      }
+
+      // 6. Invalidar el código de un solo uso (borrar del config)
+      await invalidarCodigo();
+
+      // 7. Mostrar pantalla de éxito
+      document.getElementById('screen-form').style.display = 'none';
+      document.getElementById('screen-success').style.display = 'block';
+
+    } catch(e) {
+      console.error('[Enroll] Error:', e);
+      setError('Error de conexión. Verificá tu internet e intentá de nuevo.');
+      resetBtn();
+    }
+  }
+
+  async function invalidarCodigo() {
+    try {
+      // Limpiar el código y la expiración — así no puede usarse dos veces
+      await sbFetch('config', {
+        method: 'POST',
+        body: JSON.stringify({ clave: ENROLL_CODE_CFG, valor: '' }),
+        extraHeaders: { 'Prefer': 'resolution=merge-duplicates' }
+      });
+      await sbFetch('config', {
+        method: 'POST',
+        body: JSON.stringify({ clave: ENROLL_EXP_CFG, valor: '0' }),
+        extraHeaders: { 'Prefer': 'resolution=merge-duplicates' }
+      });
+    } catch(e) {
+      // Non-critical — si falla, el código igualmente expira
+      console.warn('[Enroll] No se pudo invalidar código:', e);
+    }
+  }
+
+  function resetBtn() {
+    const btn = document.getElementById('btn-verificar');
+    btn.disabled = false;
+    btn.innerHTML = 'Verificar código';
+    btn.classList.remove('loading');
+  }
+
+  function irAlSistema() {
+    window.location.href = 'index.html';
+  }
+
+  // ── INIT: verificar si ya está enrolado ─────────────────────────────────────
+  async function init() {
+    const token = localStorage.getItem(DE_TOKEN_KEY);
+    if (!token) {
+      // Primer ingreso normal — mostrar form
+      digits[0].focus();
+      return;
+    }
+
+    // Verificar contra Supabase si el token sigue válido
+    try {
+      await loadAppSecret();
+      const rows = await sbFetch(`config?clave=eq.${DE_TOKENS_CFG}&select=valor`);
+      if (rows && rows.length) {
+        let tokensValidos = [];
+        try { tokensValidos = JSON.parse(rows[0].valor) || []; } catch(e) {}
+        if (tokensValidos.includes(token)) {
+          // Ya enrollado y válido — ofrecer ir directo
+          document.getElementById('screen-form').style.display = 'none';
+          document.getElementById('screen-enrolled').style.display = 'block';
+          return;
+        }
+      }
+    } catch(e) {
+      // Sin conexión — mostrar form de todas formas
+    }
+
+    digits[0].focus();
+  }
+
+  init();
+</script>
+
+</body>
+</html>
