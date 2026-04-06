@@ -5274,7 +5274,8 @@ async function enrollGenerarCodigo() {
 
     showToast('Código generado — válido 30 minutos', 'success');
   } catch(e) {
-    showToast('Error al generar código', 'error');
+    console.error('[Enroll] Error al generar código:', e.message || e);
+    showToast('Error: ' + (e.message || 'ver consola'), 'error');
     btn.disabled = false;
     btn.textContent = '⊕ Generar código';
   }
