@@ -250,14 +250,7 @@
     border-radius: var(--radius-lg);
     width: 100%;
     max-width: 680px;
-    max-height: 90vh;
-    display: flex;
-    flex-direction: column;
     margin: auto;
-  }
-  .modal-body {
-    overflow-y: auto;
-    flex: 1;
   }
   .modal-header {
     display: flex;
@@ -282,7 +275,7 @@
     line-height: 1;
   }
   .modal-close:hover { background: var(--surface2); color: var(--text); }
-  .modal-body { padding: 20px; overflow-y: auto; flex: 1; }
+  .modal-body { padding: 20px; }
   .modal-footer {
     padding: 14px 20px;
     border-top: 1px solid var(--border);
@@ -785,38 +778,6 @@
 const SUPABASE_URL = 'https://oiuualqixcccfhtpcist.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pdXVhbHFpeGNjY2ZodHBjaXN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NzUxNjEsImV4cCI6MjA4OTQ1MTE2MX0.ms4MHVhKDTKfID0WGi05EFPySf350SA66uNi4wPfsOo';
 
-// ─── SUPABASE ────────────────────────────────────────────────
-// IMPORTANTE: declarar _sbSecret y sbFetch ANTES del bloque init
-// para evitar temporal dead zone (init llama loadOrdenes → sbFetch)
-let _sbSecret = null;
-(async () => {
-  try {
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/config?clave=eq.app_secret&select=valor`, {
-      headers: {'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json'}
-    });
-    const d = await r.json();
-    if (d?.[0]?.valor) _sbSecret = d[0].valor;
-  } catch(e) { console.warn('[ordenes] app_secret no disponible', e); }
-})();
-
-async function sbFetch(path, opts = {}) {
-  const headers = {
-    'apikey': SUPABASE_KEY,
-    'Authorization': `Bearer ${SUPABASE_KEY}`,
-    'Content-Type': 'application/json',
-    'Prefer': 'return=representation',
-    ...(_sbSecret ? { 'x-app-secret': _sbSecret } : {}),
-    ...opts.headers
-  };
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, { ...opts, headers });
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(err);
-  }
-  const text = await res.text();
-  return text ? JSON.parse(text) : null;
-}
-
 // ─── STATE ───────────────────────────────────────────────────
 let localKey = '';
 let localName = '';
@@ -871,6 +832,24 @@ function updateHeader() {
   document.getElementById('header-local').textContent = localName || '—';
 }
 
+// ─── SUPABASE ────────────────────────────────────────────────
+async function sbFetch(path, opts = {}) {
+  const headers = {
+    'apikey': SUPABASE_KEY,
+    'Authorization': `Bearer ${SUPABASE_KEY}`,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=representation',
+    ...opts.headers
+  };
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, { ...opts, headers });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(err);
+  }
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
 // ─── LOAD ────────────────────────────────────────────────────
 async function loadOrdenes() {
   try {
@@ -922,7 +901,6 @@ function renderTabla() {
   if (filtroActivo === 'por_pagar') data = data.filter(o => o.estado_pago === 'por_pagar');
   else if (filtroActivo === 'ya_pagado') data = data.filter(o => o.estado_pago === 'ya_pagado');
   else if (filtroActivo === 'pendiente') data = data.filter(o => !isComplete(o));
-  else if (filtroActivo === 'por_recibir') data = data.filter(o => !o.registrado && o.estado_pago !== 'ya_pagado');
 
   if (search) data = data.filter(o =>
     (o.nro_factura||'').toLowerCase().includes(search) ||
@@ -931,8 +909,7 @@ function renderTabla() {
 
   const tbody = document.getElementById('tabla-body');
   if (!data.length) {
-    const emptyMsg = filtroActivo === 'por_recibir' ? 'No hay pedidos pendientes de recibir' : 'No hay órdenes';
-    tbody.innerHTML = `<tr><td colspan="9"><div class="empty"><div class="empty-icon">📄</div><div class="empty-text">${emptyMsg}</div></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9"><div class="empty"><div class="empty-icon">📄</div><div class="empty-text">No hay órdenes</div></div></td></tr>`;
     return;
   }
 
@@ -942,9 +919,9 @@ function renderTabla() {
     return `
       <tr style="cursor:pointer;" onclick="openDetalle('${o.id}')">
         <td style="white-space:nowrap;">${formatDateDisplay(o.fecha)}<br><span style="font-size:10px;color:var(--text3);">${o.hora||''}</span></td>
-        <td style="font-weight:500;">${o.nro_factura||'<span style="color:var(--text3);font-size:11px;">Sin factura</span>'}</td>
+        <td style="font-weight:500;">${o.nro_factura||'—'}</td>
         <td>${o.proveedor||'—'}</td>
-        <td>${getOrigenBadge(o)}</td>
+        <td>${badgeTipo(o.tipo_comprobante)}</td>
         <td>${badgePago(o.estado_pago)}</td>
         <td style="font-weight:500;color:var(--accent);">${formatMoney(o.total)}</td>
         <td>
@@ -1032,11 +1009,11 @@ function openDetalle(id) {
         <div class="detail-item"><div class="detail-item-label">Subtotal</div><div class="detail-item-value">${formatMoney(o.subtotal)}</div></div>
         <div class="detail-item"><div class="detail-item-label">IVA / Impuestos</div><div class="detail-item-value">${formatMoney(o.impuestos)}</div></div>
         <div class="detail-item"><div class="detail-item-label">Descuentos</div><div class="detail-item-value">${formatMoney(o.descuentos)}</div></div>
-        <div class="detail-item"><div class="detail-item-label">Total pedido</div><div class="detail-item-value" style="color:var(--accent);font-size:16px;font-weight:600;">${formatMoney(o.total)}</div></div>
+        <div class="detail-item"><div class="detail-item-label">Total</div><div class="detail-item-value" style="color:var(--accent);font-size:16px;font-weight:600;">${formatMoney(o.total)}</div></div>
+        <div class="detail-item"><div class="detail-item-label">Estado de pago</div><div class="detail-item-value">${badgePago(o.estado_pago)}</div></div>
         <div class="detail-item"><div class="detail-item-label">Recibido por</div><div class="detail-item-value">${o.recepcion||'—'}</div></div>
       </div>
     </div>
-    ${buildPagoSection(o)}
     <div class="detail-section">
       <div class="detail-section-title">Activación <span style="font-size:10px;color:var(--text3);font-weight:400;">— tocá para marcar</span></div>
       <div class="checks-grid">
@@ -1057,104 +1034,6 @@ function openDetalle(id) {
   document.getElementById('modal-detalle').classList.add('open');
   const btnEditar = document.getElementById('btn-modal-editar');
   if (btnEditar) btnEditar.style.display = rolActual === 'admin' ? '' : 'none';
-}
-
-// ─── SECCIÓN PAGO MODAL (6.3) ────────────────────────────────
-function buildPagoSection(o) {
-  const METODO_LABELS = { efectivo:'Efectivo', transferencia:'Transferencia', mp:'Mercado Pago', qr:'QR', ya_pagado:'Ya pagado', por_pagar:'Por pagar' };
-  const METODO_COLOR  = { efectivo:'var(--green)', transferencia:'var(--blue)', mp:'var(--blue)', qr:'var(--blue)', ya_pagado:'var(--green)', por_pagar:'var(--red)' };
-  const estadoLabel   = METODO_LABELS[o.estado_pago] || o.estado_pago || '—';
-  const estadoColor   = METODO_COLOR[o.estado_pago]  || 'var(--text3)';
-
-  // Si ya está pagado: mostrar resumen de lo confirmado
-  if (o.estado_pago !== 'por_pagar') {
-    const yaConfirmado = o.metodo_confirmado
-      ? `<div class="detail-item"><div class="detail-item-label">Método confirmado</div><div class="detail-item-value" style="color:${METODO_COLOR[o.metodo_confirmado]||'var(--text)'};">${METODO_LABELS[o.metodo_confirmado]||o.metodo_confirmado}</div></div>`
-      : '';
-    const montoConf = o.monto_pagado != null
-      ? `<div class="detail-item"><div class="detail-item-label">Monto abonado</div><div class="detail-item-value" style="color:var(--green);font-weight:600;">${formatMoney(o.monto_pagado)}</div></div>`
-      : '';
-    return `
-    <div class="detail-section">
-      <div class="detail-section-title">Estado de pago</div>
-      <div class="detail-grid">
-        <div class="detail-item"><div class="detail-item-label">Estado</div><div class="detail-item-value"><span style="color:${estadoColor};font-weight:600;">${estadoLabel}</span></div></div>
-        ${yaConfirmado}
-        ${montoConf}
-      </div>
-    </div>`;
-  }
-
-  // Estado por_pagar → mostrar formulario de confirmación
-  const metodoPlanificado = o.notas
-    ? '' // si hay notas puede venir de pedido
-    : '';
-  // Buscar método planificado del pedido (viene en notas o en estado_pago inicial)
-  const planLabel = o.pago_planificado
-    ? `<div style="font-size:11px;color:var(--text3);margin-bottom:12px;">Método planificado al pedir: <strong style="color:var(--text);">${METODO_LABELS[o.pago_planificado]||o.pago_planificado}</strong></div>`
-    : `<div style="font-size:11px;color:var(--text3);margin-bottom:12px;">Método planificado: <strong style="color:var(--amber);">Por pagar</strong></div>`;
-
-  return `
-    <div class="detail-section" style="border:1px solid var(--amber);border-radius:var(--r2);padding:16px 20px;background:rgba(255,180,0,0.04);">
-      <div class="detail-section-title" style="color:var(--amber);">⚠ Pago pendiente — confirmar al abonar</div>
-      ${planLabel}
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
-        <div>
-          <div class="detail-item-label" style="margin-bottom:6px;">Método usado</div>
-          <select id="modal-metodo-pago" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:8px 10px;color:var(--text);font-size:13px;outline:none;">
-            <option value="">Seleccionar...</option>
-            <option value="efectivo">Efectivo</option>
-            <option value="transferencia">Transferencia</option>
-            <option value="mp">Mercado Pago</option>
-            <option value="qr">QR</option>
-          </select>
-        </div>
-        <div>
-          <div class="detail-item-label" style="margin-bottom:6px;">Monto abonado</div>
-          <input id="modal-monto-pagado" type="number" min="0" step="1"
-            placeholder="${o.total ? Math.round(o.total) : 'Monto...'}"
-            style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:8px 10px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box;">
-        </div>
-      </div>
-      <button onclick="confirmarPago('${o.id}')"
-        style="width:100%;padding:10px;background:var(--green);color:#0a0a0a;border:none;border-radius:var(--r);font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
-        ✓ Confirmar pago
-      </button>
-    </div>`;
-}
-
-async function confirmarPago(ordenId) {
-  const metodo = document.getElementById('modal-metodo-pago')?.value;
-  const montoRaw = document.getElementById('modal-monto-pagado')?.value;
-  if (!metodo) { showToast('Seleccioná el método de pago', 'error'); return; }
-
-  const monto = montoRaw ? parseFloat(montoRaw) : null;
-  const payload = {
-    estado_pago: metodo,
-    metodo_confirmado: metodo,
-    updated_at: new Date().toISOString(),
-  };
-  if (monto !== null) payload.monto_pagado = monto;
-
-  try {
-    await sbFetch(`ordenes_trabajo?id=eq.${ordenId}`, {
-      method: 'PATCH',
-      body: JSON.stringify(payload)
-    });
-    // Actualizar local
-    const orden = ordenes.find(o => o.id === ordenId);
-    if (orden) {
-      orden.estado_pago = metodo;
-      orden.metodo_confirmado = metodo;
-      if (monto !== null) orden.monto_pagado = monto;
-    }
-    renderTabla();
-    renderStats();
-    closeModal();
-    showToast('Pago confirmado ✓', 'success');
-  } catch(e) {
-    showToast('Error al confirmar pago: ' + e.message, 'error');
-  }
 }
 
 function closeModal() {
@@ -1258,9 +1137,7 @@ function editOT(id) {
   document.getElementById('form-titulo').textContent = 'Editar Orden de Trabajo';
   document.getElementById('submit-icon').textContent = '✓';
   document.getElementById('submit-label').textContent = 'Guardar cambios';
-  // Solo mostrar eliminar a admin Y solo si la OT no vino de un pedido
-  const puedeEliminar = rolActual === 'admin' && !o.pedido_id;
-  document.getElementById('btn-eliminar').style.display = puedeEliminar ? 'inline-flex' : 'none';
+  document.getElementById('btn-eliminar').style.display = 'inline-flex';
 
   document.getElementById('f-fecha').value = o.fecha || today();
   document.getElementById('f-hora').value = o.hora || '';
@@ -1276,7 +1153,7 @@ function editOT(id) {
   document.getElementById('f-qty-pedida').value = o.qty_pedida || '';
   document.getElementById('f-qty-recibida').value = o.qty_recibida || '';
   document.getElementById('f-extras').value = o.extras || '';
-  document.getElementById('f-observaciones').value = o.obs_recepcion || '';
+  document.getElementById('f-observaciones').value = o.observaciones || '';
   calcTotal();
 
   const map = {
@@ -1348,7 +1225,7 @@ async function submitOT() {
     qty_pedida: parseFloat(document.getElementById('f-qty-pedida').value) || null,
     qty_recibida: parseFloat(document.getElementById('f-qty-recibida').value) || null,
     extras: document.getElementById('f-extras').value.trim() || null,
-    obs_recepcion: document.getElementById('f-observaciones').value.trim() || null,
+    observaciones: document.getElementById('f-observaciones').value.trim() || null,
     repuesto: document.getElementById('c-repuesto').checked,
     registrado: document.getElementById('c-registrado').checked,
     activo_pya: document.getElementById('c-activo-pya').checked,
@@ -1384,17 +1261,6 @@ async function submitOT() {
 
 async function eliminarOT() {
   if (!editingId) return;
-  // Solo admin puede eliminar
-  if (rolActual !== 'admin') {
-    showToast('Solo el administrador puede eliminar órdenes', 'error');
-    return;
-  }
-  // No permitir eliminar OT vinculada a un pedido
-  const orden = ordenes.find(o => o.id === editingId);
-  if (orden && orden.pedido_id) {
-    showToast('Esta OT fue generada desde un pedido y no puede eliminarse. Marcala como recibida.', 'error');
-    return;
-  }
   if (!confirm('¿Eliminar esta orden de trabajo? Esta acción no se puede deshacer.')) return;
   try {
     await sbFetch(`ordenes_trabajo?id=eq.${editingId}`, { method: 'DELETE' });
@@ -1546,6 +1412,124 @@ function renderCalendario() {
     </div>`;
 }
 
+// ─── HISTORIAL OT ─────────────────────────────────────────────
+let historialOT = [];
+
+async function loadHistorialOT() {
+  try {
+    // OT que están completas (todos los checks marcados) o tienen fecha de más de 7 días
+    let q = 'ordenes_trabajo?order=fecha.desc,created_at.desc&limit=100';
+    if (localKey) q += `&local=eq.${localKey}`;
+    // Solo las que tienen al menos factura registrada (registrado=true) como "cerradas"
+    q += '&registrado=eq.true';
+    const data = await sbFetch(q);
+    historialOT = data || [];
+    renderHistorialOT();
+  } catch(e) {
+    showToast('Error al cargar historial: ' + e.message, 'error');
+  }
+}
+
+function renderHistorialOT() {
+  const search = (document.getElementById('search-historial-ot')?.value || '').toLowerCase();
+  let data = historialOT;
+  if (search) data = data.filter(o =>
+    (o.proveedor||'').toLowerCase().includes(search) ||
+    (o.nro_factura||'').toLowerCase().includes(search)
+  );
+  const tbody = document.getElementById('tabla-historial-ot');
+  if (!tbody) return;
+  if (!data.length) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty"><div class="empty-icon">📋</div><div class="empty-text">Sin OT cerradas todavía</div></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = data.map(o => {
+    const checks = ['repuesto','registrado','activo_pya','activo_mp','activo_rappi','check_factura','check_nocturno','revision_precios'];
+    const done = checks.filter(k => o[k]).length;
+    const pct = Math.round(done/checks.length*100);
+    const difColor = o.qty_pedida && o.qty_recibida && o.qty_recibida < o.qty_pedida ? 'var(--yellow)' : 'var(--green)';
+    const recibidoTxt = o.qty_recibida != null
+      ? `<span style="color:${difColor};font-weight:500;">${o.qty_recibida}</span>${o.qty_pedida ? ` / ${o.qty_pedida}` : ''}`
+      : '—';
+    return `<tr>
+      <td style="white-space:nowrap;">${formatDateDisplay(o.fecha)}</td>
+      <td style="font-weight:500;">${o.proveedor||'—'}</td>
+      <td style="color:var(--text2);font-size:11px;">${o.nro_factura||'—'}</td>
+      <td>${recibidoTxt}</td>
+      <td style="color:var(--accent);font-weight:500;">${formatMoney(o.total)}</td>
+      <td>${badgePago(o.estado_pago)}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <div style="flex:1;height:4px;background:var(--border2);border-radius:2px;">
+            <div style="width:${pct}%;height:100%;background:var(--green);border-radius:2px;"></div>
+          </div>
+          <span style="font-size:10px;color:var(--text3);white-space:nowrap;">${done}/${checks.length}</span>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ─── CALENDARIO SEMANAL ──────────────────────────────────────
+let pedidosPorLlegar = [];
+
+async function loadCalendario() {
+  const cont = document.getElementById('calendario-semana');
+  if (!cont) return;
+  cont.innerHTML = '<div class="loading"><div class="spinner"></div>Cargando pedidos...</div>';
+  try {
+    const q = 'pedidos?status=in.(enviado,en-camino)&select=id,proveedor,tienda,tienda_nombre,fecha_llegada,total,pago,items&order=fecha_llegada.asc';
+    const data = await sbFetch(q);
+    pedidosPorLlegar = (data || []).filter(p => p.fecha_llegada);
+    renderCalendarioSemana();
+  } catch(e) {
+    const cont2 = document.getElementById('calendario-semana');
+    if (cont2) cont2.innerHTML = '<div class="empty"><div class="empty-icon">⚠</div><div class="empty-text">Error al cargar pedidos</div></div>';
+  }
+}
+
+function renderCalendarioSemana() {
+  const cont = document.getElementById('calendario-semana');
+  if (!cont) return;
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const dow = hoy.getDay();
+  const lunes = new Date(hoy);
+  lunes.setDate(hoy.getDate() - (dow === 0 ? 6 : dow - 1));
+  const dias = Array.from({length:7}, (_,i) => { const d=new Date(lunes); d.setDate(lunes.getDate()+i); return d; });
+  const diasNom = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+  const localKeyMap = {palermo:'T',belgrano:'R',barrio_chino:'J',san_telmo:'S'};
+  const tiendaFiltro = localKeyMap[localKey] || null;
+  const pedsFiltrados = tiendaFiltro ? pedidosPorLlegar.filter(p=>p.tienda===tiendaFiltro) : pedidosPorLlegar;
+  const html = dias.map((dia,idx) => {
+    const dStr = dia.toISOString().split('T')[0];
+    const esHoy = dia.getTime()===hoy.getTime();
+    const esPasado = dia<hoy;
+    const pedsDia = pedsFiltrados.filter(p=>p.fecha_llegada===dStr);
+    const pedHtml = pedsDia.length===0
+      ? '<div style="font-size:11px;color:var(--text3);margin-top:6px;">Sin pedidos</div>'
+      : pedsDia.map(p=>{
+          const tLabel = {T:'Palermo',R:'Belgrano',J:'B.Chino',S:'S.Telmo'}[p.tienda]||p.tienda;
+          const nItems = Array.isArray(p.items)?p.items.length:'?';
+          return '<div style="margin-top:6px;padding:8px 10px;background:'+(esHoy?'rgba(200,241,53,0.08)':'var(--surface2)')+';border:1px solid '+(esHoy?'var(--accent)':'var(--border)')+';border-radius:6px;">'
+            +'<div style="font-size:12px;font-weight:600;color:var(--text);">'+p.proveedor+'</div>'
+            +'<div style="font-size:10px;color:var(--text2);margin-top:2px;">'+tLabel+' · '+nItems+' ítems</div>'
+            +'<div style="font-size:10px;color:var(--text3);margin-top:1px;">'+(p.pago||'Pago sin definir')+'</div></div>';
+        }).join('');
+    return '<div style="background:'+(esHoy?'rgba(200,241,53,0.04)':'var(--surface)')+';border:1px solid '+(esHoy?'var(--accent)':'var(--border)')+';border-radius:8px;padding:12px;min-width:0;opacity:'+(esPasado&&!esHoy?'0.5':'1')+'">'
+      +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">'
+      +'<span style="font-size:11px;color:'+(esHoy?'var(--accent)':'var(--text2)')+';font-weight:'+(esHoy?'700':'400')+';">'+diasNom[idx]+'</span>'
+      +(esHoy?'<span style="font-size:9px;background:var(--accent);color:#0a0a0a;padding:1px 5px;border-radius:3px;font-weight:700;">HOY</span>':'')
+      +'</div>'
+      +'<div style="font-size:11px;color:var(--text3);">'+dia.getDate()+'/'+(dia.getMonth()+1)+'</div>'
+      +pedHtml
+      +(pedsDia.length>0?'<div style="margin-top:6px;font-size:10px;color:var(--text3);text-align:right;">'+pedsDia.length+' proveedor'+(pedsDia.length>1?'es':'')+'</div>':'')
+      +'</div>';
+  }).join('');
+  cont.innerHTML = '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:12px;">'+html+'</div>'
+    +'<div style="font-size:11px;color:var(--text3);text-align:right;">Semana del '+dias[0].getDate()+'/'+(dias[0].getMonth()+1)+' al '+dias[6].getDate()+'/'+(dias[6].getMonth()+1)
+    +(localKey?' · Solo '+(localName||localKey):' · Todas las tiendas')+'</div>';
+}
+
 // ─── HISTORIAL OT ────────────────────────────────────────────
 let historialOT = [];
 async function loadHistorialOT() {
@@ -1575,6 +1559,169 @@ function getOrigenBadge(o) {
   return o.pedido_id
     ? '<span class="badge badge-accent" style="font-size:9px;">📦 Pedido</span>'
     : '<span class="badge badge-gray" style="font-size:9px;">Manual</span>';
+}
+
+// ─── REEMPLAZAR renderTabla con soporte por_recibir + origen ──
+function renderTabla() {
+  const search = document.getElementById('search-input')?.value.toLowerCase()||'';
+  let data = ordenes;
+  if (filtroActivo==='por_pagar') data=data.filter(o=>o.estado_pago==='por_pagar');
+  else if (filtroActivo==='ya_pagado') data=data.filter(o=>o.estado_pago==='ya_pagado');
+  else if (filtroActivo==='pendiente') data=data.filter(o=>!isComplete(o));
+  else if (filtroActivo==='por_recibir') data=data.filter(o=>o.pedido_id&&!o.nro_factura);
+  if (search) data=data.filter(o=>(o.nro_factura||'').toLowerCase().includes(search)||(o.proveedor||'').toLowerCase().includes(search));
+  const tbody=document.getElementById('tabla-body');
+  if (!data.length){
+    tbody.innerHTML='<tr><td colspan="9"><div class="empty"><div class="empty-icon">📄</div><div class="empty-text">'+(filtroActivo==='por_recibir'?'No hay pedidos pendientes de recibir':'No hay órdenes')+'</div></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML=data.map(o=>{
+    const checks=checkCount(o); const dots=buildDots(o);
+    return '<tr style="cursor:pointer;" onclick="openDetalle(''+o.id+'')">'
+      +'<td style="white-space:nowrap;">'+formatDateDisplay(o.fecha)+'<br><span style="font-size:10px;color:var(--text3);">'+(o.hora||'')+'</span></td>'
+      +'<td style="font-weight:500;">'+(o.nro_factura||'<span style="color:var(--text3);font-size:11px;">Sin factura</span>')+'</td>'
+      +'<td>'+(o.proveedor||'—')+'</td>'
+      +'<td>'+getOrigenBadge(o)+'</td>'
+      +'<td>'+badgePago(o.estado_pago)+'</td>'
+      +'<td style="font-weight:500;color:var(--accent);">'+formatMoney(o.total)+'</td>'
+      +'<td><div style="display:flex;align-items:center;gap:6px;">'+dots+'<span style="font-size:10px;color:var(--text3);">'+checks.done+'/'+checks.total+'</span></div></td>'
+      +'<td style="color:var(--text2);font-size:11px;">'+(o.recepcion||'—')+'</td>'
+      +'<td onclick="event.stopPropagation();">'+(rolActual==='admin'?'<button class="btn btn-ghost btn-sm" onclick="editOT(''+o.id+'')">✎</button>':'')+'</td>'
+      +'</tr>';
+  }).join('');
+}
+
+// ─── REEMPLAZAR openDetalle con campos recepción + origen ─────
+function openDetalle(id) {
+  const o=ordenes.find(x=>x.id===id); if(!o)return;
+  modalOrdenId=id;
+  document.getElementById('modal-titulo').textContent=(o.nro_factura||o.proveedor||'OT')+' · '+(o.proveedor||'');
+  const checks=[
+    {key:'repuesto',label:'Repuesto en góndola'},{key:'registrado',label:'Registrado en sistema'},
+    {key:'activo_pya',label:'Activado PYA'},{key:'activo_mp',label:'Activado MP'},
+    {key:'activo_rappi',label:'Activado Rappi'},{key:'check_factura',label:'Check factura'},
+    {key:'check_nocturno',label:'Check nocturno'},{key:'revision_precios',label:'Revisión de precios'},
+  ];
+  const origenBadge=o.pedido_id?'<span class="badge badge-accent" style="font-size:9px;">📦 De pedido</span>':'<span class="badge badge-gray" style="font-size:9px;">Manual</span>';
+  let cantDiffHtml='';
+  if(o.cant_pedida!=null&&o.cant_recibida!=null){
+    const diff=o.cant_recibida-o.cant_pedida;
+    const col=diff<0?'var(--red)':diff>0?'var(--green)':'var(--text3)';
+    cantDiffHtml='<span style="color:'+col+';font-size:11px;">('+( diff>0?'+':'')+diff+')</span>';
+  }
+  const recepcionSection=(o.cant_pedida!=null||o.cant_recibida!=null||o.extras||o.obs_recepcion)
+    ?'<div class="detail-section"><div class="detail-section-title">Recepción operativa</div><div class="detail-grid">'
+      +(o.cant_pedida!=null?'<div class="detail-item"><div class="detail-item-label">Cant. pedida</div><div class="detail-item-value">'+o.cant_pedida+'</div></div>':'')
+      +(o.cant_recibida!=null?'<div class="detail-item"><div class="detail-item-label">Cant. recibida</div><div class="detail-item-value">'+o.cant_recibida+' '+cantDiffHtml+'</div></div>':'')
+      +(o.extras?'<div class="detail-item" style="grid-column:span 2"><div class="detail-item-label">Artículos extra</div><div class="detail-item-value" style="font-size:12px;">'+o.extras+'</div></div>':'')
+      +(o.obs_recepcion?'<div class="detail-item" style="grid-column:span 2"><div class="detail-item-label">Observaciones</div><div class="detail-item-value" style="font-size:12px;color:var(--text2);">'+o.obs_recepcion+'</div></div>':'')
+      +'</div></div>':'' ;
+  document.getElementById('modal-body').innerHTML=
+    '<div class="detail-section"><div class="detail-section-title">Datos del comprobante</div><div class="detail-grid">'
+    +'<div class="detail-item"><div class="detail-item-label">Fecha</div><div class="detail-item-value">'+formatDateDisplay(o.fecha)+' '+(o.hora||'')+'</div></div>'
+    +'<div class="detail-item"><div class="detail-item-label">N° Factura</div><div class="detail-item-value">'+(o.nro_factura||'Sin factura aún')+'</div></div>'
+    +'<div class="detail-item"><div class="detail-item-label">Proveedor</div><div class="detail-item-value">'+(o.proveedor||'—')+'</div></div>'
+    +'<div class="detail-item"><div class="detail-item-label">Origen</div><div class="detail-item-value">'+origenBadge+'</div></div>'
+    +'</div></div>'
+    +'<div class="detail-section"><div class="detail-section-title">Montos</div><div class="detail-grid">'
+    +'<div class="detail-item"><div class="detail-item-label">Subtotal</div><div class="detail-item-value">'+formatMoney(o.subtotal)+'</div></div>'
+    +'<div class="detail-item"><div class="detail-item-label">IVA / Impuestos</div><div class="detail-item-value">'+formatMoney(o.impuestos)+'</div></div>'
+    +'<div class="detail-item"><div class="detail-item-label">Descuentos</div><div class="detail-item-value">'+formatMoney(o.descuentos)+'</div></div>'
+    +'<div class="detail-item"><div class="detail-item-label">Total</div><div class="detail-item-value" style="color:var(--accent);font-size:16px;font-weight:600;">'+formatMoney(o.total)+'</div></div>'
+    +'<div class="detail-item"><div class="detail-item-label">Estado de pago</div><div class="detail-item-value">'+badgePago(o.estado_pago)+'</div></div>'
+    +'<div class="detail-item"><div class="detail-item-label">Recibido por</div><div class="detail-item-value">'+(o.recepcion||'—')+'</div></div>'
+    +'</div></div>'
+    +recepcionSection
+    +'<div class="detail-section"><div class="detail-section-title">Activación <span style="font-size:10px;color:var(--text3);font-weight:400;">— tocá para marcar</span></div>'
+    +'<div class="checks-grid">'
+    +checks.map(ch=>'<div class="check-item '+(o[ch.key]?'checked':'')+'" id="modal-check-'+ch.key+'" onclick="toggleCheckModal(''+o.id+'',''+ch.key+'',this)" style="cursor:pointer;"><div class="check-box"><span class="check-box-tick">✓</span></div><span class="check-label">'+ch.label+'</span></div>').join('')
+    +'</div></div>'
+    +(o.notas?'<div class="detail-section"><div class="detail-section-title">Notas</div><div style="font-size:12px;color:var(--text2);line-height:1.5;">'+o.notas+'</div></div>':'');
+  document.getElementById('modal-detalle').classList.add('open');
+  const btnEditar=document.getElementById('btn-modal-editar');
+  if(btnEditar) btnEditar.style.display=rolActual==='admin'?'':'none';
+}
+
+// ─── REEMPLAZAR submitOT con campos nuevos ────────────────────
+async function submitOT() {
+  const nro=(document.getElementById('f-nro')?.value||'').trim();
+  const proveedor=(document.getElementById('f-proveedor')?.value||'').trim();
+  const tipo=document.getElementById('f-tipo')?.value||'';
+  const estadoPago=document.getElementById('f-estado-pago')?.value||'';
+  if(!proveedor){showToast('Ingresá el proveedor','error');return;}
+  if(!estadoPago){showToast('Seleccioná el estado de pago','error');return;}
+  const payload={
+    local:localKey, fecha:document.getElementById('f-fecha')?.value,
+    hora:document.getElementById('f-hora')?.value,
+    nro_factura:nro||null, tipo_comprobante:tipo||null, proveedor,
+    subtotal:parseFloat(document.getElementById('f-subtotal')?.value)||0,
+    impuestos:parseFloat(document.getElementById('f-impuestos')?.value)||0,
+    descuentos:parseFloat(document.getElementById('f-descuentos')?.value)||0,
+    total:parseFloat(document.getElementById('f-total')?.value)||0,
+    estado_pago:estadoPago,
+    recepcion:(document.getElementById('f-recepcion')?.value||'').trim()||null,
+    notas:(document.getElementById('f-notas')?.value||'').trim()||null,
+    cant_pedida:parseInt(document.getElementById('f-cant-pedida')?.value)||null,
+    cant_recibida:parseInt(document.getElementById('f-cant-recibida')?.value)||null,
+    extras:(document.getElementById('f-extras')?.value||'').trim()||null,
+    obs_recepcion:(document.getElementById('f-obs-recepcion')?.value||'').trim()||null,
+    repuesto:document.getElementById('c-repuesto')?.checked||false,
+    registrado:document.getElementById('c-registrado')?.checked||false,
+    activo_pya:document.getElementById('c-activo-pya')?.checked||false,
+    activo_mp:document.getElementById('c-activo-mp')?.checked||false,
+    activo_rappi:document.getElementById('c-activo-rappi')?.checked||false,
+    check_factura:document.getElementById('c-check-factura')?.checked||false,
+    check_nocturno:document.getElementById('c-check-nocturno')?.checked||false,
+    revision_precios:document.getElementById('c-revision-precios')?.checked||false,
+    updated_at:new Date().toISOString(),
+  };
+  try {
+    if(editingId){
+      await sbFetch('ordenes_trabajo?id=eq.'+editingId,{method:'PATCH',body:JSON.stringify(payload)});
+      showToast('Orden actualizada','success');
+    } else {
+      payload.created_at=new Date().toISOString();
+      await sbFetch('ordenes_trabajo',{method:'POST',body:JSON.stringify(payload)});
+      showToast('Orden creada','success');
+    }
+    cancelEdit(); loadOrdenes();
+  } catch(e){showToast('Error al guardar: '+e.message,'error');}
+}
+
+// ─── REEMPLAZAR editOT con campos nuevos ─────────────────────
+function editOT(id) {
+  if(rolActual!=='admin'){showToast('Solo el admin puede editar órdenes','error');return;}
+  const o=ordenes.find(x=>x.id===id); if(!o)return;
+  editingId=id;
+  switchTab('nueva');
+  document.getElementById('form-titulo').textContent='Editar Orden de Trabajo';
+  document.getElementById('submit-icon').textContent='✓';
+  document.getElementById('submit-label').textContent='Guardar cambios';
+  const btnEl=document.getElementById('btn-eliminar');
+  if(btnEl) btnEl.style.display='inline-flex';
+  document.getElementById('f-fecha').value=o.fecha||today();
+  document.getElementById('f-hora').value=o.hora||'';
+  document.getElementById('f-nro').value=o.nro_factura||'';
+  document.getElementById('f-tipo').value=o.tipo_comprobante||'';
+  document.getElementById('f-proveedor').value=o.proveedor||'';
+  document.getElementById('f-subtotal').value=o.subtotal||'';
+  document.getElementById('f-impuestos').value=o.impuestos||'';
+  document.getElementById('f-descuentos').value=o.descuentos||'';
+  document.getElementById('f-estado-pago').value=o.estado_pago||'';
+  document.getElementById('f-recepcion').value=o.recepcion||'';
+  document.getElementById('f-notas').value=o.notas||'';
+  if(document.getElementById('f-cant-pedida')) document.getElementById('f-cant-pedida').value=o.cant_pedida||'';
+  if(document.getElementById('f-cant-recibida')) document.getElementById('f-cant-recibida').value=o.cant_recibida||'';
+  if(document.getElementById('f-extras')) document.getElementById('f-extras').value=o.extras||'';
+  if(document.getElementById('f-obs-recepcion')) document.getElementById('f-obs-recepcion').value=o.obs_recepcion||'';
+  calcTotal();
+  const map={'c-repuesto':o.repuesto,'c-registrado':o.registrado,'c-activo-pya':o.activo_pya,'c-activo-mp':o.activo_mp,'c-activo-rappi':o.activo_rappi,'c-check-factura':o.check_factura,'c-check-nocturno':o.check_nocturno,'c-revision-precios':o.revision_precios};
+  Object.entries(map).forEach(([cid,val])=>{
+    const el=document.getElementById(cid); if(!el)return;
+    el.checked=!!val;
+    if(val) el.closest('.check-item').classList.add('checked');
+    else el.closest('.check-item').classList.remove('checked');
+  });
 }
 
 </script>

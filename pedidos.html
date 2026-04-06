@@ -397,7 +397,6 @@ body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-he
   <div class="tab" data-tab="proceso">En proceso <span class="badge" id="badge-proceso" style="background:var(--amdim);color:var(--amber)">0</span></div>
   <div class="tab" data-tab="procesados">Procesados <span class="badge" id="badge-procesados" style="background:rgba(92,184,255,.12);color:var(--blue)">0</span></div>
   <div class="tab" data-tab="historial">Historial <span class="badge" id="badge-historial" style="background:var(--bg3);color:var(--text3)">0</span></div>
-  <div class="tab" data-tab="calendario">Calendario 📅</div>
 </div>
 
 <div class="main">
@@ -412,11 +411,11 @@ body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-he
     </div>
     <div class="upsec">
       <div class="upcard" id="card-a">
-        <div class="uplbl"><span id="chk-a" class="chk" style="display:none">✓</span>Stock Valorizado (FacilVirtual)</div>
+        <div class="uplbl"><span id="chk-a" class="chk" style="display:none">✓</span>Archivo artículos (Artículos Minorista)</div>
         <div class="dz" id="dz-a" onclick="document.getElementById('fi-a').click()">
           <input type="file" id="fi-a" accept=".xlsx,.xls,.csv">
           <div class="dz-icon">📦</div>
-          <div class="dz-txt">Arrastrá o <strong>seleccioná</strong><br>Stock Valorizado.xlsx</div>
+          <div class="dz-txt">Arrastrá o <strong>seleccioná</strong><br>Artículos (Minorista).xlsx</div>
         </div>
         <div class="finfo" id="fi-a-info"></div>
       </div>
@@ -433,7 +432,7 @@ body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-he
     <div class="calc-bar">
       <button class="btn-p" id="btn-calc" disabled onclick="calcularPedidos()">⚡ Calcular pedidos</button>
       <button class="btn-s" id="btn-clear" onclick="limpiarTodo()" style="display:none">↺ Limpiar</button>
-      <span class="ci" id="calc-info">Cargá Stock Valorizado y Ventas para calcular</span>
+      <span class="ci" id="calc-info">Cargá los dos archivos para calcular</span>
     </div>
     <div class="stats-bar" id="sbar" style="display:none"></div>
     <div id="prov-container"></div>
@@ -559,28 +558,6 @@ body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-he
     </div>
     <div id="historial-list"></div>
   </div>
-
-  <!-- CALENDARIO DE LLEGADAS -->
-  <div id="calendario-view" class="hv">
-    <div class="hf" style="flex-wrap:wrap;gap:8px;align-items:center;">
-      <select class="hsel" id="hfc-tienda" onchange="renderCalendario()">
-        <option value="">Todas las tiendas</option>
-        <option value="T">Thames</option><option value="R">Roosevelt</option>
-        <option value="J">Juramento</option><option value="S">San Telmo</option>
-      </select>
-      <select class="hsel" id="hfc-vista" onchange="renderCalendario()">
-        <option value="semana">Semana actual</option>
-        <option value="mes">Mes actual</option>
-      </select>
-      <div style="margin-left:auto;display:flex;gap:6px;">
-        <button class="btn-s" id="cal-prev" style="font-size:12px;padding:5px 12px" onclick="calNavegar(-1)">← Ant.</button>
-        <button class="btn-s" id="cal-hoy"  style="font-size:12px;padding:5px 12px" onclick="calHoy()">Hoy</button>
-        <button class="btn-s" id="cal-next" style="font-size:12px;padding:5px 12px" onclick="calNavegar(1)">Sig. →</button>
-      </div>
-    </div>
-    <div id="cal-resumen" style="display:none;margin:0 24px 12px;padding:12px 16px;background:var(--bg2);border:1px solid var(--line);border-radius:var(--r);display:flex;gap:24px;flex-wrap:wrap;"></div>
-    <div id="calendario-grid" style="padding:0 24px 24px;"></div>
-  </div>
 </div>
 
 <!-- MODAL BASE DE PROVEEDORES -->
@@ -673,14 +650,6 @@ body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-he
         <option value="QR">QR</option>
         <option value="Por pagar">Por pagar</option>
       </select>
-    </div>
-    <div class="env-field">
-      <label class="env-label">Monto confirmado del pedido</label>
-      <input class="env-input" type="number" id="env-monto" min="0" step="1" placeholder="Opcional — monto total acordado">
-    </div>
-    <div class="env-field">
-      <label class="env-label">Notas / observaciones</label>
-      <textarea class="env-input" id="env-notas" rows="2" placeholder="Notas para el proveedor o la OT..." style="resize:vertical;font-family:inherit;font-size:13px"></textarea>
     </div>
     <div class="env-actions">
       <button class="btn-s" style="font-size:12px;padding:7px 14px" onclick="closeEnvModal()">Cancelar</button>
@@ -784,17 +753,7 @@ let artsData={}, ventasData={}, pedidoActual={};
 // ══════════════════════════════════════════════
 const SB_URL = 'https://oiuualqixcccfhtpcist.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pdXVhbHFpeGNjY2ZodHBjaXN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NzUxNjEsImV4cCI6MjA4OTQ1MTE2MX0.ms4MHVhKDTKfID0WGi05EFPySf350SA66uNi4wPfsOo';
-let SB_HDR = {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=representation'};
-// Cargar app_secret para RLS — se adjunta a SB_HDR al arrancar
-(async () => {
-  try {
-    const r = await fetch(`${SB_URL}/rest/v1/config?clave=eq.app_secret&select=valor`, {
-      headers: {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'}
-    });
-    const d = await r.json();
-    if (d?.[0]?.valor) SB_HDR = {...SB_HDR, 'x-app-secret': d[0].valor};
-  } catch(e) { console.warn('[pedidos] app_secret no disponible', e); }
-})();
+const SB_HDR = {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=representation'};
 
 async function sbPedGet(params=''){
   const r=await fetch(`${SB_URL}/rest/v1/pedidos?${params}`,{headers:SB_HDR});
@@ -894,47 +853,20 @@ updateTime();setInterval(updateTime,10000);
 // ============================================================
 function parseArticulos(wb){
   const ws=wb.Sheets[wb.SheetNames[0]];
-  const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:null,raw:false});
-  // FacilVirtual Stock Valorizado: hasta 3 filas de header antes de los datos
-  // Buscar la fila que tenga CODIGO o DESCRIPCION (hasta fila 10)
+  const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:null});
   let hi=-1,hm={};
   for(let i=0;i<Math.min(10,rows.length);i++){
-    const r=rows[i].map(c=>normalize(String(c||'')));
-    if(r.some(c=>c.includes('CODIGO')||c.includes('DESCRIPCION'))){
-      hi=i; r.forEach((h,j)=>{hm[h]=j;}); break;
-    }
+    const r=rows[i].map(c=>normalize(c||''));
+    if(r.some(c=>c.includes('CODIGO')||c.includes('DESCRIPCION'))){hi=i;r.forEach((h,j)=>{hm[h]=j;});break;}
   }
-  if(hi<0) throw new Error('No se encontró encabezado en Stock Valorizado');
-  function col(...candidates){
-    for(const c of candidates){
-      const nc=normalize(c);
-      for(const k of Object.keys(hm)) if(k.includes(nc)) return hm[k];
-    }
-    return -1;
-  }
-  const iCod   = col('CODIGO','COD');
-  const iDesc  = col('DESCRIPCION','DESCRIP','NOMBRE');
-  const iStock = col('STOCK','EXISTENCIA','CANTIDAD','CANT ACTUAL','CANTIDAD ACTUAL');
-  const iCosto = col('PRECIO COSTO','P.COSTO','COSTO','PRECIO DE COSTO');
-  const iProv  = col('PROVEEDOR','PROV');
+  if(hi<0)throw new Error('No se encontró encabezado en Artículos');
+  function col(...candidates){for(const c of candidates){const nc=normalize(c);for(const k of Object.keys(hm))if(k.includes(nc))return hm[k];}return -1;}
+  const iCod=col('CODIGO','COD'),iDesc=col('DESCRIPCION','DESCRIP'),iStock=col('STOCK','CANTIDAD ACTUAL','CANT ACTUAL','EXISTENCIA'),iCosto=col('PRECIO COSTO','P.COSTO','COSTO');
   const data=[];
   for(let i=hi+1;i<rows.length;i++){
-    const r=rows[i];
-    const cod=r[iCod]; const desc=r[iDesc];
-    if(!cod&&!desc) continue;
-    // FacilVirtual usa coma como separador decimal — normalizar
-    function parseNum(v){
-      if(v==null) return 0;
-      const s=String(v).trim().replace(/\./g,'').replace(',','.');
-      return parseFloat(s)||0;
-    }
-    data.push({
-      codigo: cod  ? String(cod).trim()  : '',
-      desc:   desc ? String(desc).trim() : '',
-      stock:  parseNum(r[iStock]),
-      costo:  parseNum(r[iCosto]),
-      prov:   iProv>=0 && r[iProv] ? String(r[iProv]).trim() : '',
-    });
+    const r=rows[i];const cod=r[iCod];const desc=r[iDesc];
+    if(!cod&&!desc)continue;
+    data.push({codigo:cod?String(cod).trim():'',desc:desc?String(desc).trim():'',stock:parseFloat(r[iStock])||0,costo:parseFloat(r[iCosto])||0});
   }
   return data;
 }
@@ -972,7 +904,7 @@ function handleFile(file,type,infoEl,cardEl,chkEl){
   reader.onload=e=>{
     try{
       const wb=XLSX.read(e.target.result,{type:'array'});
-      if(type==='a'){artsData[curTienda]=parseStockValorizado(wb);infoEl.textContent=`✓ ${file.name} — ${artsData[curTienda].length} artículos`;}
+      if(type==='a'){artsData[curTienda]=parseArticulos(wb);infoEl.textContent=`✓ ${file.name} — ${artsData[curTienda].length} artículos`;}
       else{ventasData[curTienda]=parseVentas(wb);infoEl.textContent=`✓ ${file.name} — ${Object.keys(ventasData[curTienda]).length} con ventas`;}
       infoEl.classList.add('vis');cardEl.classList.add('has-data');chkEl.style.display='inline';
       checkReady();showToast(`${file.name} cargado`,'success');
@@ -1014,7 +946,7 @@ document.querySelectorAll('[data-tienda]').forEach(btn=>{
 // ============================================================
 function calcularPedidos(){
   const arts=artsData[curTienda],ventas=ventasData[curTienda];
-  if(!arts||!ventas){showToast('Cargá Stock Valorizado y Ventas primero','error');return;}
+  if(!arts||!ventas){showToast('Cargá los dos archivos primero','error');return;}
   const {byCod,byDesc}=buildLookup();
   const byProv={};
   for(const art of arts){
@@ -1401,8 +1333,6 @@ function marcarEnviado(pk, prov, tienda) {
     }
   }
   if (!matched) sel.value = '';
-  document.getElementById('env-monto').value = '';
-  document.getElementById('env-notas').value = '';
   document.getElementById('env-modal-back').classList.add('open');
 }
 
@@ -1416,23 +1346,18 @@ async function confirmarEnvio() {
   const { pk, prov: provFull, tienda } = _envPending;
   const fechaLlegada = document.getElementById('env-fecha').value;
   const pago = document.getElementById('env-pago').value;
-  const montoRaw = document.getElementById('env-monto').value;
-  const notasEnvio = document.getElementById('env-notas').value.trim();
   if (!fechaLlegada) { showToast('Ingresá la fecha estimada de llegada', 'error'); return; }
 
   const info = PROV_INFO[provFull] || {};
   const items = pedidoActual[curTienda][provFull].filter(i => i.qty > 0);
-  const totalCalc = items.reduce((s, i) => s + i.qty * i.pu, 0);
-  const montoConfirmado = montoRaw ? parseFloat(montoRaw) : null;
   const entry = {
     id: Date.now(), tienda, tiendaNombre: TIENDAS[tienda], proveedor: provFull,
     fecha: new Date().toISOString(),
     fechaLlegada,
     items: items.map(i => ({ desc: i.desc, codigo: i.codigo, qtyPedido: i.qty, pu: i.pu, qtyRecibido: null, puRecibido: null })),
-    total: montoConfirmado !== null ? montoConfirmado : totalCalc,
+    total: items.reduce((s, i) => s + i.qty * i.pu, 0),
     status: 'enviado', pago: pago || info.pago || '', contacto: info.contacto || '',
     wfSteps: {}, confirm: null,
-    notas: notasEnvio || null,
   };
 
   // Insertar en Supabase — pedidos
@@ -1452,13 +1377,13 @@ async function confirmarEnvio() {
       nro_factura: null,
       tipo_comprobante: null,
       proveedor: provFull,
-      subtotal: montoConfirmado !== null ? montoConfirmado : entry.total,
+      subtotal: entry.total,
       impuestos: 0,
       descuentos: 0,
-      total: montoConfirmado !== null ? montoConfirmado : entry.total,
+      total: entry.total,
       estado_pago: pago === 'Por pagar' ? 'por_pagar' : pago ? pago.toLowerCase().replace(' ','') : 'por_pagar',
       recepcion: null,
-      notas: notasEnvio || `Generado desde pedido automáticamente. ${items.length} ítems pedidos.`,
+      notas: `Generado desde pedido automáticamente. ${items.length} ítems pedidos.`,
       repuesto: false, registrado: false, activo_pya: false,
       activo_mp: false, activo_rappi: false, check_factura: false,
       check_nocturno: false, revision_precios: false,
@@ -1494,7 +1419,7 @@ function limpiarTodo(){
   document.getElementById('sbar').style.display='none';
   document.getElementById('btn-clear').style.display='none';
   document.getElementById('btn-calc').disabled=true;
-  document.getElementById('calc-info').textContent='Cargá Stock Valorizado y Ventas para calcular';
+  document.getElementById('calc-info').textContent='Cargá los dos archivos para calcular';
   invRows=[]; invSel.clear(); invFilter.clear();
   document.getElementById('badge-inv').textContent='—';
   showToast('Datos limpiados','success');
@@ -1540,20 +1465,76 @@ function updateBadge(){
 }
 
 // ============================================================
-// renderHistorial — procesados + no entregados archivados
+// RENDER HISTORIAL
 // ============================================================
+function renderHistorial(){
+  const fTienda = document.getElementById('hfh-tienda')?.value || '';
+  const fTipo   = document.getElementById('hfh-tipo')?.value || '';
+  let data = HIST.filter(h => ['procesado','no-entregado'].includes(h.status));
+  if (fTienda) data = data.filter(h => h.tienda === fTienda);
+  if (fTipo)   data = data.filter(h => h.status === fTipo);
+  data.sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
+  const cont = document.getElementById('historial-list');
+  if (!cont) return;
+  if (!data.length) {
+    cont.innerHTML = `<div class="empty"><div class="empty-icon">📋</div><div class="empty-title">Sin historial</div><div class="empty-sub">Los pedidos procesados y no entregados aparecerán acá</div></div>`;
+    return;
+  }
+  cont.innerHTML = data.map(h => {
+    const ri = HIST.indexOf(h);
+    const fecha = new Date(h.fecha).toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'short'});
+    const tcolor = TC[h.tienda] || 'var(--text2)';
+    const st = STATUS_LABELS[h.status] || STATUS_LABELS['enviado'];
+    const llegada = h.fechaLlegada ? ` · llegada: ${new Date(h.fechaLlegada+'T00:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'short'})}` : '';
+    const noEntBadge = h.status === 'no-entregado' && h.noEntregadoNota
+      ? `<div style="margin:8px 16px 12px;padding:8px 12px;background:var(--rdim);border-radius:var(--r);font-family:'DM Mono',monospace;font-size:11px;color:var(--red)">⚠ ${h.noEntregadoNota}</div>` : '';
+    const difBadge = h.confirm ? (h.confirm.type==='ok'
+      ? `<span class="hist-badge" style="background:var(--adim);color:var(--accent2)">Sin diferencias</span>`
+      : `<span class="hist-badge" style="background:var(--rdim);color:var(--red)">Con diferencias</span>`) : '';
+    return `<div class="hcard ${h.status === 'no-entregado' ? 'status-no-entregado' : 'status-recibido-ok'}" id="hcard_hist_${ri}">
+      <div class="hch" onclick="toggleHCard_hist(${ri})">
+        <div class="hcl">
+          <div class="hprov">${h.proveedor}</div>
+          <div class="hmeta"><span style="color:${tcolor}">${h.tiendaNombre}</span> · ${fecha}${llegada} · ${h.items.length} ítems ${difBadge}</div>
+        </div>
+        <div class="htot">${fmt(h.total)}</div>
+        <span class="sbadge ${st.cls}">${st.label}</span>
+      </div>
+      <div class="hbody" id="hbody_hist_${ri}">
+        ${noEntBadge}
+        <div style="padding:12px 18px;border-top:1px solid var(--line)">
+          <table class="ctbl"><thead><tr>
+            <th>Artículo</th><th class="r">Pedido</th><th class="r">Recibido</th><th class="r">Precio</th>
+          </tr></thead>
+          <tbody>${h.items.map(item=>`<tr>
+            <td>${item.desc}</td>
+            <td class="r">${fmtN(item.qtyPedido)}</td>
+            <td class="r" style="color:${item.qtyRecibido!=null&&item.qtyRecibido!==item.qtyPedido?'var(--amber)':'inherit'}">${item.qtyRecibido!=null?fmtN(item.qtyRecibido):'—'}</td>
+            <td class="r">${fmt(item.puRecibido||item.pu)}</td>
+          </tr>`).join('')}</tbody>
+          </table>
+          ${h.pago ? `<div style="margin-top:10px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)">Pago: <span style="color:var(--text2)">${h.pago}</span></div>` : ''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
 function toggleHCard_hist(ri) {
-  const body = document.getElementById('hbody_hist_'+ri);
-  const card = document.getElementById('hcard_hist_'+ri);
+  const body = document.getElementById(`hbody_hist_${ri}`);
+  const card = document.getElementById(`hcard_hist_${ri}`);
   if (body && card) card.classList.toggle('open');
 }
+
+// ============================================================
+// renderHistorial — procesados + no entregados archivados
+// ============================================================
 function renderHistorial(){
   const fTienda = (document.getElementById('hfh-tienda')||{}).value || '';
   const fTipo   = (document.getElementById('hfh-tipo')||{}).value || '';
   let data = HIST.filter(h => ['procesado','no-entregado'].includes(h.status));
   if (fTienda) data = data.filter(h => h.tienda === fTienda);
   if (fTipo)   data = data.filter(h => h.status === fTipo);
-  data.sort((a,b) => new Date(b.fecha) - new Date(a.fecha)); // fix: ordenar por fecha desc
   const cont = document.getElementById('historial-list');
   if (!cont) return;
   if (!data.length) {
@@ -1567,22 +1548,21 @@ function renderHistorial(){
     const st = STATUS_LABELS[h.status]||STATUS_LABELS['enviado'];
     const llegStr = h.fechaLlegada ? new Date(h.fechaLlegada+'T00:00:00').toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'short'}) : null;
     const noEntBadge = h.status==='no-entregado'
-      ? '<div style="margin:8px 0;padding:8px 12px;background:var(--rdim);border-radius:var(--r);font-family:\'DM Mono\',monospace;font-size:11px;color:var(--red)">✗ No entregado'+(h.noEntregadoNota?': '+h.noEntregadoNota:'')+'</div>'
+      ? '<div style="margin:8px 0;padding:8px 12px;background:var(--rdim);border-radius:var(--r);font-family:'DM Mono',monospace;font-size:11px;color:var(--red)">✗ No entregado'+(h.noEntregadoNota?': '+h.noEntregadoNota:'')+'</div>'
       : '';
     const okBadge = h.status==='procesado'
-      ? '<div style="margin:8px 0;padding:8px 12px;background:var(--adim);border-radius:var(--r);font-family:\'DM Mono\',monospace;font-size:11px;color:var(--accent2)">✓ Procesado'+(h.fechaProcesado?' · '+new Date(h.fechaProcesado).toLocaleDateString('es-AR',{day:'numeric',month:'short'}):'')+' · '+h.items.length+' ítems</div>'
+      ? '<div style="margin:8px 0;padding:8px 12px;background:var(--adim);border-radius:var(--r);font-family:'DM Mono',monospace;font-size:11px;color:var(--accent2)">✓ Procesado'+(h.fechaProcesado?' · '+new Date(h.fechaProcesado).toLocaleDateString('es-AR',{day:'numeric',month:'short'}):'')+' · '+h.items.length+' ítems</div>'
       : '';
-    // fix: usar hcard_hist_ri + toggleHCard_hist para IDs consistentes
     return '<div class="hcard '+(h.status==='no-entregado'?'status-no-entregado':'status-recibido-ok')+'" id="hcard_hist_'+ri+'">'
-      +'<div class="hch" onclick="toggleHCard_hist('+ri+')">'
+      +'<div class="hch" onclick="toggleHCard('+ri+')">'
       +'<div class="hcl"><div class="hprov">'+h.proveedor+'</div>'
       +'<div class="hmeta"><span style="color:'+tcolor+'">'+h.tiendaNombre+'</span> · '+fecha+(llegStr?' · 📅 '+llegStr:'')+' · '+h.items.length+' ítems</div></div>'
       +'<div class="htot">'+fmt(h.total)+'</div>'
       +'<span class="sbadge '+st.cls+'">'+st.label+'</span>'
       +'</div>'
-      +'<div class="hbody" id="hbody_hist_'+ri+'">'
+      +'<div class="hbody" id="hbody_'+ri+'">'
       +'<div style="padding:14px 18px">'+noEntBadge+okBadge
-      +'<div style="margin-top:6px;font-family:DM Mono,monospace;font-size:11px;color:var(--text3)">Pago: '+(h.pago||'—')+'</div>'
+      +'<div style="margin-top:6px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)">Pago: '+(h.pago||'—')+'</div>'
       +'</div>'
       +'<div style="padding:8px 18px 14px">'
       +'<button class="btn-s" style="font-size:11px;padding:5px 11px" onclick="deleteHist('+ri+')">✕ Borrar del historial</button>'
@@ -2083,14 +2063,13 @@ function switchTab(name){
   document.getElementById('nuevo-view').style.display=name==='nuevo'?'block':'none';
   document.getElementById('inventario-view').classList.toggle('vis',name==='inventario');
   document.getElementById('balanceo-view').style.display=name==='balanceo'?'block':'none';
-  ['enviados','proceso','procesados','historial','calendario'].forEach(v=>{
+  ['enviados','proceso','procesados','historial'].forEach(v=>{
     const el=document.getElementById(v+'-view');
-    if(el) el.style.display=(v===name)?'block':'none';
+    if(el) el.classList.toggle('vis',v===name);
   });
   if(name==='inventario') renderInventario();
   else if(name==='balanceo') renderBalanceoStatus();
   else if(name==='historial') { renderHistorial(); updateBadge(); }
-  else if(name==='calendario') renderCalendario();
   else if(name!=='nuevo') renderAll();
 }
 document.querySelectorAll('.tab').forEach(tab=>{
@@ -2482,143 +2461,6 @@ function renderProcesoEmpleado() {
       '</div>' +
     '</div>';
   }).join('');
-}
-
-// ============================================================
-// CALENDARIO DE LLEGADAS (6.2)
-// ============================================================
-let _calOffset = 0; // semanas o meses de desplazamiento desde hoy
-
-function calNavegar(dir) {
-  _calOffset += dir;
-  renderCalendario();
-}
-function calHoy() {
-  _calOffset = 0;
-  renderCalendario();
-}
-
-function renderCalendario() {
-  const grid = document.getElementById('calendario-grid');
-  const resumen = document.getElementById('cal-resumen');
-  if (!grid) return;
-
-  const vista = document.getElementById('hfc-vista')?.value || 'semana';
-  const tiendaFiltro = document.getElementById('hfc-tienda')?.value || '';
-
-  // Fuente: HIST (pedidos con status enviado/en-camino/procesado que tengan fechaLlegada)
-  const fuente = HIST.filter(h => h.fechaLlegada);
-
-  const hoy = new Date(); hoy.setHours(0,0,0,0);
-
-  let dias = [];
-  if (vista === 'semana') {
-    // Lunes de la semana actual + offset en semanas
-    const dow = hoy.getDay();
-    const lunes = new Date(hoy);
-    lunes.setDate(hoy.getDate() - (dow === 0 ? 6 : dow - 1) + _calOffset * 7);
-    dias = Array.from({length:7}, (_, i) => { const d = new Date(lunes); d.setDate(lunes.getDate() + i); return d; });
-  } else {
-    // Mes actual + offset en meses
-    const base = new Date(hoy.getFullYear(), hoy.getMonth() + _calOffset, 1);
-    const ultimo = new Date(base.getFullYear(), base.getMonth() + 1, 0).getDate();
-    dias = Array.from({length: ultimo}, (_, i) => new Date(base.getFullYear(), base.getMonth(), i + 1));
-  }
-
-  const TIENDA_LABEL = {T:'Thames', R:'Roosevelt', J:'Juramento', S:'S.Telmo'};
-  const PAGO_COLOR = {Efectivo:'var(--green)', Transferencia:'var(--blue)', MP:'var(--blue)', QR:'var(--blue)', 'Por pagar':'var(--red)'};
-  const DIAS_NOM = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-
-  // Filtrar por tienda
-  const pedsFiltrados = tiendaFiltro
-    ? fuente.filter(h => h.tienda === tiendaFiltro)
-    : fuente;
-
-  // Calcular resumen general del período
-  const dStrSet = new Set(dias.map(d => d.toISOString().split('T')[0]));
-  const pedsPeriodo = pedsFiltrados.filter(h => dStrSet.has(h.fechaLlegada));
-
-  const totalPeriodo = pedsPeriodo.reduce((s,h) => s + (h.total||0), 0);
-  const porMetodo = {};
-  pedsPeriodo.forEach(h => {
-    const m = h.pago || 'Sin definir';
-    porMetodo[m] = (porMetodo[m]||0) + (h.total||0);
-  });
-  const porPagar = pedsPeriodo.filter(h => h.pago === 'Por pagar').reduce((s,h) => s+(h.total||0), 0);
-
-  // Render resumen
-  if (pedsPeriodo.length > 0) {
-    resumen.style.display = 'flex';
-    resumen.innerHTML =
-      `<div style="flex:1;min-width:120px"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Total período</div><div style="font-size:18px;font-weight:700;color:var(--accent)">${fmtMoney(totalPeriodo)}</div></div>` +
-      Object.entries(porMetodo).map(([m,v]) =>
-        `<div style="min-width:100px"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">${m}</div><div style="font-size:14px;font-weight:600;color:${PAGO_COLOR[m]||'var(--text)'}">${fmtMoney(v)}</div></div>`
-      ).join('') +
-      (porPagar > 0 ? `<div style="min-width:100px"><div style="font-size:10px;color:var(--red);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">⚠ Diferido</div><div style="font-size:14px;font-weight:600;color:var(--red)">${fmtMoney(porPagar)}</div></div>` : '');
-  } else {
-    resumen.style.display = 'none';
-  }
-
-  // Título del período
-  const fmt = d => `${d.getDate()}/${d.getMonth()+1}`;
-  const titulo = vista === 'semana'
-    ? `Semana del ${fmt(dias[0])} al ${fmt(dias[6])}`
-    : `${dias[0].toLocaleString('es-AR',{month:'long',year:'numeric'})}`;
-
-  // Columnas de la grilla
-  const cols = vista === 'semana' ? 7 : Math.min(dias.length, 7);
-  const gridStyle = vista === 'semana'
-    ? 'display:grid;grid-template-columns:repeat(7,1fr);gap:8px;'
-    : 'display:grid;grid-template-columns:repeat(7,1fr);gap:6px;';
-
-  const celdas = dias.map(dia => {
-    const dStr = dia.toISOString().split('T')[0];
-    const esHoy = dia.getTime() === hoy.getTime();
-    const esPasado = dia < hoy;
-    const pedsDia = pedsFiltrados.filter(h => h.fechaLlegada === dStr);
-    const totalDia = pedsDia.reduce((s,h) => s+(h.total||0), 0);
-
-    const cardStyle = `background:${esHoy?'rgba(200,241,53,0.04)':'var(--bg2)'};border:1px solid ${esHoy?'var(--accent)':'var(--line)'};border-radius:8px;padding:${vista==='semana'?'12px':'8px'};min-width:0;opacity:${esPasado&&!esHoy?'0.55':'1'};`;
-
-    let contenido = '';
-    if (pedsDia.length === 0) {
-      contenido = `<div style="font-size:10px;color:var(--text3);margin-top:4px;text-align:center;">—</div>`;
-    } else {
-      const totalHtml = `<div style="font-size:12px;font-weight:700;color:var(--accent);margin-top:6px;">${fmtMoney(totalDia)}</div>`;
-      const itemsHtml = pedsDia.map(h => {
-        const tLabel = tiendaFiltro ? '' : (TIENDA_LABEL[h.tienda]||h.tienda);
-        const pagoColor = PAGO_COLOR[h.pago] || 'var(--text3)';
-        const esDiferido = h.pago === 'Por pagar';
-        return `<div style="margin-top:5px;padding:6px 8px;background:${esHoy?'rgba(200,241,53,0.06)':'var(--bg3)'};border:1px solid var(--line2);border-radius:5px;border-left:3px solid ${pagoColor};">` +
-          `<div style="font-size:11px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${h.proveedor||'—'}</div>` +
-          (tLabel ? `<div style="font-size:10px;color:var(--text3);">${tLabel}</div>` : '') +
-          `<div style="display:flex;justify-content:space-between;align-items:center;margin-top:2px;">` +
-          `<span style="font-size:10px;color:${pagoColor};">${esDiferido?'⚠ ':''} ${h.pago||'—'}</span>` +
-          `<span style="font-size:10px;font-weight:600;color:var(--text2);">${fmtMoney(h.total||0)}</span>` +
-          `</div></div>`;
-      }).join('');
-      contenido = totalHtml + itemsHtml;
-    }
-
-    return `<div style="${cardStyle}">` +
-      `<div style="display:flex;align-items:center;gap:4px;">` +
-      `<span style="font-size:10px;color:${esHoy?'var(--accent)':'var(--text3)'};font-weight:${esHoy?'700':'400'};">${DIAS_NOM[dia.getDay()]}</span>` +
-      (esHoy ? `<span style="font-size:8px;background:var(--accent);color:#0a0a0a;padding:1px 4px;border-radius:3px;font-weight:700;">HOY</span>` : '') +
-      `</div>` +
-      `<div style="font-size:${vista==='semana'?'13':'11'}px;font-weight:600;color:var(--text);margin-top:1px;">${dia.getDate()}/${dia.getMonth()+1}</div>` +
-      contenido +
-      (pedsDia.length > 0 ? `<div style="margin-top:5px;font-size:9px;color:var(--text3);text-align:right;">${pedsDia.length} proveedor${pedsDia.length>1?'es':''}</div>` : '') +
-      `</div>`;
-  });
-
-  grid.innerHTML =
-    `<div style="font-size:11px;color:var(--text3);margin-bottom:10px;text-align:center;">${titulo}</div>` +
-    `<div style="${gridStyle}">${celdas.join('')}</div>`;
-}
-
-function fmtMoney(v) {
-  if (!v && v !== 0) return '—';
-  return '$' + Math.round(v).toLocaleString('es-AR');
 }
 </script>
 

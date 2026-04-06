@@ -238,12 +238,10 @@ html.in-iframe .topbar{display:none;}
       <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('activos-rol',this,'rol')">En curso</button>
         <button class="tab-btn" onclick="switchTab('hist-rol',this,'rol')">Historial</button>
-        <button class="tab-btn" id="tab-btn-ruta-rol" style="display:none;" onclick="switchTab('ruta-rol',this,'rol');renderRuta()">Ruta 🗺</button>
         <button class="tab-btn" id="tab-btn-nueva-rol" style="display:none;" onclick="switchTab('nueva-rol',this,'rol')">Nueva orden</button>
       </div>
       <div id="tab-activos-rol" class="tab-panel active"><div id="list-activos-rol"></div></div>
       <div id="tab-hist-rol" class="tab-panel"><div id="list-hist-rol"></div></div>
-      <div id="tab-ruta-rol" class="tab-panel"><div id="ruta-content"></div></div>
       <div id="tab-nueva-rol" class="tab-panel"><div id="form-nueva-rol"></div></div>
     </div>
 
@@ -281,17 +279,7 @@ html.in-iframe .topbar{display:none;}
 // ══ SUPABASE ══
 const SURL = 'https://oiuualqixcccfhtpcist.supabase.co';
 const SKEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pdXVhbHFpeGNjY2ZodHBjaXN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NzUxNjEsImV4cCI6MjA4OTQ1MTE2MX0.ms4MHVhKDTKfID0WGi05EFPySf350SA66uNi4wPfsOo';
-let H = {'apikey':SKEY,'Authorization':'Bearer '+SKEY,'Content-Type':'application/json','Prefer':'return=representation'};
-// Cargar app_secret para RLS — se adjunta a H al arrancar
-(async () => {
-  try {
-    const r = await fetch(`${SURL}/rest/v1/config?clave=eq.app_secret&select=valor`, {
-      headers: {'apikey':SKEY,'Authorization':'Bearer '+SKEY,'Content-Type':'application/json'}
-    });
-    const d = await r.json();
-    if (d?.[0]?.valor) H = {...H, 'x-app-secret': d[0].valor};
-  } catch(e) { console.warn('[remitos] app_secret no disponible', e); }
-})();
+const H = {'apikey':SKEY,'Authorization':'Bearer '+SKEY,'Content-Type':'application/json','Prefer':'return=representation'};
 async function sbGet(t,p=''){const r=await fetch(`${SURL}/rest/v1/${t}?${p}`,{headers:H});return r.json();}
 async function sbPost(t,b){const r=await fetch(`${SURL}/rest/v1/${t}`,{method:'POST',headers:H,body:JSON.stringify(b)});return r.json();}
 async function sbPatch(t,p,b){const r=await fetch(`${SURL}/rest/v1/${t}?${p}`,{method:'PATCH',headers:H,body:JSON.stringify(b)});return r.json();}
@@ -535,12 +523,10 @@ function enterApp(){
   } else {
     document.getElementById('view-rol').style.display='block';
     document.getElementById('view-admin').style.display='none';
-    // tiendas origen pueden crear órdenes; repartidor ve tab Ruta
+    // tiendas origen pueden crear órdenes
     if(currentRol!=='repartidor'){
       document.getElementById('tab-btn-nueva-rol').style.display='';
       renderFormNueva('form-nueva-rol');
-    } else {
-      document.getElementById('tab-btn-ruta-rol').style.display='';
     }
     renderRol();
   }
@@ -985,148 +971,6 @@ async function cambiarPin(){
   document.getElementById('pin-actual-r').value='';
   document.getElementById('pin-nuevo-r').value='';
   hideLoading(); showToast('PIN actualizado.');
-}
-
-// ══ RUTA ÓPTIMA PARA REPARTIDOR ══
-// Distancias relativas entre locales (simétricas, en minutos de viaje estimados)
-// Roosevelt ↔ Juramento: misma zona, muy cerca
-// Thames (Palermo) está de paso hacia San Telmo desde el norte
-// San Telmo es el extremo sur
-const DIST_ENTRE = {
-  'thames':       { 'thames':0,  'roosevelt':15, 'juramento':12, 'independencia':25 },
-  'roosevelt':    { 'thames':15, 'roosevelt':0,  'juramento':8,  'independencia':35 },
-  'juramento':    { 'thames':12, 'roosevelt':8,  'juramento':0,  'independencia':30 },
-  'independencia':{ 'thames':25, 'roosevelt':35, 'juramento':30, 'independencia':0  },
-};
-
-function nombreCortoTienda(id){
-  if(!id) return id;
-  const s = id.toLowerCase();
-  if(s.includes('thames')||s.includes('palermo')) return 'thames';
-  if(s.includes('roosevelt')||s.includes('belgrano')) return 'roosevelt';
-  if(s.includes('juramento')||s.includes('chino')) return 'juramento';
-  if(s.includes('independencia')||s.includes('telmo')) return 'independencia';
-  return s;
-}
-
-const LOCAL_DISPLAY = {
-  thames:        'Thames · Palermo',
-  roosevelt:     'Roosevelt · Belgrano',
-  juramento:     'Juramento · B. Chino',
-  independencia: 'Independencia · S. Telmo',
-};
-
-function calcularRutaOptima(paradas) {
-  // Nearest-neighbor heuristic desde cada punto de inicio, tomar la mejor
-  if(paradas.length <= 1) return paradas;
-  let mejorRuta = null, mejorCosto = Infinity;
-  for(let inicio=0; inicio<paradas.length; inicio++){
-    const visitados = new Set();
-    const ruta = [paradas[inicio]];
-    visitados.add(paradas[inicio]);
-    while(ruta.length < paradas.length){
-      const actual = ruta[ruta.length-1];
-      let cercano = null, minDist = Infinity;
-      for(const p of paradas){
-        if(visitados.has(p)) continue;
-        const d = (DIST_ENTRE[actual]||{})[p] ?? 99;
-        if(d < minDist){ minDist=d; cercano=p; }
-      }
-      if(!cercano) break;
-      ruta.push(cercano);
-      visitados.add(cercano);
-    }
-    // Costo total de esta ruta
-    let costo = 0;
-    for(let i=0;i<ruta.length-1;i++) costo += (DIST_ENTRE[ruta[i]]||{})[ruta[i+1]] ?? 99;
-    if(costo < mejorCosto){ mejorCosto=costo; mejorRuta=ruta; }
-  }
-  return mejorRuta || paradas;
-}
-
-function renderRuta(){
-  const el = document.getElementById('ruta-content');
-  if(!el) return;
-
-  // Remitos activos (en curso, no completados) que involucran al repartidor
-  const activos = remitos.filter(r => !isCompleted(r));
-  if(!activos.length){
-    el.innerHTML = `<div style="text-align:center;padding:40px 20px;font-family:var(--mono);font-size:12px;color:var(--muted)">No hay remitos activos en este momento.</div>`;
-    return;
-  }
-
-  // Recolectar todas las tiendas involucradas como paradas únicas
-  const paradasSet = new Set();
-  activos.forEach(r => {
-    paradasSet.add(nombreCortoTienda(r.origen));
-    paradasSet.add(nombreCortoTienda(r.destino));
-  });
-  const paradas = Array.from(paradasSet);
-  const rutaOptima = calcularRutaOptima(paradas);
-
-  // Agrupar remitos por tramo de la ruta óptima
-  // Un remito pertenece al tramo A→B si su origen o destino coincide con A o B
-  // Mostrar en el orden de la ruta
-
-  let html = `
-    <div style="padding:16px 0 8px;font-family:var(--mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em">
-      Ruta sugerida · ${rutaOptima.length} paradas
-    </div>
-    <div style="margin-bottom:20px;display:flex;flex-direction:column;gap:0">
-  `;
-
-  rutaOptima.forEach((parada, i) => {
-    const esUltima = i === rutaOptima.length - 1;
-    const sig = rutaOptima[i+1];
-    const minutos = sig ? ((DIST_ENTRE[parada]||{})[sig] ?? '?') : null;
-
-    // Remitos que pasan por esta parada (origen o destino)
-    const remitosParada = activos.filter(r =>
-      nombreCortoTienda(r.origen)===parada || nombreCortoTienda(r.destino)===parada
-    );
-
-    const etiquetaParada = LOCAL_DISPLAY[parada] || parada;
-    const colorParada = parada==='thames'?'var(--purple)':parada==='roosevelt'?'var(--blue)':parada==='juramento'?'var(--teal)':'var(--orange)';
-
-    html += `
-      <div style="display:flex;gap:12px;align-items:stretch">
-        <div style="display:flex;flex-direction:column;align-items:center;width:28px;flex-shrink:0">
-          <div style="width:28px;height:28px;border-radius:50%;background:${colorParada};display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:700;color:#000;flex-shrink:0">${i+1}</div>
-          ${!esUltima?`<div style="width:2px;flex:1;min-height:32px;background:var(--border2);margin:4px 0"></div>`:''}
-        </div>
-        <div style="flex:1;padding-bottom:${esUltima?'0':'16px'}">
-          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px">${etiquetaParada}</div>
-          ${remitosParada.length ? remitosParada.map(r => {
-            const esOrigen = nombreCortoTienda(r.origen)===parada;
-            const otra = esOrigen ? (LOCAL_DISPLAY[nombreCortoTienda(r.destino)]||r.destino) : (LOCAL_DISPLAY[nombreCortoTienda(r.origen)]||r.origen);
-            const accion = esOrigen ? '📤 Retirar de acá →' : '📥 Entregar acá ←';
-            const etapaIdx = currentEtapaIdx(r);
-            const etapaLabel = etapaIdx>=0 ? ETAPAS[etapaIdx].label : 'Completado';
-            return `<div style="background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:10px 12px;margin-bottom:6px;font-family:var(--mono);font-size:11px">
-              <div style="color:var(--accent);font-weight:600;margin-bottom:4px">${r.codigo}</div>
-              <div style="color:var(--muted);margin-bottom:2px">${accion} <span style="color:var(--text2)">${otra}</span></div>
-              <div style="color:var(--muted)">${r.productos?.length||0} producto(s) · ${etapaLabel}</div>
-            </div>`;
-          }).join('') : `<div style="font-family:var(--mono);font-size:11px;color:var(--muted);font-style:italic;padding:4px 0">Sin remitos en esta parada</div>`}
-          ${!esUltima ? `<div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:2px">≈ ${minutos} min hasta la siguiente parada</div>` : ''}
-        </div>
-      </div>
-    `;
-  });
-
-  html += `</div>`;
-
-  // Resumen de tiempo total estimado
-  let tiempoTotal = 0;
-  for(let i=0;i<rutaOptima.length-1;i++){
-    tiempoTotal += (DIST_ENTRE[rutaOptima[i]]||{})[rutaOptima[i+1]] ?? 0;
-  }
-  html += `<div style="background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:12px 16px;font-family:var(--mono);font-size:11px;color:var(--muted)">
-    Tiempo total estimado de traslado: <span style="color:var(--text);font-weight:600">${tiempoTotal} min</span>
-    &nbsp;·&nbsp; ${rutaOptima.length} paradas &nbsp;·&nbsp; ${activos.length} remito(s) activo(s)
-  </div>`;
-
-  el.innerHTML = html;
 }
 
 // ══ TABS ══

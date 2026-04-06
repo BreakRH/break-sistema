@@ -817,17 +817,7 @@ input,select,textarea{font-family:'Syne',sans-serif}
 // ══════════════════════════════════════════
 const SB_URL = 'https://oiuualqixcccfhtpcist.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pdXVhbHFpeGNjY2ZodHBjaXN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NzUxNjEsImV4cCI6MjA4OTQ1MTE2MX0.ms4MHVhKDTKfID0WGi05EFPySf350SA66uNi4wPfsOo';
-let SB_HDR = {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};
-// Cargar app_secret para RLS — se adjunta a SB_HDR al arrancar
-(async () => {
-  try {
-    const r = await fetch(`${SB_URL}/rest/v1/config?clave=eq.app_secret&select=valor`, {
-      headers: {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'}
-    });
-    const d = await r.json();
-    if (d?.[0]?.valor) SB_HDR = {...SB_HDR, 'x-app-secret': d[0].valor};
-  } catch(e) { console.warn('[inventario] app_secret no disponible', e); }
-})();
+const SB_HDR = {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};
 
 // ══════════════════════════════════════════
 // ══════════════════════════════════════════
