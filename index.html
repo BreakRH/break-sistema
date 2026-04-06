@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- Break Sistema v12.1 -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -1358,9 +1359,98 @@
   .accesos-status { font-family: var(--mono); font-size: 10px; padding: 2px 8px; border-radius: 4px; flex-shrink: 0; }
   .accesos-status.ok { background: var(--green-bg); color: var(--green); }
   .accesos-status.err { background: var(--red-bg); color: var(--red); }
+
+  /* ══════════════════════════════════════
+     PANTALLA DE BLOQUEO — DEVICE ENROLLMENT
+  ══════════════════════════════════════ */
+  #block-screen {
+    position: fixed; inset: 0; z-index: 99999;
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    padding: 32px 24px;
+  }
+  #block-screen.hidden { display: none; }
+  .block-wrap {
+    width: 100%; max-width: 360px;
+    display: flex; flex-direction: column; align-items: center;
+    gap: 20px; text-align: center;
+  }
+  .block-icon {
+    width: 64px; height: 64px; border-radius: 50%;
+    background: var(--red-bg); border: 0.5px solid rgba(232,93,74,0.3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px;
+  }
+  .block-title {
+    font-size: 22px; font-weight: 700; color: var(--text);
+    margin-bottom: 4px;
+  }
+  .block-sub {
+    font-family: var(--mono); font-size: 12px; color: var(--text3);
+    line-height: 1.6;
+  }
+  .block-code-wrap {
+    width: 100%;
+    background: var(--bg2); border: 0.5px solid var(--border2);
+    border-radius: var(--radius); padding: 14px 16px; text-align: left;
+  }
+  .block-code-label {
+    font-family: var(--mono); font-size: 10px; color: var(--text3);
+    text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;
+  }
+  .block-device-id {
+    font-family: var(--mono); font-size: 12px; color: var(--accent);
+    word-break: break-all;
+  }
+  .block-contact {
+    font-family: var(--mono); font-size: 11px; color: var(--text3);
+    background: var(--bg3); border-radius: var(--radius);
+    padding: 10px 14px; line-height: 1.6; width: 100%; text-align: left;
+  }
+
+  /* APERTURA DE TURNO */
+  .ap-turno-btn {
+    flex: 1;
+    padding: 10px 6px;
+    background: var(--bg3);
+    border: 1px solid var(--line2);
+    border-radius: var(--r);
+    color: var(--text2);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .15s;
+    text-align: center;
+  }
+  .ap-turno-btn:hover { border-color: var(--accent); color: var(--text); }
+  .ap-turno-btn.selected {
+    background: var(--adim);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
 </style>
 </head>
 <body>
+
+<!-- ════════════════════════════════════════
+     PANTALLA DE BLOQUEO — DEVICE ENROLLMENT
+════════════════════════════════════════ -->
+<div id="block-screen" class="hidden">
+  <div class="block-wrap">
+    <div class="block-icon">🔒</div>
+    <div>
+      <div class="block-title">Dispositivo no autorizado</div>
+      <div class="block-sub">Este dispositivo no está registrado para acceder al sistema Break.<br>Contactá al administrador para habilitarlo.</div>
+    </div>
+    <div class="block-code-wrap">
+      <div class="block-code-label">ID de este dispositivo</div>
+      <div class="block-device-id" id="block-device-id-txt">—</div>
+    </div>
+    <div class="block-contact">
+      📋 Pasale este ID al admin para que lo autorice desde su panel.
+    </div>
+  </div>
+</div>
 
 <!-- ════════════════════════════════════════
      PANTALLA DE LOGIN v8
@@ -1513,7 +1603,7 @@
       <div class="module-desc">saldo · historial · cargos</div>
     </div>
 
-    <div class="module-card" style="--card-accent:var(--orange);--icon-bg:var(--orange-bg)"
+    <div class="module-card" id="card-reportes" style="--card-accent:var(--orange);--icon-bg:var(--orange-bg)"
          onclick="openModule('reportes')">
       <div class="module-badge badge-new">nuevo</div>
       <div class="module-icon">⚑</div>
@@ -1592,7 +1682,7 @@
 ════════════════════════════════════════ -->
 <div class="screen" id="screen-reporte-tipo">
   <div class="topbar">
-    <div class="topbar-back" onclick="goTo('hub')">←</div>
+    <div class="topbar-back" onclick="if(state.rol==='repartidor')state.local=null;goTo('hub')">←</div>
     <span class="topbar-title">Nuevo reporte</span>
     <span class="topbar-badge" id="badge-local-tipo">—</span>
   </div>
@@ -2137,7 +2227,8 @@
     <div class="adm-tab"        id="adm-tab-tareas"    onclick="admTab('tareas')">Tareas</div>
     <div class="adm-tab"        id="adm-tab-reportes"  onclick="admTab('reportes')">Reportes</div>
     <div class="adm-tab"        id="adm-tab-empleados" onclick="admTab('empleados')">Empleados</div>
-    <div class="adm-tab"        id="adm-tab-accesos"   onclick="admTab('accesos');accesosCargar()">Accesos</div>
+    <div class="adm-tab"        id="adm-tab-liquidacion" onclick="admTab('liquidacion');admLoadLiquidacion()">Liquidación</div>
+    <div class="adm-tab"        id="adm-tab-accesos"   onclick="admTab('accesos');accesosCargar();deCargarDispositivos();logCargar()">Accesos</div>
   </div>
 
   <!-- ── TAB 1: RESUMEN ── -->
@@ -2245,6 +2336,60 @@
     </div>
   </div>
 
+  <!-- ── TAB 6: LIQUIDACIÓN ── -->
+  <div class="adm-panel" id="adm-panel-liquidacion">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+      <select id="liq-mes" style="font-size:13px;padding:8px 12px;flex:1;min-width:120px" onchange="admLoadLiquidacion()">
+        <option value="01">Enero</option><option value="02">Febrero</option>
+        <option value="03">Marzo</option><option value="04">Abril</option>
+        <option value="05">Mayo</option><option value="06">Junio</option>
+        <option value="07">Julio</option><option value="08">Agosto</option>
+        <option value="09">Septiembre</option><option value="10">Octubre</option>
+        <option value="11">Noviembre</option><option value="12">Diciembre</option>
+      </select>
+      <select id="liq-anio" style="font-size:13px;padding:8px 12px;flex:1;min-width:100px" onchange="admLoadLiquidacion()">
+        <option value="2025">2025</option><option value="2026">2026</option><option value="2027">2027</option>
+      </select>
+    </div>
+    <div id="adm-liq-list">
+      <div style="text-align:center;padding:30px;font-family:var(--mono);font-size:11px;color:var(--text3)">Seleccioná mes y año</div>
+    </div>
+
+    <!-- Modal agregar adelanto -->
+    <div id="liq-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;align-items:center;justify-content:center;padding:20px">
+      <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:20px;width:100%;max-width:360px">
+        <div style="font-family:var(--mono);font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:14px">Nuevo adelanto de sueldo</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div>
+            <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:4px">MONTO (ARS)</div>
+            <input id="liq-modal-monto" type="number" min="1" placeholder="Ej: 50000"
+              style="width:100%;background:var(--bg3);border:0.5px solid var(--border2);border-radius:8px;padding:9px 12px;color:var(--text);font-family:var(--mono);font-size:13px;outline:none;box-sizing:border-box">
+          </div>
+          <div>
+            <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:4px">DESCRIPCIÓN (opcional)</div>
+            <input id="liq-modal-desc" type="text" placeholder="Ej: Adelanto quincena"
+              style="width:100%;background:var(--bg3);border:0.5px solid var(--border2);border-radius:8px;padding:9px 12px;color:var(--text);font-family:var(--mono);font-size:13px;outline:none;box-sizing:border-box">
+          </div>
+          <div>
+            <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:4px">FECHA DE PAGO</div>
+            <input id="liq-modal-fecha" type="date"
+              style="width:100%;background:var(--bg3);border:0.5px solid var(--border2);border-radius:8px;padding:9px 12px;color:var(--text);font-family:var(--mono);font-size:13px;outline:none;box-sizing:border-box">
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:16px">
+          <button onclick="liqCerrarModal()"
+            style="flex:1;padding:10px;background:var(--bg3);border:0.5px solid var(--border2);border-radius:8px;color:var(--text3);font-family:var(--mono);font-size:12px;cursor:pointer">
+            Cancelar
+          </button>
+          <button onclick="liqGuardarAdelanto()"
+            style="flex:1;padding:10px;background:rgba(232,197,71,0.15);border:0.5px solid var(--accent);border-radius:8px;color:var(--accent);font-family:var(--mono);font-size:12px;font-weight:600;cursor:pointer">
+            Guardar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Panel Accesos -->
   <div class="adm-panel" id="adm-panel-accesos">
     <div style="font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Claves de acceso al sistema</div>
@@ -2253,6 +2398,63 @@
       <div style="color:var(--text3);font-family:var(--mono);font-size:12px;padding:20px 0;text-align:center">Seleccioná el tab para cargar...</div>
     </div>
     <button onclick="accesosCargar()" style="margin-top:14px;background:none;border:0.5px solid var(--border2);border-radius:var(--radius);padding:8px 13px;color:var(--text3);font-family:var(--mono);font-size:11px;cursor:pointer;transition:border-color 0.15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border2)'">↺ Actualizar</button>
+
+    <!-- ── GESTIÓN DE DISPOSITIVOS ────────────────────────────────── -->
+    <div style="margin-top:28px;padding-top:20px;border-top:0.5px solid var(--border)">
+      <div style="font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Dispositivos autorizados</div>
+      <div style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-bottom:14px;line-height:1.6">Solo los dispositivos registrados acá pueden abrir el sistema. Si alguien copia el link y lo abre desde otro lugar, ve pantalla de bloqueo.</div>
+
+      <!-- ── Generar código de enroll para otros dispositivos ── -->
+      <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px">Registrar nuevo dispositivo</div>
+        <div style="font-family:var(--mono);font-size:11px;color:var(--text3);line-height:1.5;margin-bottom:10px">Generá un código de 6 dígitos de un solo uso (expira en 30 min). El empleado lo ingresa en <span style="color:var(--accent)">enroll.html</span> desde su teléfono.</div>
+
+        <!-- Código generado (oculto hasta generar) -->
+        <div id="enroll-code-display" style="display:none;margin-bottom:10px">
+          <div style="background:var(--bg3);border:0.5px solid rgba(232,197,71,0.3);border-radius:8px;padding:12px;text-align:center">
+            <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.08em">Código activo</div>
+            <div id="enroll-code-val" style="font-family:var(--mono);font-size:32px;letter-spacing:0.25em;color:var(--accent);font-weight:500">——</div>
+            <div id="enroll-code-exp" style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:4px">expira en —</div>
+          </div>
+        </div>
+
+        <button onclick="enrollGenerarCodigo()" id="enroll-btn-gen"
+          style="background:rgba(232,197,71,0.1);border:0.5px solid var(--accent);border-radius:var(--radius);padding:8px 14px;color:var(--accent);font-family:var(--mono);font-size:11px;cursor:pointer;transition:all 0.15s;width:100%"
+          onmouseover="this.style.background=&quot;rgba(232,197,71,0.18)&quot;"
+          onmouseout="this.style.background=&quot;rgba(232,197,71,0.1)&quot;">
+          ⊕ Generar código
+        </button>
+      </div>
+
+      <!-- Enrolar este dispositivo -->
+      <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px">Este dispositivo</div>
+        <div style="font-family:var(--mono);font-size:11px;color:var(--accent);margin-bottom:10px;word-break:break-all" id="de-this-device-id">—</div>
+        <button onclick="deEnrolarEsteDispositivo()" id="de-btn-enrolar"
+          style="background:rgba(232,197,71,0.1);border:0.5px solid var(--accent);border-radius:var(--radius);padding:8px 14px;color:var(--accent);font-family:var(--mono);font-size:11px;cursor:pointer;transition:all 0.15s;width:100%">
+          ✓ Autorizar este dispositivo
+        </button>
+      </div>
+
+      <!-- Lista de dispositivos registrados -->
+      <div id="de-tokens-list" style="margin-bottom:10px">
+        <div style="text-align:center;padding:12px;font-family:var(--mono);font-size:11px;color:var(--text3)">Cargando dispositivos...</div>
+      </div>
+      <button onclick="deCargarDispositivos()" style="background:none;border:0.5px solid var(--border2);border-radius:var(--radius);padding:7px 12px;color:var(--text3);font-family:var(--mono);font-size:11px;cursor:pointer;transition:border-color 0.15s;width:100%" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border2)'">↺ Actualizar lista</button>
+    </div>
+
+    <!-- ── LOG DE ACCESOS ──────────────────────────────────── -->
+    <div style="margin-top:28px;padding-top:20px;border-top:0.5px solid var(--border)">
+      <div style="font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Log de accesos</div>
+      <div style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-bottom:14px;line-height:1.6">Últimos intentos de login — todos los dispositivos.</div>
+      <div id="log-accesos-list">
+        <div style="text-align:center;padding:12px;font-family:var(--mono);font-size:11px;color:var(--text3)">Cargando...</div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button onclick="logCargar()" style="flex:1;background:none;border:0.5px solid var(--border2);border-radius:var(--radius);padding:7px 12px;color:var(--text3);font-family:var(--mono);font-size:11px;cursor:pointer;transition:border-color 0.15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border2)'">↺ Actualizar</button>
+        <button onclick="logCargar('fail')" style="flex:1;background:none;border:0.5px solid var(--border2);border-radius:var(--radius);padding:7px 12px;color:var(--text3);font-family:var(--mono);font-size:11px;cursor:pointer;transition:border-color 0.15s" onmouseover="this.style.borderColor='var(--red)'" onmouseout="this.style.borderColor='var(--border2)'">Solo fallidos</button>
+      </div>
+    </div>
   </div>
 
   <!-- FAB — Nueva tarea (visible solo en tab tareas) -->
@@ -2264,6 +2466,53 @@
 <!-- ════════════════════════════════════════
      SCREEN: PANEL DE TURNO
 ════════════════════════════════════════ -->
+<!-- PANTALLA APERTURA DE TURNO -->
+<div class="screen" id="screen-apertura">
+  <div class="topbar">
+    <div class="topbar-back" onclick="goTo('hub')">←</div>
+    <span class="topbar-title">Apertura de turno</span>
+  </div>
+  <div style="padding:24px;max-width:420px;margin:0 auto;">
+
+    <!-- Info del local y empleado -->
+    <div style="background:var(--bg2);border:1px solid var(--line);border-radius:var(--r2);padding:16px;margin-bottom:20px;">
+      <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Apertura</div>
+      <div style="font-size:16px;font-weight:700;color:var(--text);" id="ap-nombre">—</div>
+      <div style="font-size:12px;color:var(--text3);margin-top:2px;" id="ap-local">—</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:6px;" id="ap-hora-actual">—</div>
+    </div>
+
+    <!-- Último cierre (info) -->
+    <div id="ap-ultimo-cierre" style="background:var(--bg2);border:1px solid var(--line);border-radius:var(--r2);padding:14px;margin-bottom:20px;display:none;">
+      <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Último cierre registrado</div>
+      <div style="font-size:13px;color:var(--text2);" id="ap-cierre-info">—</div>
+    </div>
+
+    <!-- Sin cierre previo -->
+    <div id="ap-sin-cierre" style="background:rgba(255,140,0,.06);border:1px solid var(--amber);border-radius:var(--r2);padding:14px;margin-bottom:20px;display:none;">
+      <div style="font-size:12px;color:var(--amber);">⚠ No se encontró un cierre previo registrado para este local. Podés igualmente abrir el turno.</div>
+    </div>
+
+    <!-- Selector de turno -->
+    <div style="margin-bottom:24px;">
+      <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;">Turno a abrir</div>
+      <div style="display:flex;gap:8px;">
+        <button class="ap-turno-btn" id="ap-btn-manana" onclick="apSelTurno('manana',this)">🌅 Mañana</button>
+        <button class="ap-turno-btn" id="ap-btn-tarde"  onclick="apSelTurno('tarde',this)">☀️ Tarde</button>
+        <button class="ap-turno-btn" id="ap-btn-noche"  onclick="apSelTurno('noche',this)">🌙 Noche</button>
+      </div>
+      <div id="ap-turno-sugerido" style="font-size:10px;color:var(--text3);margin-top:6px;"></div>
+    </div>
+
+    <!-- Botón confirmar -->
+    <button id="ap-btn-confirmar" onclick="ptConfirmarApertura()"
+      style="width:100%;padding:14px;background:var(--accent);color:#0a0a0a;border:none;border-radius:var(--r2);font-size:14px;font-weight:700;cursor:pointer;">
+      ✓ Abrir turno
+    </button>
+    <div id="ap-loading" style="display:none;text-align:center;padding:16px;font-size:12px;color:var(--text3);">Registrando apertura...</div>
+  </div>
+</div>
+
 <div class="screen" id="screen-panel-turno">
   <div class="topbar">
     <div class="topbar-back" onclick="ptCancelarAlarmas();goTo('hub')">←</div>
@@ -2717,7 +2966,35 @@ let state = {
 // ═══════════════════════════════════════
 // SUPABASE HELPERS
 // ═══════════════════════════════════════
+
+// app_secret — se carga una vez al arrancar desde la tabla config.
+// Se adjunta en cada request como header x-app-secret para que
+// las políticas RLS puedan validarlo server-side.
+let _appSecret = null;
+
+async function sbLoadAppSecret() {
+  // Lee el secret SIN adjuntarlo (bootstrap: config tiene SELECT libre)
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/config?clave=eq.app_secret&select=valor`, {
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json',
+      }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      _appSecret = data?.[0]?.valor || null;
+    }
+  } catch(e) {
+    console.warn('[Break] No se pudo cargar app_secret:', e);
+  }
+}
+
 async function sbFetch(path, opts = {}) {
+  // Si todavía no tenemos el secret, intentar cargarlo una vez
+  if (!_appSecret) await sbLoadAppSecret();
+
   const { extraHeaders, ...fetchOpts } = opts;
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
     headers: {
@@ -2725,6 +3002,8 @@ async function sbFetch(path, opts = {}) {
       'Authorization': `Bearer ${SUPABASE_KEY}`,
       'Content-Type': 'application/json',
       'Prefer': 'return=representation',
+      // Adjuntar el secret si está disponible
+      ...(_appSecret ? { 'x-app-secret': _appSecret } : {}),
       ...opts.headers,
       ...(extraHeaders || {}),
     },
@@ -2853,6 +3132,7 @@ function goTo(screen) {
     'success': 'screen-success',
     'admin-pin': 'screen-admin-pin',
     'admin': 'screen-admin',
+    'apertura':    'screen-apertura',
     'panel-turno': 'screen-panel-turno',
     'pedidos': 'screen-pedidos',
     'deudas':  'screen-deudas',
@@ -2870,10 +3150,11 @@ function openModule(mod) {
   if (mod === 'admin') {
     goTo('admin'); loadAdminDashboard(); return;
   }
-  // v8: repartidor solo puede abrir remitos
+  // v8: repartidor puede abrir remitos y reportes
   if (state.rol === 'repartidor') {
-    if (mod !== 'remitos') { showToast('Solo tenés acceso a remitos', 'error'); return; }
-    remitosOpen(); return;
+    if (mod === 'remitos')  { remitosOpen(); return; }
+    if (mod === 'reportes') { repartidorAbrirReportes(); return; }
+    showToast('Solo tenés acceso a remitos y reportes', 'error'); return;
   }
   // admin: no necesita empleado_id ni turno para pedidos/remitos/inventario/ordenes/pagos
   if (state.rol === 'admin') {
@@ -2896,7 +3177,7 @@ function openModule(mod) {
   if (!state.turno)        { showToast('Seleccioná el turno', 'error'); return; }
   if (mod === 'reportes')    { goTo('reporte-tipo'); updateBadges(); return; }
   if (mod === 'deudas')      { deudasOpen(); return; }
-  if (mod === 'panel-turno') { ptInit(); goTo('panel-turno'); return; }
+  if (mod === 'panel-turno') { ptInit(); return; } // fix: ptInit() maneja la navegación internamente (apertura → panel)
   if (mod === 'pedidos')    { pedidosOpen(); return; }
   if (mod === 'remitos')    { remitosOpen(); return; }
   if (mod === 'inventario') { inventarioOpen(); return; }
@@ -2947,13 +3228,13 @@ function aplicarLocalFijo() {
   if (localGuardado && LOCALES[localGuardado]) {
     state.local = localGuardado;
     actualizarTurnosSegunLocal(localGuardado);
-    document.getElementById('local-chips-row').style.display = 'none';
-    document.getElementById('local-fijo-wrap').style.display = '';
-    document.getElementById('local-fijo-label').textContent = LOCALES[localGuardado];
+    // v8: local-chips-row y local-fijo-wrap ya no existen en el HTML
+    // el local viene del login — solo actualizamos label si existe
+    const lbl = document.getElementById('local-fijo-label');
+    if (lbl) lbl.textContent = LOCALES[localGuardado];
+    const wrap = document.getElementById('local-info-wrap');
+    if (wrap) wrap.style.display = 'block';
     actualizarBtnCambiarLocal();
-  } else {
-    document.getElementById('local-chips-row').style.display = '';
-    document.getElementById('local-fijo-wrap').style.display = 'none';
   }
 }
 
@@ -2964,32 +3245,29 @@ function actualizarBtnCambiarLocal() {
 }
 
 function localFijoCambiar() {
-  if (state.rol !== 'admin') return;
-  if (!confirm('Cambiar el local de este dispositivo. Tenes que elegir uno nuevo con tu PIN de admin.')) return;
-  localStorage.removeItem(LOCAL_FIJO_KEY);
-  state.local = null;
-  state.turno = null;
-  document.querySelectorAll('.turno-chip').forEach(c => c.classList.remove('selected'));
-  document.getElementById('local-chips-row').style.display = '';
-  document.getElementById('local-fijo-wrap').style.display = 'none';
+  // v8: local ya no se cambia desde el hub — viene del login
+  lsCerrarSesion();
 }
 
 function guardarLocalFijo(local) {
   localStorage.setItem(LOCAL_FIJO_KEY, local);
-  aplicarLocalFijo();
+  // v8: aplicarLocalFijo ya es segura, pero no necesitamos re-renderizar el hub
+  state.local = local;
+  const lbl = document.getElementById('local-fijo-label');
+  if (lbl) lbl.textContent = LOCALES[local] || local;
+  const wrap = document.getElementById('local-info-wrap');
+  if (wrap) wrap.style.display = 'block';
 }
 
 function selLocal(local, el) {
+  // v8: el local viene del login, esta función queda como stub
   state.local = local;
-  document.querySelectorAll('.local-chip').forEach(c => c.classList.remove('selected'));
-  el.classList.add('selected');
+  if (el) {
+    document.querySelectorAll('.local-chip').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+  }
   admActualizarCardTurno();
   actualizarTurnosSegunLocal(local);
-  // Si es admin, guardar como local fijo del dispositivo
-  if (state.rol === 'admin') {
-    guardarLocalFijo(local);
-    showToast('Local guardado: ' + LOCALES[local], 'success');
-  }
   checkPedidosPendientes();
 }
 
@@ -3141,49 +3419,12 @@ function admPinKey(k) {}
 function admPinDel() {}
 function admUpdateDots() {}
 function selRol(rol) {
-  // Chips visuales
-  ['emp','enc','adm'].forEach(r => {
-    document.getElementById(`rol-${r}`)?.classList.remove('selected-emp','selected-enc','selected-adm');
-  });
-  const map = { empleado:'emp', encargado:'enc', admin:'adm' };
-  document.getElementById(`rol-${map[rol]}`)?.classList.add(`selected-${map[rol]}`);
-
-  // Secciones visibles
-  ['empleado','encargado','admin'].forEach(r => {
-    document.getElementById(`sec-${r}`)?.classList.toggle('visible', r === rol);
-  });
-
-  // Reset state al cambiar rol
-  state.empleado_id    = null;
-  state.empleado_nombre = null;
+  // v8: el rol viene del login — esta función queda como stub para compatibilidad
   state.rol = rol;
-  document.getElementById('hub-emp-name').textContent = '—';
-  document.getElementById('hub-meta').textContent = 'seleccioná tu nombre para empezar';
 
-  // Si sale de admin → ocultar cards de admin y resetear input
-  if (rol !== 'admin') {
-    state.adminPin = null;
-    const cardAdmin = document.getElementById('card-admin');
-    if (cardAdmin) cardAdmin.style.display = 'none';
-    const cardPedidos = document.getElementById('card-pedidos');
-    if (cardPedidos) cardPedidos.style.display = 'none';
-    const cardPagos = document.getElementById('card-pagos');
-    if (cardPagos) cardPagos.style.display = 'none';
-    admPinInput = '';
-    const admInput = document.getElementById('adm-pin-input');
-    if (admInput) { admInput.value = ''; admInput.style.borderColor = ''; }
-    const errEl = document.getElementById('adm-pin-error');
-    if (errEl) { errEl.textContent = ''; errEl.style.color = 'var(--red)'; }
-  }
-
-  // Reset encargado
+  // v8: encargado no tiene PIN en el hub — autenticado desde el login
   if (rol === 'encargado') {
-    encPinInput = '';
-    encPinMode = 'login';
-    encPinConfirmBuffer = '';
-    document.getElementById('enc-pin-wrap').style.display = 'none';
-    document.getElementById('enc-pin-error').textContent = '';
-    document.getElementById('sel-encargado').value = '';
+    encPinInput = ''; encPinMode = 'login'; encPinConfirmBuffer = '';
   }
 
   admActualizarCardTurno();
@@ -3196,42 +3437,13 @@ let encPinConfirmBuffer = '';
 let encargados = [];            // cargados desde Supabase
 
 async function onEncChange() {
-  const sel = document.getElementById('sel-encargado');
-  const opt = sel.options[sel.selectedIndex];
-  if (!sel.value) {
-    document.getElementById('enc-pin-wrap').style.display = 'none';
-    state.empleado_id = null; state.empleado_nombre = null;
-    return;
-  }
-
-  state.empleado_id    = sel.value;
-  state.empleado_nombre = opt.text;
-  state.rol = 'encargado';
-  document.getElementById('hub-emp-name').textContent = opt.text;
-  document.getElementById('hub-meta').textContent = 'ingresá tu PIN para continuar';
-
-  // Verificar si ya tiene PIN
-  try {
-    const data = await sbFetch(`encargado_pines?cuenta_id=eq.${sel.value}&select=cuenta_id`);
-    const tienePIN = data && data.length > 0;
-    encPinInput = '';
-    encPinMode = tienePIN ? 'login' : 'crear';
-    encPinConfirmBuffer = '';
-    encActualizarLabel();
-    document.getElementById('enc-pin-wrap').style.display = 'block';
-    document.getElementById('enc-pin-note').classList.toggle('visible', !tienePIN);
-    document.getElementById('enc-pin-error').textContent = '';
-    encUpdateDots();
-  } catch(e) {
-    // Fallback: mostrar PIN igual
-    encPinMode = 'login';
-    document.getElementById('enc-pin-wrap').style.display = 'block';
-    encUpdateDots();
-  }
+  // v8: encargado usa el mismo dropdown de empleados — onEmpChange lo maneja
+  // Esta función queda como stub por compatibilidad
 }
 
 function encActualizarLabel() {
   const lbl = document.getElementById('enc-pin-label');
+  if (!lbl) return;
   if (encPinMode === 'login')    lbl.textContent = 'Ingresá tu PIN';
   if (encPinMode === 'crear')    lbl.textContent = 'Creá tu PIN (mín. 4 dígitos)';
   if (encPinMode === 'confirmar') lbl.textContent = 'Confirmá tu PIN';
@@ -3807,12 +4019,13 @@ async function admTab(tab) {
   const fab = document.getElementById('adm-fab');
   if (fab) fab.classList.toggle('hidden', tab !== 'tareas');
 
-  if (tab === 'resumen')   admLoadResumen();
-  if (tab === 'cierres')   admLoadCierres();
-  if (tab === 'tareas')    admLoadTareas();
-  if (tab === 'reportes')  applyAdminFilters();
-  if (tab === 'empleados') admLoadEmpleados();
-  if (tab === 'accesos')   accesosCargar();
+  if (tab === 'resumen')     admLoadResumen();
+  if (tab === 'cierres')     admLoadCierres();
+  if (tab === 'tareas')      admLoadTareas();
+  if (tab === 'reportes')    applyAdminFilters();
+  if (tab === 'empleados')   admLoadEmpleados();
+  if (tab === 'liquidacion') admLoadLiquidacion();
+  if (tab === 'accesos')     { accesosCargar(); deCargarDispositivos(); logCargar(); }
 }
 
 // ── TAB 1: RESUMEN ────────────────────────
@@ -4156,6 +4369,217 @@ async function admCambiarRol(id, nuevoRol) {
   } catch(e) { showToast('Error al actualizar rol', 'error'); }
 }
 
+// ── TAB 6: LIQUIDACIÓN ───────────────────
+// ── LIQUIDACIÓN — estado en memoria ──────
+let liqData = { empleados:[], adelantos:[], entradas:[], hielosPorEmp:{} };
+let liqModalEmpId = null;
+
+async function admLoadLiquidacion() {
+  const hoy = new Date();
+  const selMes  = document.getElementById('liq-mes');
+  const selAnio = document.getElementById('liq-anio');
+  if (!selMes || !selAnio) return;
+  if (!selMes.dataset.init) {
+    selMes.value  = String(hoy.getMonth()+1).padStart(2,'0');
+    selAnio.value = String(hoy.getFullYear());
+    selMes.dataset.init = '1';
+  }
+  const mes  = selMes.value;
+  const anio = selAnio.value;
+  const lastDay = new Date(parseInt(anio), parseInt(mes), 0).getDate();
+  const listEl = document.getElementById('adm-liq-list');
+  listEl.innerHTML = '<div style="text-align:center;padding:20px;font-family:var(--mono);font-size:11px;color:var(--text3)">Cargando...</div>';
+
+  try {
+    const [cuentas, entradas, adelantos, cierresMes, hielosTodos] = await Promise.all([
+      sbFetch('cuentas?tipo=eq.empleado&order=nombre.asc&select=id,nombre,local'),
+      sbFetch('entradas?order=created_at.asc&select=id,cid,monto,fecha,store'),
+      sbFetch(`adelantos_sueldo?mes=eq.${mes}&anio=eq.${anio}&order=created_at.asc`),
+      sbFetch(`cierres_turno?select=id,empleado_id&fecha=gte.${anio}-${mes}-01&fecha=lte.${anio}-${mes}-${lastDay}`),
+      sbFetch('hielos_ciclos?select=id,cierre_id,bolsas'),
+    ]);
+
+    liqData.empleados = cuentas || [];
+    liqData.adelantos = adelantos || [];
+    liqData.entradas  = entradas  || [];
+
+    // Hielos del mes por empleado
+    const cierreIdsMes = new Set((cierresMes||[]).map(c => c.id));
+    liqData.hielosPorEmp = {};
+    (hielosTodos||[]).forEach(h => {
+      if (!cierreIdsMes.has(h.cierre_id)) return;
+      const cierre = (cierresMes||[]).find(c => c.id === h.cierre_id);
+      if (!cierre) return;
+      const eid = cierre.empleado_id;
+      if (!liqData.hielosPorEmp[eid]) liqData.hielosPorEmp[eid] = { ciclos:0, bolsas:0 };
+      liqData.hielosPorEmp[eid].ciclos++;
+      liqData.hielosPorEmp[eid].bolsas += (h.bolsas||0);
+    });
+
+    liqRender(mes, anio);
+  } catch(err) {
+    console.error('admLoadLiquidacion', err);
+    listEl.innerHTML = '<div style="padding:20px;font-family:var(--mono);font-size:12px;color:var(--red)">Error al cargar. ¿Ejecutaste el SQL de la tabla adelantos_sueldo?</div>';
+  }
+}
+
+function liqRender(mes, anio) {
+  const listEl = document.getElementById('adm-liq-list');
+  const fmt = n => '$' + Math.abs(Math.round(n)).toLocaleString('es-AR');
+  const LOCALES = { palermo:'Thames', belgrano:'Roosevelt', barrio_chino:'B. Chino', san_telmo:'San Telmo' };
+
+  const { empleados, adelantos, entradas, hielosPorEmp } = liqData;
+  if (!empleados.length) {
+    listEl.innerHTML = '<div style="padding:20px;font-family:var(--mono);font-size:12px;color:var(--text3)">No hay empleados registrados.</div>';
+    return;
+  }
+
+  // Filtrar entradas del mes por fecha string "DD/MM/YY HH:MM"
+  const aa = anio.slice(2);
+  const entradasMes = entradas.filter(e => {
+    if (!e.fecha) return false;
+    const p = e.fecha.split('/');
+    return p.length >= 3 && p[1] === mes && p[2]?.slice(0,2) === aa;
+  });
+
+  let html = '';
+  for (const emp of empleados) {
+    const deudaMes = entradasMes
+      .filter(e => e.cid === emp.id)
+      .reduce((s,e) => s + (e.monto||0), 0);
+
+    const deudaTotal = entradas
+      .filter(e => e.cid === emp.id)
+      .reduce((s,e) => s + (e.monto||0), 0);
+
+    const adelantosEmp = adelantos.filter(a => a.empleado_id === emp.id);
+    const totalAdelantos = adelantosEmp.reduce((s,a) => s + (a.monto||0), 0);
+
+    const hielos = hielosPorEmp[emp.id] || { ciclos:0, bolsas:0 };
+    const ini = emp.nombre.split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase();
+    const colorDeuda = deudaMes > 0 ? 'var(--red)' : deudaMes < 0 ? 'var(--green)' : 'var(--text3)';
+    const colorTotal = deudaTotal > 0 ? 'var(--red)' : deudaTotal < 0 ? 'var(--green)' : 'var(--text3)';
+
+    // Lista de adelantos del empleado
+    const adelantosHtml = adelantosEmp.length
+      ? adelantosEmp.map((a,i) => `
+          <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid var(--border)">
+            <span style="font-family:var(--mono);font-size:11px;color:var(--text);flex:1">${a.descripcion||'Adelanto'}</span>
+            <span style="font-family:var(--mono);font-size:12px;font-weight:600;color:var(--orange)">${fmt(a.monto)}</span>
+            <span style="font-family:var(--mono);font-size:10px;color:var(--text3);min-width:60px;text-align:right">${a.fecha_pago||''}</span>
+            <button onclick="liqEliminarAdelanto('${a.id}','${emp.id}')" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:0 2px;line-height:1" title="Eliminar">✕</button>
+          </div>`).join('')
+      : `<div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:8px 0;font-style:italic">Sin adelantos registrados</div>`;
+
+    html += `
+    <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <div style="width:34px;height:34px;border-radius:50%;background:var(--bg4);border:0.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:600;color:var(--text2);flex-shrink:0">${ini}</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:500;color:var(--text)">${emp.nombre}</div>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--text3)">${LOCALES[emp.local]||emp.local||'—'}</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+        <div style="background:var(--bg3);border:0.5px solid var(--border);border-radius:8px;padding:10px 12px">
+          <div style="font-family:var(--mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Deuda del mes</div>
+          <div style="font-size:16px;font-weight:600;color:${colorDeuda};font-family:var(--mono)">${fmt(deudaMes)}</div>
+        </div>
+        <div style="background:var(--bg3);border:0.5px solid var(--border);border-radius:8px;padding:10px 12px">
+          <div style="font-family:var(--mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Deuda total acumulada</div>
+          <div style="font-size:16px;font-weight:600;color:${colorTotal};font-family:var(--mono)">${fmt(deudaTotal)}</div>
+        </div>
+        <div style="background:var(--bg3);border:0.5px solid var(--border);border-radius:8px;padding:10px 12px">
+          <div style="font-family:var(--mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Adelantos del mes</div>
+          <div style="font-size:16px;font-weight:600;color:var(--orange);font-family:var(--mono)">${totalAdelantos > 0 ? fmt(totalAdelantos) : '—'}</div>
+        </div>
+        <div style="background:var(--bg3);border:0.5px solid var(--border);border-radius:8px;padding:10px 12px">
+          <div style="font-family:var(--mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Hielos del mes</div>
+          <div style="font-size:14px;font-weight:600;color:var(--blue);font-family:var(--mono)">${hielos.ciclos} ciclos · ${hielos.bolsas} bolsas</div>
+        </div>
+      </div>
+
+      <div style="border-top:0.5px solid var(--border);padding-top:10px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div style="font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em">Adelantos registrados</div>
+          <button onclick="liqAbrirModalAdelanto('${emp.id}')"
+            style="background:rgba(232,197,71,0.1);border:0.5px solid var(--accent);border-radius:6px;padding:4px 10px;color:var(--accent);font-family:var(--mono);font-size:11px;cursor:pointer">
+            + Agregar adelanto
+          </button>
+        </div>
+        <div id="liq-adelantos-${emp.id}">
+          ${adelantosHtml}
+        </div>
+      </div>
+    </div>`;
+  }
+
+  listEl.innerHTML = html;
+}
+
+function liqAbrirModalAdelanto(empId) {
+  liqModalEmpId = empId;
+  document.getElementById('liq-modal-monto').value = '';
+  document.getElementById('liq-modal-desc').value = '';
+  document.getElementById('liq-modal-fecha').value = new Date().toISOString().split('T')[0];
+  document.getElementById('liq-modal').style.display = 'flex';
+}
+
+function liqCerrarModal() {
+  document.getElementById('liq-modal').style.display = 'none';
+  liqModalEmpId = null;
+}
+
+async function liqGuardarAdelanto() {
+  const monto = parseInt(document.getElementById('liq-modal-monto').value);
+  const desc  = document.getElementById('liq-modal-desc').value.trim();
+  const fecha = document.getElementById('liq-modal-fecha').value;
+  if (!monto || monto <= 0) { showToast('Ingresá un monto válido', 'error'); return; }
+  if (!fecha) { showToast('Ingresá una fecha', 'error'); return; }
+
+  const mes  = document.getElementById('liq-mes').value;
+  const anio = document.getElementById('liq-anio').value;
+  const [y,m,d] = fecha.split('-');
+  const fechaPago = `${d}/${m}/${y.slice(2)}`;
+
+  try {
+    const res = await sbFetch('adelantos_sueldo', {
+      method: 'POST',
+      body: JSON.stringify({
+        empleado_id: liqModalEmpId,
+        monto,
+        descripcion: desc || 'Adelanto de sueldo',
+        fecha_pago: fechaPago,
+        mes,
+        anio,
+      })
+    });
+    if (res && res[0]) {
+      liqData.adelantos.push(res[0]);
+      liqCerrarModal();
+      liqRender(mes, anio);
+      showToast('Adelanto registrado ✓', 'success');
+    }
+  } catch(e) {
+    showToast('Error al guardar', 'error');
+  }
+}
+
+async function liqEliminarAdelanto(adelantoId, empId) {
+  if (!confirm('¿Eliminar este adelanto?')) return;
+  const mes  = document.getElementById('liq-mes').value;
+  const anio = document.getElementById('liq-anio').value;
+  try {
+    await sbFetch(`adelantos_sueldo?id=eq.${adelantoId}`, { method: 'DELETE' });
+    liqData.adelantos = liqData.adelantos.filter(a => a.id !== adelantoId);
+    liqRender(mes, anio);
+    showToast('Adelanto eliminado', '');
+  } catch(e) {
+    showToast('Error al eliminar', 'error');
+  }
+}
+
 // ── FILTRO LOCAL EN REPORTES ──────────────
 let adminLocalFilter2 = '';
 function adminFilterLocal(local, el) {
@@ -4364,6 +4788,73 @@ const LS_AUTH_EXPIRY = 12 * 60 * 60 * 1000; // 12h
 let lsState = { tipo: null, local: null, localName: null, step: 'tipo' };
 let lsConfigCache = null;
 
+
+// ── REPARTIDOR — REPORTES ──────────────────────────────────────────────────
+// El repartidor no tiene local fijo, así que elige la tienda al reportar
+function repartidorAbrirReportes() {
+  // Si ya eligió tienda en esta sesión, abrir directo
+  if (state.local) {
+    goTo('reporte-tipo');
+    updateBadges();
+    return;
+  }
+  // Mostrar selector de tienda inline con un modal simple
+  const opciones = [
+    { key: 'palermo',      nombre: 'Thames · Palermo' },
+    { key: 'belgrano',     nombre: 'Roosevelt · Belgrano' },
+    { key: 'barrio_chino', nombre: 'Juramento · B. Chino' },
+    { key: 'san_telmo',    nombre: 'Independencia · S. Telmo' },
+  ];
+  const btns = opciones.map(o =>
+    `<button onclick="repartidorSelLocal('${o.key}','${o.nombre}')"
+      style="width:100%;padding:12px 14px;background:var(--bg2);border:0.5px solid var(--border);
+             border-radius:var(--radius);color:var(--text);font-family:var(--sans);font-size:14px;
+             cursor:pointer;text-align:left;transition:background 0.15s;margin-bottom:8px"
+      onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='var(--bg2)'"
+    >${o.nombre}</button>`
+  ).join('');
+
+  const modal = document.createElement('div');
+  modal.id = 'rep-local-modal';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;padding:24px';
+  modal.innerHTML = `
+    <div style="background:var(--bg);border:0.5px solid var(--border2);border-radius:var(--radius-lg);padding:24px;width:100%;max-width:360px">
+      <div style="font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:14px">¿En qué tienda estás?</div>
+      ${btns}
+      <button onclick="document.getElementById('rep-local-modal').remove()"
+        style="width:100%;padding:10px;background:none;border:0.5px solid var(--border);border-radius:var(--radius);color:var(--text3);font-family:var(--mono);font-size:12px;cursor:pointer;margin-top:4px">
+        Cancelar
+      </button>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+function repartidorSelLocal(local, localName) {
+  // Setear local solo para esta sesión de reporte (no persiste)
+  state.local = local;
+  const modal = document.getElementById('rep-local-modal');
+  if (modal) modal.remove();
+  goTo('reporte-tipo');
+  updateBadges();
+  // Limpiar local después de terminar el reporte (cuando vuelve al hub)
+  // lo dejamos seteado para que pueda hacer varios reportes de la misma tienda
+}
+
+
+// v8: helper seguro para elementos que pueden no existir en el DOM
+function elSet(id, prop, val) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (prop === 'display') el.style.display = val;
+  else if (prop === 'textContent') el.textContent = val;
+  else if (prop === 'value') el.value = val;
+  else if (prop === 'borderColor') el.style.borderColor = val;
+}
+function elClass(id, method, cls) {
+  const el = document.getElementById(id);
+  if (el) el.classList[method](cls);
+}
+
 async function lsPrecargarConfig() {
   try {
     const rows = await sbFetch('config?select=clave,valor');
@@ -4458,6 +4949,35 @@ async function lsConfirmar() {
   const clave = document.getElementById('ls-clave-inp').value.trim();
   if (!clave) return;
 
+  // ── RATE LIMITING — Capa 3 ─────────────────────────────────
+  // Máx 5 intentos fallidos por device en ventana de 15 minutos.
+  const deviceId   = lsGetDeviceId();
+  const RL_KEY     = 'break_rl_' + deviceId;
+  const RL_MAX     = 5;
+  const RL_WINDOW  = 15 * 60 * 1000; // 15 minutos en ms
+  const RL_BLOCK   = 15 * 60 * 1000; // bloqueo de 15 minutos
+
+  function rlGetState() {
+    try { return JSON.parse(localStorage.getItem(RL_KEY)) || { intentos: 0, primerFallo: null, bloqueadoHasta: null }; }
+    catch(e) { return { intentos: 0, primerFallo: null, bloqueadoHasta: null }; }
+  }
+  function rlSave(s) { localStorage.setItem(RL_KEY, JSON.stringify(s)); }
+
+  const rl = rlGetState();
+
+  // ¿Está bloqueado?
+  if (rl.bloqueadoHasta && Date.now() < rl.bloqueadoHasta) {
+    const minutos = Math.ceil((rl.bloqueadoHasta - Date.now()) / 60000);
+    lsMostrarError(`Demasiados intentos fallidos. Esperá ${minutos} minuto${minutos !== 1 ? 's' : ''} antes de intentar de nuevo.`);
+    logRegistrar('blocked', lsState.tipo, lsState.local);
+    return;
+  }
+  // ¿Venció la ventana? Resetear
+  if (rl.primerFallo && Date.now() - rl.primerFallo > RL_WINDOW) {
+    rlSave({ intentos: 0, primerFallo: null, bloqueadoHasta: null });
+  }
+  // ── FIN RATE LIMITING ──────────────────────────────────────
+
   document.getElementById('ls-clave').classList.remove('visible');
   document.getElementById('ls-loading').style.display = 'block';
 
@@ -4478,24 +4998,41 @@ async function lsConfirmar() {
       lsMostrarError('Clave no configurada. Pedile al admin que la configure en Administración → Accesos.');
       return;
     }
+
     if (clave !== claveCorrecta) {
+      // ── Registrar fallo y actualizar rate limiting ──────────
       document.getElementById('ls-clave').classList.add('visible');
       document.getElementById('ls-clave-inp').value = '';
-      lsMostrarError('Clave incorrecta. Intentá de nuevo.');
+
+      const rlActual = rlGetState();
+      rlActual.intentos = (rlActual.intentos || 0) + 1;
+      if (!rlActual.primerFallo) rlActual.primerFallo = Date.now();
+
+      if (rlActual.intentos >= RL_MAX) {
+        rlActual.bloqueadoHasta = Date.now() + RL_BLOCK;
+        rlSave(rlActual);
+        lsMostrarError('Demasiados intentos fallidos. Dispositivo bloqueado por 15 minutos.');
+        logRegistrar('blocked', lsState.tipo, lsState.local);
+      } else {
+        rlSave(rlActual);
+        const restantes = RL_MAX - rlActual.intentos;
+        lsMostrarError(`Clave incorrecta. ${restantes} intento${restantes !== 1 ? 's' : ''} restante${restantes !== 1 ? 's' : ''} antes del bloqueo.`);
+        logRegistrar('fail', lsState.tipo, lsState.local);
+      }
       return;
     }
 
-    // ✅ Login exitoso
+    // ✅ Login exitoso — resetear rate limiting y registrar
+    rlSave({ intentos: 0, primerFallo: null, bloqueadoHasta: null });
+    logRegistrar('ok', lsState.tipo, lsState.local);
+
     const rolFinal = (lsState.tipo === 'empleado') ? 'empleado' : lsState.tipo;
     const authData = { rol: rolFinal, local: lsState.local, localName: lsState.localName, ts: Date.now() };
 
     // Persistir sesión de 12h solo para empleado/encargado
     if (rolFinal === 'empleado' || rolFinal === 'encargado') {
       localStorage.setItem(LS_AUTH_KEY, JSON.stringify(authData));
-      // Mantener break_local_fijo para compatibilidad con iframes
       if (lsState.local) localStorage.setItem('break_local_fijo', lsState.local);
-      // Backup del local en Supabase
-      const deviceId = lsGetDeviceId();
       sbFetch('config', {
         method: 'POST',
         body: JSON.stringify({ clave: 'device_local_' + deviceId, valor: lsState.local }),
@@ -4550,7 +5087,11 @@ function lsEntrarHub(auth) {
     state.empleado_nombre = 'Repartidor';
     state.turno           = 'repartidor';
     document.getElementById('hub-emp-name').textContent = 'Repartidor';
-    document.getElementById('hub-meta').textContent     = 'acceso solo a remitos';
+    document.getElementById('hub-meta').textContent     = 'remitos · reportes';
+    // Ocultar cards que no aplican al repartidor
+    ['card-deudas','card-panel-turno','card-inventario','card-ordenes','card-turno-admin'].forEach(id => {
+      const c = document.getElementById(id); if (c) c.style.display = 'none';
+    });
   } else if (auth.rol === 'admin') {
     if (secNombre) secNombre.style.display = 'none';
     adminPinValue  = lsConfigCache ? lsConfigCache['admin_pin'] : adminPinValue;
@@ -4622,11 +5163,18 @@ async function accesosCargar() {
         const tiene = !!cfg[item.clave];
         const row = document.createElement('div');
         row.className = 'accesos-row' + (tiene ? '' : ' sin-clave');
+        const btnLabel = tiene ? 'cambiar' : 'configurar';
+        const statusClass = tiene ? 'ok' : 'err';
+        const statusTxt   = tiene ? '✓ ok' : '✗ sin clave';
         row.innerHTML =
           '<span style="font-size:16px">' + item.emoji + '</span>' +
           '<div class="accesos-row-info"><div class="accesos-row-name">' + item.label + '</div></div>' +
-          '<span class="accesos-status ' + (tiene ? 'ok' : 'err') + '">' + (tiene ? '✓ ok' : '✗ sin clave') + '</span>' +
-          '<button onclick="accAbrir('' + item.clave + '','' + item.label + '')" style="background:none;border:0.5px solid var(--border2);border-radius:6px;padding:5px 10px;color:var(--text3);font-family:var(--mono);font-size:10px;cursor:pointer;transition:color 0.12s" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text3)'">' + (tiene ? 'cambiar' : 'configurar') + '</button>';
+          '<span class="accesos-status ' + statusClass + '">' + statusTxt + '</span>';
+        const btn = document.createElement('button');
+        btn.textContent = btnLabel;
+        btn.style.cssText = 'background:none;border:0.5px solid var(--border2);border-radius:6px;padding:5px 10px;color:var(--text3);font-family:var(--mono);font-size:10px;cursor:pointer';
+        btn.onclick = () => accAbrir(item.clave, item.label);
+        row.appendChild(btn);
         list.appendChild(row);
       });
     });
@@ -4660,11 +5208,384 @@ async function accGuardar(clave, valor, label) {
   }
 }
 
+// ── GESTIÓN DE DISPOSITIVOS (Panel Admin → Accesos) ───────────────────────────
+
+// ═══════════════════════════════════════
+// ENROLL — GENERAR CÓDIGO DE UN USO
+// ═══════════════════════════════════════
+const ENROLL_CODE_CFG = 'enroll_code';
+const ENROLL_EXP_CFG  = 'enroll_code_exp';
+const ENROLL_TTL_MS   = 30 * 60 * 1000; // 30 minutos
+
+let _enrollCountdownInterval = null;
+
+async function enrollGenerarCodigo() {
+  const btn = document.getElementById('enroll-btn-gen');
+  const displayEl = document.getElementById('enroll-code-display');
+  const valEl     = document.getElementById('enroll-code-val');
+  const expEl     = document.getElementById('enroll-code-exp');
+
+  btn.disabled = true;
+  btn.textContent = 'Generando...';
+
+  try {
+    // Generar código aleatorio de 6 dígitos
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const expTs = Date.now() + ENROLL_TTL_MS;
+
+    // Guardar en Supabase
+    await sbFetch('config', {
+      method: 'POST',
+      body: JSON.stringify({ clave: ENROLL_CODE_CFG, valor: code }),
+      extraHeaders: { 'Prefer': 'resolution=merge-duplicates' }
+    });
+    await sbFetch('config', {
+      method: 'POST',
+      body: JSON.stringify({ clave: ENROLL_EXP_CFG, valor: String(expTs) }),
+      extraHeaders: { 'Prefer': 'resolution=merge-duplicates' }
+    });
+
+    // Mostrar código
+    valEl.textContent = code;
+    displayEl.style.display = 'block';
+
+    // Countdown
+    if (_enrollCountdownInterval) clearInterval(_enrollCountdownInterval);
+    function updateCountdown() {
+      const remaining = expTs - Date.now();
+      if (remaining <= 0) {
+        clearInterval(_enrollCountdownInterval);
+        expEl.textContent = 'expirado';
+        valEl.style.opacity = '0.3';
+        btn.disabled = false;
+        btn.textContent = '⊕ Generar nuevo código';
+        return;
+      }
+      const mins = Math.floor(remaining / 60000);
+      const secs = Math.floor((remaining % 60000) / 1000);
+      expEl.textContent = `expira en ${mins}:${String(secs).padStart(2, '0')}`;
+    }
+    updateCountdown();
+    _enrollCountdownInterval = setInterval(updateCountdown, 1000);
+
+    valEl.style.opacity = '1';
+    btn.disabled = false;
+    btn.textContent = '⊕ Generar nuevo código';
+
+    showToast('Código generado — válido 30 minutos', 'success');
+  } catch(e) {
+    showToast('Error al generar código', 'error');
+    btn.disabled = false;
+    btn.textContent = '⊕ Generar código';
+  }
+}
+
+async function deCargarDispositivos() {
+  const listEl = document.getElementById('de-tokens-list');
+  const thisDeviceEl = document.getElementById('de-this-device-id');
+  const btnEnrolar   = document.getElementById('de-btn-enrolar');
+  const miToken = localStorage.getItem(DE_TOKEN_KEY);
+  const miId    = lsGetDeviceId();
+
+  if (thisDeviceEl) thisDeviceEl.textContent = miId;
+  if (listEl) listEl.innerHTML = '<div style="text-align:center;padding:12px;font-family:var(--mono);font-size:11px;color:var(--text3)">Cargando...</div>';
+
+  try {
+    const rows = await sbFetch('config?clave=eq.' + DE_TOKENS_CFG + '&select=valor');
+    let tokens = [];
+    if (rows && rows.length) {
+      try { tokens = JSON.parse(rows[0].valor) || []; } catch(e) { tokens = []; }
+    }
+
+    // Actualizar botón de este dispositivo
+    const esteEnrolado = miToken && tokens.includes(miToken);
+    if (btnEnrolar) {
+      btnEnrolar.textContent = esteEnrolado ? '✓ Este dispositivo ya está autorizado' : '✓ Autorizar este dispositivo';
+      btnEnrolar.style.opacity = esteEnrolado ? '0.5' : '1';
+      btnEnrolar.disabled = esteEnrolado;
+    }
+
+    if (!listEl) return;
+    if (!tokens.length) {
+      listEl.innerHTML = '<div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:10px 0">Sin dispositivos registrados aún. Autorizá este dispositivo primero.</div>';
+      return;
+    }
+
+    listEl.innerHTML = tokens.map((t, i) => {
+      const esMio = (t === miToken);
+      return `<div style="background:var(--bg2);border:0.5px solid ${esMio ? 'rgba(76,175,130,0.3)' : 'var(--border)'};border-radius:var(--radius);padding:10px 12px;margin-bottom:7px;display:flex;align-items:center;gap:10px">
+        <div style="flex:1;min-width:0">
+          <div style="font-family:var(--mono);font-size:10px;color:${esMio ? 'var(--green)' : 'var(--text3)'};margin-bottom:3px">${esMio ? '← ESTE DISPOSITIVO' : 'Dispositivo ' + (i+1)}</div>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--text3);word-break:break-all;opacity:0.6">${t}</div>
+        </div>
+        <button onclick="deRevocarToken('${t}')"
+          style="background:none;border:0.5px solid var(--border2);border-radius:5px;padding:4px 8px;color:var(--text3);font-family:var(--mono);font-size:9px;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all 0.12s"
+          onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'"
+          onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text3)'">
+          revocar
+        </button>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    if (listEl) listEl.innerHTML = '<div style="font-family:var(--mono);font-size:11px;color:var(--red)">Error al cargar dispositivos</div>';
+  }
+}
+
+async function deEnrolarEsteDispositivo() {
+  const miId = lsGetDeviceId();
+  let miToken = localStorage.getItem(DE_TOKEN_KEY);
+  if (!miToken) {
+    miToken = 'bkt_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,10);
+    localStorage.setItem(DE_TOKEN_KEY, miToken);
+  }
+  try {
+    let tokens = [];
+    try {
+      const rows = await sbFetch('config?clave=eq.' + DE_TOKENS_CFG + '&select=valor');
+      if (rows && rows.length) tokens = JSON.parse(rows[0].valor) || [];
+    } catch(e) {}
+
+    if (!tokens.includes(miToken)) {
+      tokens.push(miToken);
+      await sbFetch('config', {
+        method: 'POST',
+        body: JSON.stringify({ clave: DE_TOKENS_CFG, valor: JSON.stringify(tokens) }),
+        extraHeaders: { 'Prefer': 'resolution=merge-duplicates' }
+      });
+    }
+    showToast('Dispositivo autorizado correctamente', 'success');
+    deCargarDispositivos();
+  } catch(e) {
+    showToast('Error al autorizar dispositivo', 'error');
+  }
+}
+
+async function deRevocarToken(token) {
+  if (!confirm('¿Revocar este dispositivo? Ya no podrá acceder al sistema.')) return;
+  try {
+    const rows = await sbFetch('config?clave=eq.' + DE_TOKENS_CFG + '&select=valor');
+    let tokens = (rows && rows.length) ? JSON.parse(rows[0].valor) : [];
+    tokens = tokens.filter(t => t !== token);
+    await sbFetch('config', {
+      method: 'POST',
+      body: JSON.stringify({ clave: DE_TOKENS_CFG, valor: JSON.stringify(tokens) }),
+      extraHeaders: { 'Prefer': 'resolution=merge-duplicates' }
+    });
+    showToast('Dispositivo revocado', 'success');
+    deCargarDispositivos();
+  } catch(e) {
+    showToast('Error al revocar', 'error');
+  }
+}
+
+// ═══════════════════════════════════════
+// LOG DE ACCESOS — CAPA 3B
+// ═══════════════════════════════════════
+
+// Registra un intento de login en Supabase (fire-and-forget, no bloquea el flujo)
+function logRegistrar(resultado, tipo, local) {
+  const deviceId = lsGetDeviceId();
+  sbFetch('login_attempts', {
+    method: 'POST',
+    body: JSON.stringify({ device_id: deviceId, tipo: tipo || null, local: local || null, resultado }),
+    extraHeaders: { 'Prefer': 'return=minimal' }
+  }).catch(() => {}); // silencioso — nunca interrumpe el login
+}
+
+// Carga y renderiza el log en el panel admin
+async function logCargar(filtroResultado) {
+  const listEl = document.getElementById('log-accesos-list');
+  if (!listEl) return;
+  listEl.innerHTML = '<div style="text-align:center;padding:12px;font-family:var(--mono);font-size:11px;color:var(--text3)">Cargando...</div>';
+
+  try {
+    let query = 'login_attempts?order=created_at.desc&limit=50';
+    if (filtroResultado) query += `&resultado=eq.${filtroResultado}`;
+
+    const rows = await sbFetch(query);
+    if (!rows || !rows.length) {
+      listEl.innerHTML = '<div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:10px 0">Sin registros aún.</div>';
+      return;
+    }
+
+    const RESULTADO_STYLE = {
+      ok:      { color: 'var(--green)',  bg: 'var(--green-bg)',  label: '✓ ok' },
+      fail:    { color: 'var(--red)',    bg: 'var(--red-bg)',    label: '✗ fallido' },
+      blocked: { color: 'var(--orange)', bg: 'var(--orange-bg)', label: '⊘ bloqueado' },
+    };
+    const LOCALES_NOM = { palermo:'Palermo', belgrano:'Belgrano', barrio_chino:'B. Chino', san_telmo:'S. Telmo' };
+
+    listEl.innerHTML = rows.map(r => {
+      const st = RESULTADO_STYLE[r.resultado] || { color: 'var(--text3)', bg: 'var(--bg4)', label: r.resultado };
+      const fecha = r.created_at ? new Date(r.created_at).toLocaleString('es-AR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) : '—';
+      const local = r.local ? (LOCALES_NOM[r.local] || r.local) : '—';
+      const deviceShort = r.device_id ? r.device_id.slice(-8) : '—';
+      return `<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:9px 12px;margin-bottom:6px;display:flex;align-items:center;gap:10px">
+        <span style="font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:4px;background:${st.bg};color:${st.color};flex-shrink:0">${st.label}</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-family:var(--mono);font-size:11px;color:var(--text)">${r.tipo || '—'} · ${local}</div>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:2px">${fecha} · dev …${deviceShort}</div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    listEl.innerHTML = '<div style="font-family:var(--mono);font-size:11px;color:var(--red)">Error al cargar log</div>';
+  }
+}
+
+// ═══════════════════════════════════════
+// DEVICE ENROLLMENT — CAPA 1 DE SEGURIDAD
+// ═══════════════════════════════════════
+const DE_TOKEN_KEY   = 'break_device_token';
+const DE_TOKENS_CFG  = 'device_tokens';   // clave en tabla config de Supabase
+const DE_BYPASS_KEY  = 'break_enroll_bypass'; // solo para uso en consola por admin
+
+// Verifica si el dispositivo está autorizado.
+// Retorna true si puede continuar, false si debe bloquearse.
+async function deCheckDevice() {
+  // 1. ¿Tiene token local?
+  const localToken = localStorage.getItem(DE_TOKEN_KEY);
+  if (!localToken) return false;
+
+  // 2. ¿El token está en la lista de tokens autorizados en Supabase?
+  try {
+    const rows = await sbFetch('config?clave=eq.' + DE_TOKENS_CFG + '&select=valor');
+    if (!rows || !rows.length) {
+      // Si todavía no hay lista configurada en Supabase,
+      // aceptamos cualquier token (modo bootstrap — primer setup).
+      return true;
+    }
+    const rawVal = rows[0].valor;
+    let tokensValidos = [];
+    try { tokensValidos = JSON.parse(rawVal); } catch(e) { tokensValidos = []; }
+    if (!Array.isArray(tokensValidos)) tokensValidos = [];
+    return tokensValidos.includes(localToken);
+  } catch(e) {
+    // Sin conexión: confiamos en el token local (evita bloquear dispositivos
+    // válidos por problemas de red temporales).
+    console.warn('[DE] Sin conexión — confiando en token local');
+    return true;
+  }
+}
+
+// Muestra la pantalla de bloqueo con el device_id para que el admin lo registre.
+function deBloquear() {
+  const deviceId = lsGetDeviceId();
+  const blockEl = document.getElementById('block-screen');
+  const idEl    = document.getElementById('block-device-id-txt');
+  if (idEl)    idEl.textContent = deviceId;
+  if (blockEl) blockEl.classList.remove('hidden');
+  // Ocultar loading overlay
+  const loadEl = document.getElementById('loading-overlay');
+  if (loadEl) loadEl.classList.add('hidden');
+}
+
+// ── FUNCIONES DE ADMINISTRACIÓN (usar desde consola del browser) ──────────────
+//
+// Para ENROLLAR este dispositivo (ejecutar en la consola del browser):
+//   breakEnroll()
+//
+// Para VER todos los tokens registrados:
+//   breakListTokens()
+//
+// Para REVOCAR un token específico:
+//   breakRevokeToken('token_aqui')
+//
+// Para LIMPIAR el token de este navegador (des-enrolar):
+//   breakUnenroll()
+
+window.breakEnroll = async function() {
+  // Genera un token único para este dispositivo y lo registra en Supabase
+  const deviceId = lsGetDeviceId();
+  let token = localStorage.getItem(DE_TOKEN_KEY);
+  if (!token) {
+    token = 'bkt_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,10);
+    localStorage.setItem(DE_TOKEN_KEY, token);
+  }
+
+  try {
+    // Cargar lista actual
+    let tokensActuales = [];
+    try {
+      const rows = await sbFetch('config?clave=eq.' + DE_TOKENS_CFG + '&select=valor');
+      if (rows && rows.length) tokensActuales = JSON.parse(rows[0].valor) || [];
+    } catch(e) {}
+
+    // Agregar si no está
+    if (!tokensActuales.includes(token)) {
+      tokensActuales.push(token);
+      await sbFetch('config', {
+        method: 'POST',
+        body: JSON.stringify({ clave: DE_TOKENS_CFG, valor: JSON.stringify(tokensActuales) }),
+        extraHeaders: { 'Prefer': 'resolution=merge-duplicates' }
+      });
+    }
+    console.log('%c[Break] ✅ Dispositivo enrollado correctamente', 'color:#4caf82;font-weight:bold');
+    console.log('Device ID:', deviceId);
+    console.log('Token    :', token);
+    console.log('Recargá la página para verificar acceso.');
+    return token;
+  } catch(e) {
+    console.error('[Break] ❌ Error al enrollar:', e);
+  }
+};
+
+window.breakListTokens = async function() {
+  try {
+    const rows = await sbFetch('config?clave=eq.' + DE_TOKENS_CFG + '&select=valor');
+    if (!rows || !rows.length) { console.log('[Break] Sin tokens registrados aún.'); return; }
+    const tokens = JSON.parse(rows[0].valor) || [];
+    console.log('%c[Break] Tokens registrados (' + tokens.length + '):', 'color:#5b9cf6;font-weight:bold');
+    tokens.forEach((t,i) => {
+      const esMio = (t === localStorage.getItem(DE_TOKEN_KEY));
+      console.log((i+1) + '. ' + t + (esMio ? ' ← ESTE DISPOSITIVO' : ''));
+    });
+    return tokens;
+  } catch(e) { console.error('[Break] Error:', e); }
+};
+
+window.breakRevokeToken = async function(token) {
+  if (!token) { console.log('Uso: breakRevokeToken("token_aqui")'); return; }
+  try {
+    const rows = await sbFetch('config?clave=eq.' + DE_TOKENS_CFG + '&select=valor');
+    let tokens = (rows && rows.length) ? JSON.parse(rows[0].valor) : [];
+    const antes = tokens.length;
+    tokens = tokens.filter(t => t !== token);
+    if (tokens.length === antes) { console.log('[Break] Token no encontrado.'); return; }
+    await sbFetch('config', {
+      method: 'POST',
+      body: JSON.stringify({ clave: DE_TOKENS_CFG, valor: JSON.stringify(tokens) }),
+      extraHeaders: { 'Prefer': 'resolution=merge-duplicates' }
+    });
+    console.log('%c[Break] ✅ Token revocado. El dispositivo quedará bloqueado al próximo acceso.', 'color:#4caf82;font-weight:bold');
+  } catch(e) { console.error('[Break] Error:', e); }
+};
+
+window.breakUnenroll = function() {
+  localStorage.removeItem(DE_TOKEN_KEY);
+  console.log('[Break] Token local eliminado. Este dispositivo quedará bloqueado al recargar.');
+};
+
 // ═══════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════
 async function init() {
   try {
+    // ── CAPA 2: APP SECRET (RLS) ───────────────────────────────────────────
+    // Cargar el secret de Supabase antes de cualquier otra query.
+    // A partir de acá, sbFetch lo adjunta automáticamente en cada request.
+    await sbLoadAppSecret();
+
+    // ── CAPA 1: DEVICE ENROLLMENT ──────────────────────────────────────────
+    // Verificar antes de cualquier otra cosa si el dispositivo está autorizado.
+    // Si no lo está, mostrar pantalla de bloqueo y detener la inicialización.
+    const deviceAutorizado = await deCheckDevice();
+    if (!deviceAutorizado) {
+      deBloquear();
+      return; // Detiene el init completamente — no carga nada más
+    }
+    // ── FIN CAPA 1 ─────────────────────────────────────────────────────────
+
     // Cargar datos base
     const cuentas  = await sbFetch('cuentas?tipo=eq.empleado&order=nombre.asc&select=id,nombre,rol');
     const empleados = (cuentas||[]).filter(c => c.rol === 'empleado' || !c.rol);
@@ -4708,7 +5629,14 @@ async function init() {
 
   } catch(e) {
     console.error(e);
-    document.getElementById('loading-overlay').querySelector('.loading-text').textContent = 'error de conexión — verificar config';
+    // Siempre ocultar el overlay aunque haya error — sino tapa toda la pantalla
+    const ov = document.getElementById('loading-overlay');
+    if (ov) {
+      const txt = ov.querySelector('.loading-text');
+      if (txt) txt.textContent = 'error de conexión — verificar config';
+      // Mostrar el error 3s y luego ocultar para no bloquear la UI
+      setTimeout(() => ov.classList.add('hidden'), 3000);
+    }
   }
 }
 
@@ -4737,6 +5665,22 @@ let ptData = {
 
 // ── INIT ─────────────────────────────────
 function ptInit() {
+  // 6.8: empleado/encargado siempre pasa por pantalla de apertura
+  if (state.rol === 'empleado' || state.rol === 'encargado') {
+    // Mostrar apertura — go there first, then load async data
+    goTo('apertura');
+    ptShowApertura().catch(e => {
+      console.error('ptShowApertura error:', e);
+      // Si falla la apertura, ir directo al panel sin bloquear
+      ptInitCore();
+      goTo('panel-turno');
+    });
+    return;
+  }
+  ptInitCore();
+}
+
+function ptInitCore() {
   window._breakHubLoaded = true;
   ptData.turnoInicio = new Date();
   ptData.cierreGuardado = false;
@@ -4819,7 +5763,7 @@ async function ptLoadTareas() {
   try {
     // 1. Cargar definiciones activas para este local
     const defs = await sbFetch(
-      `tareas_definicion?activa=eq.true&or=(local.is.null,local.eq.${state.local})`
+      `tareas_definicion?or=(local.is.null,local.eq.${state.local})&activa=eq.true`
     );
     ptData.definiciones = defs || [];
 
@@ -4878,10 +5822,13 @@ async function ptLoadTareas() {
 
   } catch(e) {
     console.error('ptLoadTareas:', e);
-    ptRenderDemoTareas();
+    try { ptRenderDemoTareas(); } catch(e2) { console.error('ptRenderDemoTareas:', e2); }
+  } finally {
+    const loadEl = document.getElementById('pt-loading');
+    if (loadEl) loadEl.style.display = 'none';
+    const listEl = document.getElementById('pt-tareas-list');
+    if (listEl) listEl.style.display = 'block';
   }
-
-  document.getElementById('pt-loading').style.display = 'none';
 }
 
 function ptDefAplicaHoy(def) {
@@ -5660,7 +6607,7 @@ function deudasOpen() {
   // Blanquear src primero para forzar recarga aunque el local sea el mismo
   const iframe = document.getElementById('deudas-iframe');
   iframe.src = '';
-  setTimeout(() => { iframe.src = 'deudas.html?local=' + (state.local || ''); }, 0);
+  setTimeout(() => { iframe.src = 'deudas.html?local=' + (state.local || '') + '&rol=' + (state.rol || ''); }, 0);
 }
 
 // === MODULO PEDIDOS ===
@@ -5805,6 +6752,106 @@ async function checkPedidosPendientes() {
       banner.style.display = 'flex';
     }
   } catch(e) { console.error('checkPedidosPendientes', e); }
+}
+
+// ═══════════════════════════════════════════════════════════
+// APERTURA DE TURNO (6.8)
+// ═══════════════════════════════════════════════════════════
+
+let _apTurnoSel = null;
+
+const TURNO_SIGUIENTE = { manana: 'tarde', tarde: 'noche', noche: 'manana' };
+const TURNO_NOM_AP    = { manana: 'Mañana', tarde: 'Tarde', noche: 'Noche' };
+const LOCALES_FULL    = { palermo:'Thames · Palermo', belgrano:'Roosevelt · Belgrano', barrio_chino:'Juramento · B. Chino', san_telmo:'Independencia · S. Telmo' };
+
+async function ptShowApertura() {
+  goTo('apertura');
+
+  // Poblar datos estáticos
+  document.getElementById('ap-nombre').textContent = state.empleado_nombre || '—';
+  document.getElementById('ap-local').textContent  = LOCALES_FULL[state.local] || state.local || '—';
+  const ahora = new Date();
+  document.getElementById('ap-hora-actual').textContent =
+    `Hoy ${ahora.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'})} · ${String(ahora.getHours()).padStart(2,'0')}:${String(ahora.getMinutes()).padStart(2,'0')}`;
+
+  // Reset UI
+  _apTurnoSel = null;
+  document.querySelectorAll('.ap-turno-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('ap-turno-sugerido').textContent = '';
+  document.getElementById('ap-ultimo-cierre').style.display = 'none';
+  document.getElementById('ap-sin-cierre').style.display = 'none';
+  document.getElementById('ap-btn-confirmar').style.display = 'block';
+  document.getElementById('ap-loading').style.display = 'none';
+
+  // Consultar último cierre del local
+  try {
+    const hoy = new Date().toISOString().split('T')[0];
+    const cierres = await sbFetch(
+      `cierres_turno?local=eq.${state.local}&order=created_at.desc&limit=1`
+    );
+    const ultimo = cierres?.[0];
+    if (ultimo) {
+      // Mostrar info del último cierre
+      const fechaCierre = ultimo.fecha || '—';
+      const turnoCierre = TURNO_NOM_AP[ultimo.turno] || ultimo.turno || '—';
+      const quienCerro  = ultimo.empleado_nombre || `Emp. ${ultimo.empleado_id}` || '—';
+      document.getElementById('ap-cierre-info').textContent =
+        `${turnoCierre} del ${fechaCierre} · cerrado por ${quienCerro}`;
+      document.getElementById('ap-ultimo-cierre').style.display = 'block';
+
+      // Sugerir el turno siguiente
+      const sugerido = TURNO_SIGUIENTE[ultimo.turno] || 'manana';
+      apSelTurno(sugerido, document.getElementById(`ap-btn-${sugerido}`));
+      document.getElementById('ap-turno-sugerido').textContent =
+        `↑ Sugerido según el último cierre (${turnoCierre})`;
+    } else {
+      // Sin cierre previo
+      document.getElementById('ap-sin-cierre').style.display = 'block';
+      // Sugerir mañana por defecto
+      apSelTurno('manana', document.getElementById('ap-btn-manana'));
+    }
+  } catch(e) {
+    console.error('Error cargando último cierre:', e);
+    document.getElementById('ap-sin-cierre').style.display = 'block';
+    apSelTurno('manana', document.getElementById('ap-btn-manana'));
+  }
+}
+
+function apSelTurno(turno, el) {
+  _apTurnoSel = turno;
+  document.querySelectorAll('.ap-turno-btn').forEach(b => b.classList.remove('selected'));
+  if (el) el.classList.add('selected');
+}
+
+async function ptConfirmarApertura() {
+  if (!_apTurnoSel) { showToast('Seleccioná el turno a abrir', 'error'); return; }
+
+  document.getElementById('ap-btn-confirmar').style.display = 'none';
+  document.getElementById('ap-loading').style.display = 'block';
+
+  // Aplicar turno al estado global
+  state.turno = _apTurnoSel;
+
+  // Guardar apertura en Supabase
+  try {
+    const payload = {
+      local:          state.local,
+      turno:          state.turno,
+      empleado_id:    state.empleado_id,
+      empleado_nombre: state.empleado_nombre || null,
+      fecha:          new Date().toISOString().split('T')[0],
+      apertura_at:    new Date().toISOString(),
+    };
+    await sbFetch('aperturas_turno', { method: 'POST', body: JSON.stringify([payload]) });
+  } catch(e) {
+    // No bloquear si Supabase falla — la apertura igual continúa
+    console.warn('No se pudo guardar apertura en Supabase:', e);
+  }
+
+  // Ir al panel de turno
+  ptInitCore();
+  goTo('panel-turno');
+  showToast(`Turno ${TURNO_NOM_AP[state.turno]} abierto ✓`, 'success');
 }
 
 </script>

@@ -368,12 +368,22 @@ select option { background: #111; }
 // ══════════════════════════════════════════════
 const SUPA_URL = 'https://oiuualqixcccfhtpcist.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pdXVhbHFpeGNjY2ZodHBjaXN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NzUxNjEsImV4cCI6MjA4OTQ1MTE2MX0.ms4MHVhKDTKfID0WGi05EFPySf350SA66uNi4wPfsOo';
-const HEADERS = {
+let HEADERS = {
   'apikey': SUPA_KEY,
   'Authorization': 'Bearer ' + SUPA_KEY,
   'Content-Type': 'application/json',
   'Prefer': 'return=representation'
 };
+// Cargar app_secret para RLS
+(async () => {
+  try {
+    const r = await fetch(`${SUPA_URL}/rest/v1/config?clave=eq.app_secret&select=valor`, {
+      headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY, 'Content-Type': 'application/json' }
+    });
+    const d = await r.json();
+    if (d?.[0]?.valor) HEADERS['x-app-secret'] = d[0].valor;
+  } catch(e) { console.warn('[deudas] app_secret no disponible', e); }
+})();
 
 // ══════════════════════════════════════════════
 // LOCAL CONTEXT
@@ -389,11 +399,23 @@ const LOCAL_NAMES = {
 };
 
 let currentLocal = new URLSearchParams(window.location.search).get('local') || null;
+const _urlRol    = new URLSearchParams(window.location.search).get('rol') || null;
 
 window.addEventListener('message', function(e) {
-  if (e.data && e.data.type === 'break-context' && e.data.local) {
-    currentLocal = e.data.local;
-    applyLocalContext();
+  if (!e.data || e.data.type !== 'break-context') return;
+  const ctx = e.data;
+  if (ctx.local) { currentLocal = ctx.local; applyLocalContext(); }
+  // Si el hub ya autenticó como admin, saltar el splash de PIN
+  if (ctx.rol === 'admin') {
+    const tryAutoLogin = () => {
+      if (document.getElementById('loading-overlay') &&
+          document.getElementById('loading-overlay').style.display !== 'none') {
+        setTimeout(tryAutoLogin, 150); return;
+      }
+      currentUser = 'Administración'; currentRole = 'admin'; adminVerTodo = false;
+      enterApp();
+    };
+    tryAutoLogin();
   }
 });
 
@@ -462,6 +484,15 @@ async function init() {
     populateSelects();
     updateSplashTotal();
     applyLocalContext();
+
+    // Auto-login si viene como admin desde el hub
+    if (_urlRol === 'admin') {
+      document.getElementById('loading-overlay').classList.add('hidden');
+      currentUser = 'Administración'; currentRole = 'admin';
+      adminVerTodo = false;
+      enterApp();
+      return;
+    }
   } catch (err) {
     console.error(err);
     showToast('Error al conectar con Supabase', true);
