@@ -5219,6 +5219,58 @@ const ENROLL_TTL_MS   = 30 * 60 * 1000; // 30 minutos
 
 let _enrollCountdownInterval = null;
 
+// Upsert para config — maneja 204 sin body correctamente
+async function enrollUpsertConfig(clave, valor) {
+  if (!_appSecret) await sbLoadAppSecret();
+  // Intentar PATCH primero (update si existe)
+  const resPatch = await fetch(`${SUPABASE_URL}/rest/v1/config?clave=eq.${clave}`, {
+    method: 'PATCH',
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=minimal',
+      ...(_appSecret ? { 'x-app-secret': _appSecret } : {}),
+    },
+    body: JSON.stringify({ valor })
+  });
+  if (!resPatch.ok) {
+    const err = await resPatch.text();
+    throw new Error('PATCH config failed: ' + err);
+  }
+  // Si PATCH no actualizó nada (fila no existe), hacer POST
+  const count = resPatch.headers.get('content-range');
+  if (count === '*/0' || resPatch.status === 204) {
+    // Verificar si realmente existe
+    const check = await fetch(`${SUPABASE_URL}/rest/v1/config?clave=eq.${clave}&select=clave`, {
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        ...(_appSecret ? { 'x-app-secret': _appSecret } : {}),
+      }
+    });
+    const rows = await check.json();
+    if (!rows || rows.length === 0) {
+      // Insertar fila nueva
+      const resPost = await fetch(`${SUPABASE_URL}/rest/v1/config`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal',
+          ...(_appSecret ? { 'x-app-secret': _appSecret } : {}),
+        },
+        body: JSON.stringify({ clave, valor })
+      });
+      if (!resPost.ok) {
+        const err = await resPost.text();
+        throw new Error('POST config failed: ' + err);
+      }
+    }
+  }
+}
+
 async function enrollGenerarCodigo() {
   const btn = document.getElementById('enroll-btn-gen');
   const displayEl = document.getElementById('enroll-code-display');
@@ -5233,17 +5285,9 @@ async function enrollGenerarCodigo() {
     const code = String(Math.floor(100000 + Math.random() * 900000));
     const expTs = Date.now() + ENROLL_TTL_MS;
 
-    // Guardar en Supabase
-    await sbFetch('config', {
-      method: 'POST',
-      body: JSON.stringify({ clave: ENROLL_CODE_CFG, valor: code }),
-      extraHeaders: { 'Prefer': 'resolution=merge-duplicates' }
-    });
-    await sbFetch('config', {
-      method: 'POST',
-      body: JSON.stringify({ clave: ENROLL_EXP_CFG, valor: String(expTs) }),
-      extraHeaders: { 'Prefer': 'resolution=merge-duplicates' }
-    });
+    // Guardar en Supabase — usar PATCH para update directo sin esperar body
+    await enrollUpsertConfig(ENROLL_CODE_CFG, code);
+    await enrollUpsertConfig(ENROLL_EXP_CFG, String(expTs));
 
     // Mostrar código
     valEl.textContent = code;
