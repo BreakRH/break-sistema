@@ -1482,6 +1482,10 @@
         <span class="login-option-icon">🚚</span>
         <div><div class="login-option-name">Logística</div><div class="login-option-desc">remitos y reportes</div></div>
       </button>
+      <button class="login-option-btn" onclick="lsSelTipo('supervisor')">
+        <span class="login-option-icon">🗂️</span>
+        <div><div class="login-option-name">Supervisor</div><div class="login-option-desc">órdenes de trabajo · remitos</div></div>
+      </button>
     </div>
 
     <!-- STEP 2: tienda (solo empleado/encargado) -->
@@ -3200,6 +3204,14 @@ function openModule(mod) {
     if (mod === 'remitos')  { remitosOpen(); return; }
     if (mod === 'reportes') { repartidorAbrirReportes(); return; }
     showToast('Solo tenés acceso a remitos y reportes', 'error'); return;
+  }
+  // supervisor: puede abrir ordenes, remitos, inventario y reportes — sin pedidos, pagos ni admin
+  if (state.rol === 'supervisor') {
+    if (mod === 'ordenes')    { ordenesOpen(); return; }
+    if (mod === 'remitos')    { remitosOpen(); return; }
+    if (mod === 'inventario') { inventarioOpen(); return; }
+    if (mod === 'reportes')   { goTo('reporte-tipo'); updateBadges(); return; }
+    showToast('No tenés acceso a ese módulo', 'error'); return;
   }
   // admin: no necesita empleado_id ni turno para pedidos/remitos/inventario/ordenes/pagos
   if (state.rol === 'admin') {
@@ -4931,7 +4943,7 @@ function lsGetDeviceId() {
 
 function lsSelTipo(tipo) {
   lsState.tipo = tipo;
-  if (tipo === 'admin' || tipo === 'repartidor') {
+  if (tipo === 'admin' || tipo === 'repartidor' || tipo === 'supervisor') {
     lsState.local = null; lsState.localName = null;
     lsMostrarClave();
   } else {
@@ -4950,8 +4962,8 @@ function lsMostrarClave() {
   lsState.step = 'clave';
   document.getElementById('ls-tipo').classList.remove('visible');
   document.getElementById('ls-tienda').classList.remove('visible');
-  const titulos    = { empleado: lsState.localName, encargado: 'Encargado · ' + lsState.localName, admin: 'Administrador', repartidor: 'Logística' };
-  const subtitulos = { empleado: 'clave de empleados de esta tienda', encargado: 'clave de encargado de esta tienda', admin: 'PIN de administrador', repartidor: 'clave de logística' };
+  const titulos    = { empleado: lsState.localName, encargado: 'Encargado · ' + lsState.localName, admin: 'Administrador', repartidor: 'Logística', supervisor: 'Supervisor' };
+  const subtitulos = { empleado: 'clave de empleados de esta tienda', encargado: 'clave de encargado de esta tienda', admin: 'PIN de administrador', repartidor: 'clave de logística', supervisor: 'clave de supervisor' };
   document.getElementById('ls-clave-titulo').textContent = titulos[lsState.tipo];
   document.getElementById('ls-clave-sub').textContent    = subtitulos[lsState.tipo];
   document.getElementById('ls-clave-inp').value = '';
@@ -5034,6 +5046,7 @@ async function lsConfirmar() {
     let claveCorrecta = null;
     if (lsState.tipo === 'admin')      claveCorrecta = cfg['admin_pin'];
     if (lsState.tipo === 'repartidor') claveCorrecta = cfg['pass_repartidor'];
+    if (lsState.tipo === 'supervisor') claveCorrecta = cfg['pass_supervisor'];
     if (lsState.tipo === 'empleado')   claveCorrecta = cfg['pass_empleado_' + lsState.local];
     if (lsState.tipo === 'encargado')  claveCorrecta = cfg['pass_encargado_' + lsState.local];
 
@@ -5076,7 +5089,7 @@ async function lsConfirmar() {
     const authData = { rol: rolFinal, local: lsState.local, localName: lsState.localName, ts: Date.now() };
 
     // Persistir sesión de 12h solo para empleado/encargado
-    if (rolFinal === 'empleado' || rolFinal === 'encargado') {
+    if (rolFinal === 'empleado' || rolFinal === 'encargado' || rolFinal === 'supervisor') {
       localStorage.setItem(LS_AUTH_KEY, JSON.stringify(authData));
       if (lsState.local) localStorage.setItem('break_local_fijo', lsState.local);
       sbFetch('config', {
@@ -5107,7 +5120,7 @@ function lsEntrarHub(auth) {
   // 3. Badge de rol en hub
   const badge = document.getElementById('v8-rol-badge');
   if (badge) {
-    const rolLabel = { empleado: '👤 Empleado', encargado: '🔑 Encargado', admin: '🔐 Administrador', repartidor: '🚚 Logística' };
+    const rolLabel = { empleado: '👤 Empleado', encargado: '🔑 Encargado', admin: '🔐 Administrador', repartidor: '🚚 Logística', supervisor: '🗂️ Supervisor' };
     const localLabel = auth.localName || '(todas las tiendas)';
     badge.textContent = (rolLabel[auth.rol] || auth.rol) + ' · ' + localLabel;
   }
@@ -5152,6 +5165,18 @@ function lsEntrarHub(auth) {
     if (cardPedidos) cardPedidos.style.display = 'block';
     if (cardPagos)   cardPagos.style.display   = 'block';
     admActualizarCardTurno();
+  } else if (auth.rol === 'supervisor') {
+    if (secNombre) secNombre.style.display = 'none';
+    if (turnoWrap) turnoWrap.style.display = 'none';
+    state.empleado_id     = 'supervisor';
+    state.empleado_nombre = 'Supervisor';
+    state.turno           = 'supervisor';
+    document.getElementById('hub-emp-name').textContent = 'Supervisor';
+    document.getElementById('hub-meta').textContent     = 'órdenes de trabajo · remitos';
+    // Ocultar cards que no aplican a supervisor
+    ['card-deudas','card-panel-turno','card-turno-admin'].forEach(id => {
+      const c = document.getElementById(id); if (c) c.style.display = 'none';
+    });
   } else {
     // empleado / encargado: muestran dropdown de nombre
     if (secNombre) secNombre.style.display = 'block';
@@ -5188,6 +5213,7 @@ const ACCESOS_DEF = [
   ]},
   { grupo: 'Accesos especiales', items: [
     { label: 'Logística',           emoji: '🚚', clave: 'pass_repartidor' },
+    { label: 'Supervisor',          emoji: '🗂️', clave: 'pass_supervisor' },
     { label: 'Administrador (PIN)', emoji: '🔐', clave: 'admin_pin' },
   ]},
 ];
@@ -6899,11 +6925,14 @@ function ordenesOpen() {
     empleado: state.empleado_nombre,
     rol: state.rol
   };
+  console.log('[ordenesOpen] postMessage ctx:', JSON.stringify(ctx));
   iframe.src = '';
   setTimeout(() => {
     iframe.src = 'ordenes.html';
     iframe.onload = function() {
-      try { iframe.contentWindow.postMessage(ctx, '*'); } catch(e) {}
+      setTimeout(() => {
+        try { iframe.contentWindow.postMessage(ctx, '*'); } catch(e) {}
+      }, 100);
     };
   }, 0);
 }
