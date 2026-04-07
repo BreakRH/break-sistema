@@ -377,6 +377,31 @@ body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-he
   .header{padding:0 16px}.tabs{padding:12px 16px 0}
   .it th:nth-child(5),.it td:nth-child(5),.it th:nth-child(6),.it td:nth-child(6){display:none}
 }
+/* ── Drive Auto-Carga ──────────────────────────────────────── */
+.drive-banner{display:flex;align-items:center;gap:10px;padding:10px 16px;border-radius:var(--r);font-family:'DM Mono',monospace;font-size:11px;margin-bottom:20px;border:1px solid var(--line)}
+.drive-banner.loading{background:var(--bg2);color:var(--text3);border-color:var(--line)}
+.drive-banner.ok{background:rgba(184,240,74,.07);border-color:rgba(184,240,74,.25);color:var(--accent2)}
+.drive-banner.warn{background:rgba(255,169,77,.07);border-color:rgba(255,169,77,.25);color:var(--amber)}
+.drive-banner.error{background:var(--rdim);border-color:rgba(255,92,92,.25);color:var(--red)}
+.drive-status-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:20px}
+.dsc{background:var(--bg2);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;position:relative;transition:border-color .2s}
+.dsc.ds-ok{border-color:rgba(184,240,74,.3)}
+.dsc.ds-old{border-color:rgba(255,169,77,.35)}
+.dsc.ds-missing{border-color:rgba(255,92,92,.3)}
+.dsc.ds-loading{opacity:.6}
+.dsc-name{font-size:12px;font-weight:700;color:var(--text);margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.dsc-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.ds-ok .dsc-dot{background:var(--accent)}
+.ds-old .dsc-dot{background:var(--amber)}
+.ds-missing .dsc-dot{background:var(--red)}
+.ds-loading .dsc-dot{background:var(--text3)}
+.dsc-date{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-bottom:3px}
+.dsc-items{font-family:'DM Mono',monospace;font-size:10px;color:var(--text2)}
+.dsc-badge{position:absolute;top:8px;right:8px;font-family:'DM Mono',monospace;font-size:9px;padding:2px 6px;border-radius:8px;font-weight:700}
+.ds-ok .dsc-badge{background:var(--adim);color:var(--accent2)}
+.ds-old .dsc-badge{background:var(--amdim);color:var(--amber)}
+.ds-missing .dsc-badge{background:var(--rdim);color:var(--red)}
+@media(max-width:768px){.drive-status-grid{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 <body>
@@ -410,6 +435,22 @@ body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-he
       <button class="tbn J" data-tienda="J"><div class="tdot"></div>Juramento</button>
       <button class="tbn S" data-tienda="S"><div class="tdot"></div>San Telmo</button>
     </div>
+    <!-- Drive Auto-Carga Status -->
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px" id="drive-sv-label">
+      <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em">Stock Valorizado</span>
+    </div>
+    <div id="drive-status-grid" class="drive-status-grid" style="display:none"></div>
+    <div style="display:flex;align-items:center;gap:8px;margin:10px 0 4px" id="drive-v-label">
+      <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em">Ventas por artículos</span>
+    </div>
+    <div id="drive-status-grid-v" class="drive-status-grid" style="display:none"></div>
+    <div id="drive-banner" class="drive-banner loading" style="display:none">
+      <span id="drive-banner-icon">⟳</span>
+      <span id="drive-banner-msg">Cargando archivos desde Drive…</span>
+      <span style="flex:1"></span>
+      <button class="btn-s" style="font-size:10px;padding:3px 10px" onclick="driveAutoLoad()">↺ Recargar</button>
+    </div>
+
     <div class="upsec">
       <div class="upcard" id="card-a">
         <div class="uplbl"><span id="chk-a" class="chk" style="display:none">✓</span>Stock Valorizado (FacilVirtual)</div>
@@ -938,6 +979,9 @@ function parseArticulos(wb){
   }
   return data;
 }
+// Alias — handleFile lo llama como parseStockValorizado
+const parseStockValorizado = parseArticulos;
+
 function parseVentas(wb){
   const ws=wb.Sheets[wb.SheetNames[0]];
   const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:null});
@@ -958,8 +1002,345 @@ function parseVentas(wb){
 }
 
 // ============================================================
-// FILE DROPZONES
+// DRIVE AUTO-CARGA
 // ============================================================
+const DRIVE_TIENDAS = [
+  { key: 'T', nombre: 'Thames',      configKey: 'drive_folder_thames',       configKeyVentas: 'drive_folder_ventas_thames'       },
+  { key: 'R', nombre: 'Roosevelt',   configKey: 'drive_folder_roosevelt',    configKeyVentas: 'drive_folder_ventas_roosevelt'    },
+  { key: 'J', nombre: 'Juramento',   configKey: 'drive_folder_juramento',    configKeyVentas: 'drive_folder_ventas_juramento'    },
+  { key: 'S', nombre: 'San Telmo',   configKey: 'drive_folder_independencia',configKeyVentas: 'drive_folder_ventas_independencia'},
+];
+const DRIVE_COLOR = { T:'var(--accent)', R:'var(--blue)', J:'var(--teal)', S:'var(--amber)' };
+
+// driveGetToken — genera access_token a partir del Service Account JSON guardado en Supabase
+async function driveGetToken() {
+  // Obtener credenciales SA desde config
+  const r = await fetch(`${SB_URL}/rest/v1/config?clave=eq.drive_sa_key&select=valor`, {
+    headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json' }
+  });
+  const d = await r.json();
+  if (!d?.[0]?.valor) throw new Error('drive_sa_key no configurado en Supabase config');
+  const sa = JSON.parse(d[0].valor);
+
+  // Construir JWT para Google OAuth2
+  const now = Math.floor(Date.now() / 1000);
+  const header  = btoa(JSON.stringify({ alg: 'RS256', typ: 'JWT' })).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
+  const payload = btoa(JSON.stringify({
+    iss  : sa.client_email,
+    scope: 'https://www.googleapis.com/auth/drive.readonly',
+    aud  : 'https://oauth2.googleapis.com/token',
+    iat  : now,
+    exp  : now + 3600,
+  })).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
+
+  // Firmar con RS256 via SubtleCrypto
+  const pemBody = sa.private_key
+    .replace('-----BEGIN PRIVATE KEY-----', '')
+    .replace('-----END PRIVATE KEY-----', '')
+    .replace(/\s+/g, '');
+  const binaryDer = Uint8Array.from(atob(pemBody), c => c.charCodeAt(0));
+  const cryptoKey = await crypto.subtle.importKey(
+    'pkcs8', binaryDer.buffer,
+    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+    false, ['sign']
+  );
+  const sigBuf = await crypto.subtle.sign(
+    'RSASSA-PKCS1-v1_5', cryptoKey,
+    new TextEncoder().encode(`${header}.${payload}`)
+  );
+  const sig = btoa(String.fromCharCode(...new Uint8Array(sigBuf)))
+    .replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
+
+  const jwtStr = `${header}.${payload}.${sig}`;
+
+  // Intercambiar JWT por access_token
+  const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${jwtStr}`,
+  });
+  const tokenData = await tokenRes.json();
+  if (!tokenData.access_token) throw new Error('No se obtuvo access_token de Google: ' + JSON.stringify(tokenData));
+  return tokenData.access_token;
+}
+
+// driveListFolder — lista archivos en una carpeta, ordenados por fecha desc
+async function driveListFolder(folderId, token) {
+  const q = encodeURIComponent(`'${folderId}' in parents and trashed = false`);
+  const r = await fetch(
+    `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name,modifiedTime)&orderBy=modifiedTime+desc`,
+    { headers: { 'Authorization': 'Bearer ' + token } }
+  );
+  const d = await r.json();
+  return d.files || [];
+}
+
+// driveDownloadFile — descarga el contenido binario de un archivo Drive
+async function driveDownloadFile(fileId, token) {
+  const r = await fetch(
+    `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
+    { headers: { 'Authorization': 'Bearer ' + token } }
+  );
+  if (!r.ok) throw new Error(`Error descargando archivo Drive: ${r.status}`);
+  return r.arrayBuffer();
+}
+
+// parseFechaArchivo — extrae fecha del nombre del archivo (busca YYYY-MM-DD o DD-MM-YYYY)
+function parseFechaArchivo(nombre) {
+  // Formato YYYY-MM-DD (ej: Stock_valorizado_2026-03-30.xlsx)
+  let m = nombre.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return new Date(parseInt(m[1]), parseInt(m[2])-1, parseInt(m[3]));
+  // Formato DD-MM-YYYY (ej: Stock_valorizado_30-03-2026.xlsx)
+  m = nombre.match(/(\d{2})-(\d{2})-(\d{4})/);
+  if (m) return new Date(parseInt(m[3]), parseInt(m[2])-1, parseInt(m[1]));
+  return null;
+}
+
+function esHoy(fecha) {
+  if (!fecha) return false;
+  const hoy = new Date();
+  return fecha.getFullYear() === hoy.getFullYear() &&
+         fecha.getMonth()    === hoy.getMonth()    &&
+         fecha.getDate()     === hoy.getDate();
+}
+
+function fmtFechaCorta(fecha) {
+  if (!fecha) return '—';
+  return fecha.toLocaleDateString('es-AR', { day:'numeric', month:'short', year:'numeric' });
+}
+
+// renderDriveStatus — dibuja la grilla de 4 cards con estado por tienda
+function renderDriveStatus(statuses, gridId) {
+  gridId = gridId || 'drive-status-grid';
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
+  grid.style.display = 'grid';
+  const isVentas = gridId === 'drive-status-grid-v';
+  grid.innerHTML = DRIVE_TIENDAS.map(t => {
+    const st = statuses[t.key] || { estado: 'loading' };
+    let cls = 'ds-loading', badge = '…', dateStr = '', itemStr = '';
+    if (st.estado === 'ok')      { cls='ds-ok';      badge='HOY ✓'; }
+    else if (st.estado === 'old'){ cls='ds-old';     badge='DATOS VIEJOS ⚠'; }
+    else if (st.estado === 'missing'){ cls='ds-missing'; badge='SIN ARCHIVO ✗'; }
+    if (st.fecha)  dateStr = `<div class="dsc-date">Archivo: ${fmtFechaCorta(st.fecha)}</div>`;
+    if (st.items != null) itemStr = `<div class="dsc-items">${st.items.toLocaleString('es-AR')} ${isVentas ? 'con ventas' : 'artículos'}</div>`;
+    return `<div class="dsc ${cls}">
+      <div class="dsc-name"><div class="dsc-dot"></div>${t.nombre}</div>
+      ${dateStr}${itemStr}
+      <div class="dsc-badge">${badge}</div>
+    </div>`;
+  }).join('');
+}
+
+// driveAutoLoad — función principal, llamada al init
+// Carga en paralelo Stock Valorizado (carpetas SV) y Ventas por artículos (carpetas Ventas)
+async function driveAutoLoad() {
+  const banner     = document.getElementById('drive-banner');
+  const bannerMsg  = document.getElementById('drive-banner-msg');
+  const bannerIcon = document.getElementById('drive-banner-icon');
+  if (!banner) return;
+
+  // Mostrar estado loading
+  banner.style.display = 'flex';
+  banner.className = 'drive-banner loading';
+  bannerIcon.textContent = '⟳';
+  bannerMsg.textContent  = 'Conectando con Google Drive…';
+  const statusesSV = {}, statusesV = {};
+  DRIVE_TIENDAS.forEach(t => {
+    statusesSV[t.key] = { estado: 'loading' };
+    statusesV[t.key]  = { estado: 'loading' };
+  });
+  renderDriveStatus(statusesSV);
+  renderDriveStatus(statusesV, 'drive-status-grid-v');
+
+  // Cargar folder IDs (SV + Ventas) y SA key desde Supabase config en una sola query
+  let token, folderIdsSV = {}, folderIdsV = {};
+  try {
+    const keys = DRIVE_TIENDAS.map(t => t.configKey)
+      .concat(DRIVE_TIENDAS.map(t => t.configKeyVentas))
+      .concat(['drive_sa_key']);
+    const keysParam = keys.map(k => `"${k}"`).join(',');
+    const r = await fetch(
+      `${SB_URL}/rest/v1/config?clave=in.(${keysParam})&select=clave,valor`,
+      { headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json' } }
+    );
+    const rows = await r.json();
+    rows.forEach(row => {
+      DRIVE_TIENDAS.forEach(t => {
+        if (row.clave === t.configKey)       folderIdsSV[t.key] = row.valor;
+        if (row.clave === t.configKeyVentas) folderIdsV[t.key]  = row.valor;
+      });
+    });
+  } catch(e) {
+    banner.className = 'drive-banner error';
+    bannerIcon.textContent = '✗';
+    bannerMsg.textContent = 'Error al leer config de Supabase: ' + e.message;
+    return;
+  }
+
+  // Verificar que hay al menos un folder SV configurado
+  const anyConfigured = DRIVE_TIENDAS.some(t => folderIdsSV[t.key]);
+  if (!anyConfigured) {
+    banner.className = 'drive-banner warn';
+    bannerIcon.textContent = '⚙';
+    bannerMsg.textContent = 'Drive Auto-Carga no configurado — cargá los IDs de carpeta en Supabase config (drive_folder_thames, etc.)';
+    DRIVE_TIENDAS.forEach(t => {
+      statusesSV[t.key] = { estado: 'missing' };
+      statusesV[t.key]  = { estado: 'missing' };
+    });
+    renderDriveStatus(statusesSV);
+    renderDriveStatus(statusesV, 'drive-status-grid-v');
+    return;
+  }
+
+  // Obtener token SA (único, sirve para SV y Ventas)
+  try {
+    token = await driveGetToken();
+  } catch(e) {
+    banner.className = 'drive-banner error';
+    bannerIcon.textContent = '✗';
+    bannerMsg.textContent = 'Error de autenticación Drive: ' + e.message;
+    return;
+  }
+
+  bannerMsg.textContent = 'Descargando archivos…';
+
+  // ── Función auxiliar: procesa una carpeta buscando archivos por regex ──────
+  async function procesarCarpeta(folderId, regex, parseFunc, dataStore, tk, statuses, gridId, dzInfoId, dzCardId, dzChkId, labelPieces) {
+    if (!folderId) {
+      statuses[tk] = { estado: 'missing' };
+      labelPieces.faltantes++;
+      return;
+    }
+    try {
+      const files = await driveListFolder(folderId, token);
+      const matches = files.filter(f => regex.test(f.name) && /\.(xlsx|xls|csv)$/i.test(f.name));
+      if (!matches.length) {
+        statuses[tk] = { estado: 'missing' };
+        labelPieces.faltantes++;
+        return;
+      }
+      matches.sort((a, b) => {
+        const fa = parseFechaArchivo(a.name), fb = parseFechaArchivo(b.name);
+        if (fa && fb) return fb - fa;
+        return new Date(b.modifiedTime) - new Date(a.modifiedTime);
+      });
+      const bestFile = matches[0];
+      const fechaArchivo = parseFechaArchivo(bestFile.name) || new Date(bestFile.modifiedTime);
+      const esDeHoy = esHoy(fechaArchivo);
+
+      if (!dataStore[tk]) {
+        // No hay dato manual → descargar de Drive
+        const buffer = await driveDownloadFile(bestFile.id, token);
+        const wb = XLSX.read(buffer, { type: 'array' });
+        const parsed = parseFunc(wb);
+        const itemCount = Array.isArray(parsed) ? parsed.length : Object.keys(parsed).length;
+        if (itemCount > 0) {
+          dataStore[tk] = parsed;
+          statuses[tk] = { estado: esDeHoy ? 'ok' : 'old', fecha: fechaArchivo, items: itemCount };
+          if (esDeHoy) labelPieces.cargados++; else labelPieces.viejos++;
+          // Actualizar dropzone de la tienda activa
+          if (tk === curTienda && dzInfoId) {
+            const inf  = document.getElementById(dzInfoId);
+            const card = document.getElementById(dzCardId);
+            const chk  = document.getElementById(dzChkId);
+            const label = Array.isArray(parsed) ? `${itemCount} artículos` : `${itemCount} con ventas`;
+            if (inf)  { inf.textContent = `✓ Drive: ${bestFile.name} — ${label}`; inf.classList.add('vis'); }
+            if (card) card.classList.add('has-data');
+            if (chk)  chk.style.display = 'inline';
+            checkReady();
+          }
+        } else {
+          statuses[tk] = { estado: 'missing' };
+          labelPieces.faltantes++;
+        }
+      } else {
+        // Ya había dato manual — informativo solamente
+        const itemCount = Array.isArray(dataStore[tk]) ? dataStore[tk].length : Object.keys(dataStore[tk]).length;
+        statuses[tk] = { estado: esDeHoy ? 'ok' : 'old', fecha: fechaArchivo, items: itemCount };
+        if (esDeHoy) labelPieces.cargados++; else labelPieces.viejos++;
+      }
+    } catch(e) {
+      console.warn(`[driveAutoLoad] ${tk}:`, e);
+      statuses[tk] = { estado: 'missing' };
+      labelPieces.faltantes++;
+    }
+    renderDriveStatus(statuses, gridId);
+  }
+
+  // ── Procesar SV y Ventas en paralelo para todas las tiendas ───────────────
+  const piecesSV = { cargados: 0, viejos: 0, faltantes: 0 };
+  const piecesV  = { cargados: 0, viejos: 0, faltantes: 0 };
+
+  await Promise.all(DRIVE_TIENDAS.map(async t => {
+    await Promise.all([
+      procesarCarpeta(
+        folderIdsSV[t.key],
+        /stock.?valorizado/i,
+        parseStockValorizado,
+        artsData, t.key,
+        statusesSV, 'drive-status-grid',
+        'fi-a-info', 'card-a', 'chk-a',
+        piecesSV
+      ),
+      procesarCarpeta(
+        folderIdsV[t.key],
+        /ventas.?por.?art/i,
+        parseVentas,
+        ventasData, t.key,
+        statusesV, 'drive-status-grid-v',
+        'fi-v-info', 'card-v', 'chk-v',
+        piecesV
+      ),
+    ]);
+  }));
+
+  // Banner resumen final — combina SV + Ventas
+  renderDriveStatus(statusesSV);
+  renderDriveStatus(statusesV, 'drive-status-grid-v');
+
+  const totalOkSV  = piecesSV.cargados;
+  const totalOkV   = piecesV.cargados;
+  const totalFaltSV = piecesSV.faltantes;
+  const totalFaltV  = piecesV.faltantes;
+  const totalViejSV = piecesSV.viejos;
+  const totalViejV  = piecesV.viejos;
+
+  const todoOk = totalFaltSV === 0 && totalViejSV === 0 && totalFaltV === 0 && totalViejV === 0;
+  const todaMal = totalOkSV === 0 && totalViejSV === 0 && totalOkV === 0 && totalViejV === 0;
+
+  if (todoOk) {
+    banner.className = 'drive-banner ok';
+    bannerIcon.textContent = '✓';
+    bannerMsg.textContent = 'Drive — SV y Ventas de hoy cargados en las 4 tiendas';
+  } else if (todaMal) {
+    banner.className = 'drive-banner error';
+    bannerIcon.textContent = '✗';
+    bannerMsg.textContent = 'No se encontraron archivos en Drive — subí los archivos manualmente';
+  } else {
+    const partes = [];
+    if (totalOkSV > 0)   partes.push(`SV: ${totalOkSV} hoy`);
+    if (totalViejSV > 0) partes.push(`SV: ${totalViejSV} viejos`);
+    if (totalFaltSV > 0) partes.push(`SV: ${totalFaltSV} sin archivo`);
+    if (totalOkV > 0)    partes.push(`Ventas: ${totalOkV} hoy`);
+    if (totalViejV > 0)  partes.push(`Ventas: ${totalViejV} viejos`);
+    if (totalFaltV > 0)  partes.push(`Ventas: ${totalFaltV} sin archivo`);
+    banner.className = 'drive-banner warn';
+    bannerIcon.textContent = '⚠';
+    bannerMsg.textContent = partes.join(' · ');
+  }
+
+  // Refrescar checkReady para tienda activa
+  checkReady();
+}
+
+// Arrancar Drive Auto-Carga al cargar el módulo
+(function() {
+  // Esperar a que el IIFE del app_secret termine (~200ms) antes de llamar Drive
+  setTimeout(() => { driveAutoLoad(); }, 400);
+})();
+
+
 function setupDZ(dzId,fiId,infoId,cardId,chkId,type){
   const dz=document.getElementById(dzId),fi=document.getElementById(fiId),info=document.getElementById(infoId),card=document.getElementById(cardId),chk=document.getElementById(chkId);
   dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag-over');});

@@ -1430,6 +1430,7 @@
   }
 </style>
 </head>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <body>
 
 <!-- ════════════════════════════════════════
@@ -1479,7 +1480,7 @@
       </button>
       <button class="login-option-btn" onclick="lsSelTipo('repartidor')">
         <span class="login-option-icon">🚚</span>
-        <div><div class="login-option-name">Repartidor</div><div class="login-option-desc">remitos y reportes</div></div>
+        <div><div class="login-option-name">Logística</div><div class="login-option-desc">remitos y reportes</div></div>
       </button>
     </div>
 
@@ -1553,7 +1554,7 @@
     <!-- v8: rol y local vienen del login — solo nombre y turno acá -->
     <div id="v8-rol-badge" style="margin-bottom:14px;padding:10px 14px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);font-family:var(--mono);font-size:12px;color:var(--text2)">—</div>
 
-    <!-- empleado: solo visible si no es admin ni repartidor -->
+    <!-- empleado: solo visible si no es admin ni logística -->
     <div id="sec-nombre" style="display:block">
       <label class="field-label">Empleado</label>
       <select id="sel-empleado" onchange="onEmpChange()">
@@ -1775,9 +1776,9 @@
     <div class="form-section">
       <div class="form-section-title">Foto</div>
       <div class="photo-area" id="photo-ft">
-        <input type="file" accept="image/*" capture="environment" onchange="handlePhoto(this,'ft')">
+        <input type="file" accept="image/*" onchange="handlePhoto(this,'ft')">
         <div class="photo-icon">📷</div>
-        <div class="photo-text">Tocar para tomar o adjuntar foto</div>
+        <div class="photo-text">Galería o cámara</div>
         <div class="photo-sub" id="photo-ft-name">se sube a Google Drive</div>
       </div>
     </div>
@@ -1833,9 +1834,9 @@
     <div class="form-section">
       <div class="form-section-title">Foto</div>
       <div class="photo-area" id="photo-ed">
-        <input type="file" accept="image/*" capture="environment" onchange="handlePhoto(this,'ed')">
+        <input type="file" accept="image/*" onchange="handlePhoto(this,'ed')">
         <div class="photo-icon">📷</div>
-        <div class="photo-text">Foto de la falla</div>
+        <div class="photo-text">Galería o cámara</div>
         <div class="photo-sub" id="photo-ed-name">se sube a Google Drive</div>
       </div>
     </div>
@@ -1995,9 +1996,9 @@
     <div class="form-section">
       <div class="form-section-title">Foto (opcional)</div>
       <div class="photo-area" id="photo-ped">
-        <input type="file" accept="image/*" capture="environment" onchange="handlePhoto(this,'ped')">
+        <input type="file" accept="image/*" onchange="handlePhoto(this,'ped')">
         <div class="photo-icon">📷</div>
-        <div class="photo-text">Captura de pantalla o foto del pedido</div>
+        <div class="photo-text">Galería o cámara</div>
         <div class="photo-sub" id="photo-ped-name">opcional</div>
       </div>
     </div>
@@ -2136,9 +2137,9 @@
     <div class="form-section" style="margin-top:8px">
       <div class="form-section-title">Foto (recomendado)</div>
       <div class="photo-area" id="photo-tk">
-        <input type="file" accept="image/*" capture="environment" onchange="handlePhoto(this,'tk')">
+        <input type="file" accept="image/*" onchange="handlePhoto(this,'tk')">
         <div class="photo-icon">📷</div>
-        <div class="photo-text">Foto del artículo / código de barras</div>
+        <div class="photo-text">Galería o cámara</div>
         <div class="photo-sub" id="photo-tk-name">se sube a Google Drive</div>
       </div>
     </div>
@@ -2629,35 +2630,63 @@
           <!-- Caja chica (vuelto) -->
           <div class="form-section-title" style="margin-bottom:10px">💵 Dinero en caja (vuelto)</div>
           <div class="pt-billetes-grid" style="margin-bottom:10px">
+            <div class="pt-billete"><div class="pt-billete-denom">$10</div><input type="number" min="0" class="pt-billete-inp" id="ptb10" value="0" oninput="ptRecalc()"><div class="pt-billete-sub" id="ptbs10">$0</div></div>
+            <div class="pt-billete"><div class="pt-billete-denom">$20</div><input type="number" min="0" class="pt-billete-inp" id="ptb20" value="0" oninput="ptRecalc()"><div class="pt-billete-sub" id="ptbs20">$0</div></div>
+            <div class="pt-billete"><div class="pt-billete-denom">$50</div><input type="number" min="0" class="pt-billete-inp" id="ptb50" value="0" oninput="ptRecalc()"><div class="pt-billete-sub" id="ptbs50">$0</div></div>
+            <div class="pt-billete"><div class="pt-billete-denom">$100</div><input type="number" min="0" class="pt-billete-inp" id="ptb100" value="0" oninput="ptRecalc()"><div class="pt-billete-sub" id="ptbs100">$0</div></div>
+            <div class="pt-billete"><div class="pt-billete-denom">$200</div><input type="number" min="0" class="pt-billete-inp" id="ptb200" value="0" oninput="ptRecalc()"><div class="pt-billete-sub" id="ptbs200">$0</div></div>
+            <div class="pt-billete"><div class="pt-billete-denom">$500</div><input type="number" min="0" class="pt-billete-inp" id="ptb500" value="0" oninput="ptRecalc()"><div class="pt-billete-sub" id="ptbs500">$0</div></div>
             <div class="pt-billete"><div class="pt-billete-denom">$1.000</div><input type="number" min="0" class="pt-billete-inp" id="ptb1000" value="0" oninput="ptRecalc()"><div class="pt-billete-sub" id="ptbs1000">$0</div></div>
             <div class="pt-billete"><div class="pt-billete-denom">$2.000</div><input type="number" min="0" class="pt-billete-inp" id="ptb2000" value="0" oninput="ptRecalc()"><div class="pt-billete-sub" id="ptbs2000">$0</div></div>
-            <div class="pt-billete"><div class="pt-billete-denom">$5.000</div><input type="number" min="0" class="pt-billete-inp" id="ptb5000" value="0" oninput="ptRecalc()"><div class="pt-billete-sub" id="ptbs5000">$0</div></div>
             <div class="pt-billete"><div class="pt-billete-denom">$10.000</div><input type="number" min="0" class="pt-billete-inp" id="ptb10000" value="0" oninput="ptRecalc()"><div class="pt-billete-sub" id="ptbs10000">$0</div></div>
             <div class="pt-billete"><div class="pt-billete-denom">$20.000</div><input type="number" min="0" class="pt-billete-inp" id="ptb20000" value="0" oninput="ptRecalc()"><div class="pt-billete-sub" id="ptbs20000">$0</div></div>
-            <div class="pt-billete"><div class="pt-billete-denom">$50.000</div><input type="number" min="0" class="pt-billete-inp" id="ptb50000" value="0" oninput="ptRecalc()"><div class="pt-billete-sub" id="ptbs50000">$0</div></div>
           </div>
 
           <!-- Caja grande (pacas) -->
           <div class="form-section-title" style="margin-bottom:10px">📦 Caja grande (pacas)</div>
-          <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:8px">Ingresá la denominación de cada paca y la cantidad</div>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:8px">Pacas fijas y custom — ingresá la cantidad</div>
           <div class="pt-billetes-grid" style="margin-bottom:10px">
+            <!-- Paca fija $10.000 -->
             <div class="pt-billete">
-              <input type="number" min="0" class="pt-billete-inp" id="ptpd1" placeholder="Valor paca" oninput="ptRecalcPacas()" style="margin-bottom:4px">
-              <div style="font-family:var(--mono);font-size:9px;color:var(--text3);text-align:center">× cant.</div>
-              <input type="number" min="0" class="pt-billete-inp" id="ptpc1" placeholder="Cant." oninput="ptRecalcPacas()">
-              <div class="pt-billete-sub" id="ptps1">$0</div>
+              <div class="pt-billete-denom" style="font-size:11px">$10.000</div>
+              <div style="font-family:var(--mono);font-size:9px;color:var(--text3);text-align:center">cant.</div>
+              <input type="number" min="0" class="pt-billete-inp" id="ptpc-f1" placeholder="0" oninput="ptRecalcPacas()">
+              <div class="pt-billete-sub" id="ptps-f1">$0</div>
             </div>
+            <!-- Paca fija $50.000 -->
             <div class="pt-billete">
-              <input type="number" min="0" class="pt-billete-inp" id="ptpd2" placeholder="Valor paca" oninput="ptRecalcPacas()" style="margin-bottom:4px">
-              <div style="font-family:var(--mono);font-size:9px;color:var(--text3);text-align:center">× cant.</div>
-              <input type="number" min="0" class="pt-billete-inp" id="ptpc2" placeholder="Cant." oninput="ptRecalcPacas()">
-              <div class="pt-billete-sub" id="ptps2">$0</div>
+              <div class="pt-billete-denom" style="font-size:11px">$50.000</div>
+              <div style="font-family:var(--mono);font-size:9px;color:var(--text3);text-align:center">cant.</div>
+              <input type="number" min="0" class="pt-billete-inp" id="ptpc-f2" placeholder="0" oninput="ptRecalcPacas()">
+              <div class="pt-billete-sub" id="ptps-f2">$0</div>
             </div>
+            <!-- Paca fija $100.000 -->
             <div class="pt-billete">
-              <input type="number" min="0" class="pt-billete-inp" id="ptpd3" placeholder="Valor paca" oninput="ptRecalcPacas()" style="margin-bottom:4px">
-              <div style="font-family:var(--mono);font-size:9px;color:var(--text3);text-align:center">× cant.</div>
-              <input type="number" min="0" class="pt-billete-inp" id="ptpc3" placeholder="Cant." oninput="ptRecalcPacas()">
-              <div class="pt-billete-sub" id="ptps3">$0</div>
+              <div class="pt-billete-denom" style="font-size:11px">$100.000</div>
+              <div style="font-family:var(--mono);font-size:9px;color:var(--text3);text-align:center">cant.</div>
+              <input type="number" min="0" class="pt-billete-inp" id="ptpc-f3" placeholder="0" oninput="ptRecalcPacas()">
+              <div class="pt-billete-sub" id="ptps-f3">$0</div>
+            </div>
+            <!-- Custom 1 -->
+            <div class="pt-billete">
+              <input type="text" class="pt-billete-inp" id="ptpn-c1" placeholder="Nombre" oninput="ptRecalcPacas()" style="margin-bottom:2px;font-size:10px">
+              <input type="number" min="0" class="pt-billete-inp" id="ptpd-c1" placeholder="Valor $" oninput="ptRecalcPacas()" style="margin-bottom:2px">
+              <input type="number" min="0" class="pt-billete-inp" id="ptpc-c1" placeholder="Cant." oninput="ptRecalcPacas()">
+              <div class="pt-billete-sub" id="ptps-c1">$0</div>
+            </div>
+            <!-- Custom 2 -->
+            <div class="pt-billete">
+              <input type="text" class="pt-billete-inp" id="ptpn-c2" placeholder="Nombre" oninput="ptRecalcPacas()" style="margin-bottom:2px;font-size:10px">
+              <input type="number" min="0" class="pt-billete-inp" id="ptpd-c2" placeholder="Valor $" oninput="ptRecalcPacas()" style="margin-bottom:2px">
+              <input type="number" min="0" class="pt-billete-inp" id="ptpc-c2" placeholder="Cant." oninput="ptRecalcPacas()">
+              <div class="pt-billete-sub" id="ptps-c2">$0</div>
+            </div>
+            <!-- Custom 3 -->
+            <div class="pt-billete">
+              <input type="text" class="pt-billete-inp" id="ptpn-c3" placeholder="Nombre" oninput="ptRecalcPacas()" style="margin-bottom:2px;font-size:10px">
+              <input type="number" min="0" class="pt-billete-inp" id="ptpd-c3" placeholder="Valor $" oninput="ptRecalcPacas()" style="margin-bottom:2px">
+              <input type="number" min="0" class="pt-billete-inp" id="ptpc-c3" placeholder="Cant." oninput="ptRecalcPacas()">
+              <div class="pt-billete-sub" id="ptps-c3">$0</div>
             </div>
           </div>
 
@@ -2679,12 +2708,27 @@
             <div class="pt-total-ef-val" id="pt-total-general">$0</div>
           </div>
 
-          <!-- Solo campo sistema para comparar -->
-          <div class="form-section-title" style="margin-bottom:8px">Monto del sistema (POS)</div>
-          <div class="pt-medio-item" style="margin-bottom:10px">
-            <div class="pt-medio-lbl">Sistema</div>
-            <input type="number" min="0" class="pt-medio-inp" id="ptmed-sistema" placeholder="Monto del POS" oninput="ptRecalc()">
+          <!-- Ventas del turno (ingreso manual) -->
+          <div class="form-section-title" style="margin-bottom:8px">💳 Ventas del turno</div>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:10px">Ingresá lo que indica el sistema de ventas</div>
+          <div class="pt-medio-item" style="margin-bottom:8px">
+            <div class="pt-medio-lbl">Efectivo</div>
+            <input type="number" min="0" class="pt-medio-inp" id="ptven-efectivo" placeholder="$0" oninput="ptRecalcVentas()">
           </div>
+          <div class="pt-medio-item" style="margin-bottom:8px">
+            <div class="pt-medio-lbl">Transferencia / MP</div>
+            <input type="number" min="0" class="pt-medio-inp" id="ptven-mp" placeholder="$0" oninput="ptRecalcVentas()">
+          </div>
+          <div class="pt-medio-item" style="margin-bottom:8px">
+            <div class="pt-medio-lbl">Débito / Crédito</div>
+            <input type="number" min="0" class="pt-medio-inp" id="ptven-debito" placeholder="$0" oninput="ptRecalcVentas()">
+          </div>
+          <div class="pt-total-ef" style="margin-bottom:16px;border-color:var(--purple)">
+            <div class="pt-total-ef-lbl" style="color:var(--purple)">💳 Total ventas sistema</div>
+            <div class="pt-total-ef-val" id="ptven-total" style="color:var(--purple)">$0</div>
+          </div>
+          <!-- Campo sistema legacy (oculto, se calcula automático) -->
+          <input type="hidden" id="ptmed-sistema">
 
           <!-- Diferencia -->
           <div class="pt-diferencia pt-dif-neutral" id="pt-diferencia" style="margin-bottom:20px">
@@ -2824,6 +2868,12 @@
 
           </div><!-- /pt-checks-list -->
 
+          <!-- Deudas del local -->
+          <div class="form-section-title" style="margin-bottom:8px;margin-top:18px">Deudas del local</div>
+          <div id="pt-deudas-local" style="background:var(--bg4,#1a1a1a);border:0.5px solid var(--border2);border-radius:var(--radius);padding:12px 14px;margin-bottom:18px;font-family:var(--mono);font-size:13px;color:var(--muted)">
+            Cargando...
+          </div>
+
           <!-- Observaciones -->
           <div class="form-section-title" style="margin-bottom:8px;margin-top:18px">Observaciones del turno</div>
           <textarea id="pt-obs-cierre" style="margin-bottom:14px;min-height:70px" placeholder="Novedad del turno, faltantes, incidentes..."></textarea>
@@ -2929,11 +2979,11 @@ const SUPABASE_URL = 'https://oiuualqixcccfhtpcist.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pdXVhbHFpeGNjY2ZodHBjaXN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NzUxNjEsImV4cCI6MjA4OTQ1MTE2MX0.ms4MHVhKDTKfID0WGi05EFPySf350SA66uNi4wPfsOo';
 
 const DRIVE_FOLDERS = {
-  falla_tienda:   '1BkIg2KkrMZ28cpVlc-TugzoNK16dUmpv',
-  edilicio:       '12Ru8BekbLt0wBORp8HfWuQsNuhRrAy5q',
-  rotos_vencidos: '1ZLoFCW7YMAyY0pCpQskIVE_NE8Vo-2jZ',
-  pedido:         '12hsHHdBUSqPv8D2q6p2v2nOQzYd63ecA',
-  ticket:         '15to-j20Chcnm5FzslFCXwnVnVPPo17Vt',
+  falla_tienda:   '1hn9ZtrlHX_iktOOgCF2362x8mOyZxGUy',
+  edilicio:       '1s_aevibI1ICB204AsjbABi_dLU-Ik0wl',
+  rotos_vencidos: '1DL-Jx09UcDu399NrXogHWg5tvcS2jjQe',
+  pedido:         '1OKZvQei5U4AwR2z8yCRLLOSBhMEOwZT5',
+  ticket:         '1esO2aKwGoR0ITNksATPveRyCI_2sovL4',
 };
 
 const LOCALES = {
@@ -3022,24 +3072,71 @@ async function getConfig(clave) {
 }
 
 // ═══════════════════════════════════════
-// GOOGLE DRIVE UPLOAD
+// GOOGLE DRIVE UPLOAD — OAuth2 usuario
 // ═══════════════════════════════════════
+const OAUTH_CLIENT_ID = '780824362766-h1te7jdtsjbfourv1vhvg6ipevc603ms.apps.googleusercontent.com';
+const OAUTH_SCOPE     = 'https://www.googleapis.com/auth/drive.file';
+let _driveToken       = null;
+let _driveTokenExp    = 0;
+let _gisClient        = null;
+
+// driveGetOAuthToken — usa Google Identity Services (sin redirect URI)
+function driveGetOAuthToken() {
+  return new Promise((resolve, reject) => {
+    // Reusar token si todavía es válido (margen 2 min)
+    if (_driveToken && Date.now() < _driveTokenExp - 120000) {
+      return resolve(_driveToken);
+    }
+    // Inicializar cliente GIS si no existe
+    if (!_gisClient) {
+      if (!window.google?.accounts?.oauth2) {
+        return reject(new Error('Google Identity Services no cargó aún. Intentá de nuevo.'));
+      }
+      _gisClient = google.accounts.oauth2.initTokenClient({
+        client_id: OAUTH_CLIENT_ID,
+        scope:     OAUTH_SCOPE,
+        callback:  (resp) => {
+          if (resp.error) return reject(new Error('OAuth error: ' + resp.error));
+          _driveToken    = resp.access_token;
+          _driveTokenExp = Date.now() + (resp.expires_in || 3600) * 1000;
+          resolve(_driveToken);
+        },
+      });
+    }
+    // Solicitar token — abre popup de Google gestionado por GIS
+    _gisClient.requestAccessToken();
+  });
+}
+
+async function driveGetOrCreateFolder(token, parentId, name) {
+  const q = encodeURIComponent(`name='${name}' and '${parentId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`);
+  const r = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id)`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  const d = await r.json();
+  if (d.files?.length > 0) return d.files[0].id;
+  const cr = await fetch('https://www.googleapis.com/drive/v3/files', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, mimeType: 'application/vnd.google-apps.folder', parents: [parentId] })
+  });
+  const cd = await cr.json();
+  return cd.id;
+}
+
 async function uploadToDrive(file, formType, localKey) {
   try {
-    const clientEmail = await getConfig('drive_client_email');
-    const privateKey  = await getConfig('drive_private_key');
-    if (!clientEmail || !privateKey) throw new Error('Credenciales Drive no configuradas');
+    const token = await driveGetOAuthToken();
 
     const folderId = DRIVE_FOLDERS[formType];
-    const jwt = await makeJWT(clientEmail, privateKey);
-    const token = await getAccessToken(jwt);
+    if (!folderId) throw new Error(`Sin carpeta configurada para tipo: ${formType}`);
 
-    // Crear subcarpeta por local si no existe
-    const localName = LOCALES[localKey] || localKey;
-    const subFolderId = await getOrCreateFolder(token, folderId, localName);
+    // Subcarpeta por local
+    const localName   = LOCALES[localKey] || localKey;
+    const subFolderId = await driveGetOrCreateFolder(token, folderId, localName);
 
-    // Subir archivo
-    const ts = new Date().toISOString().replace(/[:.]/g,'-');
+    // Nombre del archivo
+    const ts  = new Date().toISOString().replace(/[:.]/g, '-');
     const ext = file.name.split('.').pop();
     const fileName = `${formType}_${localKey}_${ts}.${ext}`;
 
@@ -3053,67 +3150,15 @@ async function uploadToDrive(file, formType, localKey) {
       { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: form }
     );
     const uploadData = await uploadRes.json();
+    if (!uploadRes.ok) {
+      console.error('[Drive upload]', uploadRes.status, JSON.stringify(uploadData));
+      throw new Error(`Drive upload ${uploadRes.status}: ${uploadData?.error?.message}`);
+    }
     return uploadData.webViewLink || `https://drive.google.com/file/d/${uploadData.id}/view`;
   } catch(e) {
     console.error('Drive upload error:', e);
     return null;
   }
-}
-
-async function getOrCreateFolder(token, parentId, name) {
-  // Check if exists
-  const q = encodeURIComponent(`name='${name}' and '${parentId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`);
-  const searchRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id)`, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
-  const searchData = await searchRes.json();
-  if (searchData.files?.length > 0) return searchData.files[0].id;
-
-  // Create
-  const createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, mimeType: 'application/vnd.google-apps.folder', parents: [parentId] })
-  });
-  const createData = await createRes.json();
-  return createData.id;
-}
-
-async function makeJWT(email, privateKey) {
-  const now = Math.floor(Date.now() / 1000);
-  const header = { alg: 'RS256', typ: 'JWT' };
-  const payload = {
-    iss: email, scope: 'https://www.googleapis.com/auth/drive',
-    aud: 'https://oauth2.googleapis.com/token',
-    exp: now + 3600, iat: now
-  };
-  const enc = s => btoa(unescape(encodeURIComponent(JSON.stringify(s)))).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
-  const data = `${enc(header)}.${enc(payload)}`;
-  const sig = await signRS256(data, privateKey);
-  return `${data}.${sig}`;
-}
-
-async function signRS256(data, pem) {
-  const keyData = pem.replace(/-----[^-]+-----/g,'').replace(/\s/g,'');
-  const binaryKey = Uint8Array.from(atob(keyData), c => c.charCodeAt(0));
-  const cryptoKey = await crypto.subtle.importKey(
-    'pkcs8', binaryKey.buffer,
-    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
-    false, ['sign']
-  );
-  const encoder = new TextEncoder();
-  const sig = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', cryptoKey, encoder.encode(data));
-  return btoa(String.fromCharCode(...new Uint8Array(sig))).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
-}
-
-async function getAccessToken(jwt) {
-  const res = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`
-  });
-  const data = await res.json();
-  return data.access_token;
 }
 
 // ═══════════════════════════════════════
@@ -3150,7 +3195,7 @@ function openModule(mod) {
   if (mod === 'admin') {
     goTo('admin'); loadAdminDashboard(); return;
   }
-  // v8: repartidor puede abrir remitos y reportes
+  // v8: logística puede abrir remitos y reportes
   if (state.rol === 'repartidor') {
     if (mod === 'remitos')  { remitosOpen(); return; }
     if (mod === 'reportes') { repartidorAbrirReportes(); return; }
@@ -3332,7 +3377,8 @@ function onEmpChange() {
   const opt = sel.options[sel.selectedIndex];
   state.empleado_id    = sel.value;
   state.empleado_nombre = opt.text;
-  state.rol = 'empleado';
+  // Respetar rol de encargado autenticado — no pisarlo con 'empleado'
+  if (state.rol !== 'encargado') state.rol = 'empleado';
   const nameEl = document.getElementById('hub-emp-name');
   const metaEl = document.getElementById('hub-meta');
   if (sel.value) {
@@ -3610,9 +3656,9 @@ function addRVItem() {
     </div>
     ${isVenc ? `<div style="margin-top:8px"><input type="date" id="rv-venc-${n}" placeholder="Fecha vencimiento"></div>` : ''}
     <div class="photo-area" id="photo-rv-${n}" style="margin-top:10px">
-      <input type="file" accept="image/*" capture="environment" onchange="handlePhoto(this,'rv-${n}')">
+      <input type="file" accept="image/*" onchange="handlePhoto(this,'rv-${n}')">
       <div class="photo-icon" style="font-size:16px">📷</div>
-      <div class="photo-text" style="font-size:12px">Foto (opcional)</div>
+      <div class="photo-text" style="font-size:12px">Galería o cámara</div>
       <div class="photo-sub" id="photo-rv-${n}-name">adjuntar imagen</div>
     </div>
   `;
@@ -3664,9 +3710,9 @@ function addTkItem() {
       <input type="text" id="tk-prov-${n}" placeholder="Nombre del proveedor" style="margin-bottom:8px">
     ` : ''}
     <div class="photo-area" id="photo-tki-${n}" style="margin-top:4px">
-      <input type="file" accept="image/*" capture="environment" onchange="handlePhoto(this,'tki-${n}')">
+      <input type="file" accept="image/*" onchange="handlePhoto(this,'tki-${n}')">
       <div class="photo-icon" style="font-size:16px">📷</div>
-      <div class="photo-text" style="font-size:12px">Foto del artículo</div>
+      <div class="photo-text" style="font-size:12px">Galería o cámara</div>
       <div class="photo-sub" id="photo-tki-${n}-name">recomendado</div>
     </div>
   `;
@@ -3714,7 +3760,7 @@ async function submitForm(tipo) {
 
     const reporte = {
       tipo,
-      local: state.local,
+      local: state.local || localStorage.getItem('break_local_fijo') || null,
       empleado_id: state.empleado_id,
       turno: state.turno,
       foto_url: fotoUrl,
@@ -4789,8 +4835,8 @@ let lsState = { tipo: null, local: null, localName: null, step: 'tipo' };
 let lsConfigCache = null;
 
 
-// ── REPARTIDOR — REPORTES ──────────────────────────────────────────────────
-// El repartidor no tiene local fijo, así que elige la tienda al reportar
+// ── LOGÍSTICA — REPORTES ────────────────────────────────────────────────────
+// Logística no tiene local fijo, así que elige la tienda al reportar
 function repartidorAbrirReportes() {
   // Si ya eligió tienda en esta sesión, abrir directo
   if (state.local) {
@@ -4904,8 +4950,8 @@ function lsMostrarClave() {
   lsState.step = 'clave';
   document.getElementById('ls-tipo').classList.remove('visible');
   document.getElementById('ls-tienda').classList.remove('visible');
-  const titulos    = { empleado: lsState.localName, encargado: 'Encargado · ' + lsState.localName, admin: 'Administrador', repartidor: 'Repartidor' };
-  const subtitulos = { empleado: 'clave de empleados de esta tienda', encargado: 'clave de encargado de esta tienda', admin: 'PIN de administrador', repartidor: 'clave de repartidor' };
+  const titulos    = { empleado: lsState.localName, encargado: 'Encargado · ' + lsState.localName, admin: 'Administrador', repartidor: 'Logística' };
+  const subtitulos = { empleado: 'clave de empleados de esta tienda', encargado: 'clave de encargado de esta tienda', admin: 'PIN de administrador', repartidor: 'clave de logística' };
   document.getElementById('ls-clave-titulo').textContent = titulos[lsState.tipo];
   document.getElementById('ls-clave-sub').textContent    = subtitulos[lsState.tipo];
   document.getElementById('ls-clave-inp').value = '';
@@ -5061,7 +5107,7 @@ function lsEntrarHub(auth) {
   // 3. Badge de rol en hub
   const badge = document.getElementById('v8-rol-badge');
   if (badge) {
-    const rolLabel = { empleado: '👤 Empleado', encargado: '🔑 Encargado', admin: '🔐 Administrador', repartidor: '🚚 Repartidor' };
+    const rolLabel = { empleado: '👤 Empleado', encargado: '🔑 Encargado', admin: '🔐 Administrador', repartidor: '🚚 Logística' };
     const localLabel = auth.localName || '(todas las tiendas)';
     badge.textContent = (rolLabel[auth.rol] || auth.rol) + ' · ' + localLabel;
   }
@@ -5084,11 +5130,11 @@ function lsEntrarHub(auth) {
     if (secNombre) secNombre.style.display = 'none';
     if (turnoWrap) turnoWrap.style.display = 'none';
     state.empleado_id     = 'repartidor';
-    state.empleado_nombre = 'Repartidor';
+    state.empleado_nombre = 'Logística';
     state.turno           = 'repartidor';
-    document.getElementById('hub-emp-name').textContent = 'Repartidor';
+    document.getElementById('hub-emp-name').textContent = 'Logística';
     document.getElementById('hub-meta').textContent     = 'remitos · reportes';
-    // Ocultar cards que no aplican al repartidor
+    // Ocultar cards que no aplican a logística
     ['card-deudas','card-panel-turno','card-inventario','card-ordenes','card-turno-admin'].forEach(id => {
       const c = document.getElementById(id); if (c) c.style.display = 'none';
     });
@@ -5141,7 +5187,7 @@ const ACCESOS_DEF = [
     { label: 'Independencia · S. Telmo', emoji: '🎭', clave: 'pass_encargado_san_telmo' },
   ]},
   { grupo: 'Accesos especiales', items: [
-    { label: 'Repartidor',          emoji: '🚚', clave: 'pass_repartidor' },
+    { label: 'Logística',           emoji: '🚚', clave: 'pass_repartidor' },
     { label: 'Administrador (PIN)', emoji: '🔐', clave: 'admin_pin' },
   ]},
 ];
@@ -5691,8 +5737,10 @@ init();
 // PANEL DE TURNO — LÓGICA COMPLETA
 // ═══════════════════════════════════════
 const PT_DENOM = [
-  {id:'ptb1000',val:1000},{id:'ptb2000',val:2000},{id:'ptb5000',val:5000},
-  {id:'ptb10000',val:10000},{id:'ptb20000',val:20000},{id:'ptb50000',val:50000},
+  {id:'ptb10',val:10},{id:'ptb20',val:20},{id:'ptb50',val:50},
+  {id:'ptb100',val:100},{id:'ptb200',val:200},{id:'ptb500',val:500},
+  {id:'ptb1000',val:1000},{id:'ptb2000',val:2000},
+  {id:'ptb10000',val:10000},{id:'ptb20000',val:20000},
 ];
 
 const PT_SEM_DEMO = [
@@ -5741,6 +5789,67 @@ function ptInitCore() {
   document.getElementById('pt-obs-cierre').value = '';
   ptRecalc();
   ptInitChecks();
+
+  // Recargas persistentes — pre-cargar stock_actual del último cierre del mismo turno+local
+  (async () => {
+    try {
+      const turnoKey = state.turno || '';
+      const localKey = state.local || '';
+      if (turnoKey && localKey) {
+        const cierres = await sbFetch(`cierres_turno?local=eq.${localKey}&turno=eq.${turnoKey}&order=fecha.desc&limit=1&select=checks_json`);
+        if (cierres && cierres[0] && cierres[0].checks_json) {
+          const checks = typeof cierres[0].checks_json === 'string'
+            ? JSON.parse(cierres[0].checks_json) : cierres[0].checks_json;
+          // stock_actual guardado en el cierre anterior
+          const stockAnt = checks.recargas?.stock_actual ?? null;
+          if (stockAnt !== null && stockAnt !== undefined) {
+            const antEl = document.getElementById('ptck-rec-ant');
+            if (antEl && (!antEl.value || antEl.value === '0' || antEl.value === '')) {
+              antEl.value = stockAnt;
+              ptRecalcRecargas();
+              // Indicador visual sutil
+              antEl.style.borderColor = 'var(--accent)';
+              setTimeout(() => { antEl.style.borderColor = ''; }, 2000);
+            }
+          }
+        }
+      }
+    } catch(e) { console.warn('ptInitCore: recargas pre-carga error', e); }
+  })();
+
+  // Deudas del local — suma entradas por store
+  (async () => {
+    try {
+      const localKey = state.local || '';
+      const el = document.getElementById('pt-deudas-local');
+      if (!el || !localKey) return;
+      const [entradas, cuentas] = await Promise.all([
+        sbFetch(`entradas?store=eq.${localKey}&select=cid,monto`),
+        sbFetch(`cuentas?tipo=eq.empleado&select=id,nombre`)
+      ]);
+      const saldos = {};
+      (entradas||[]).forEach(e => { saldos[e.cid] = (saldos[e.cid]||0) + e.monto; });
+      const rows = (cuentas||[])
+        .map(c => ({ nombre: c.nombre, saldo: saldos[c.id] || 0 }))
+        .filter(c => c.saldo > 0)
+        .sort((a,b) => b.saldo - a.saldo);
+      const total = rows.reduce((a,r) => a + r.saldo, 0);
+      if (rows.length === 0) {
+        el.innerHTML = '<span style="color:var(--green)">Sin deudas activas en este local ✓</span>';
+        return;
+      }
+      const fmt2 = n => '$' + Math.abs(n).toLocaleString('es-AR');
+      el.innerHTML =
+        rows.map(r =>
+          `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:0.5px solid var(--border)">` +
+          `<span style="color:var(--text)">${r.nombre}</span>` +
+          `<span style="color:var(--red)">${fmt2(r.saldo)}</span></div>`
+        ).join('') +
+        `<div style="display:flex;justify-content:space-between;padding:6px 0 0;margin-top:4px;font-weight:700">` +
+        `<span style="color:var(--muted)">Total local</span>` +
+        `<span style="color:var(--red)">${fmt2(total)}</span></div>`;
+    } catch(e) { console.warn('pt-deudas-local error', e); }
+  })();
 
   // Header
   const LOCALES_SHORT = { palermo:'Thames · Palermo', belgrano:'Roosevelt · Belgrano', barrio_chino:'Juramento · B. Chino', san_telmo:'Independencia · S. Telmo' };
@@ -6191,16 +6300,43 @@ async function ptSaveDef() {
 // ── CIERRE — CÁLCULO ──────────────────────
 function ptRecalcPacas() {
   let totalPacas = 0;
+  // Pacas fijas: 10k, 50k, 100k
+  const PACAS_FIJAS = [
+    { id: 'f1', val: 10000 },
+    { id: 'f2', val: 50000 },
+    { id: 'f3', val: 100000 },
+  ];
+  PACAS_FIJAS.forEach(p => {
+    const cant = parseFloat(document.getElementById(`ptpc-${p.id}`)?.value) || 0;
+    const sub  = p.val * cant;
+    totalPacas += sub;
+    const subEl = document.getElementById(`ptps-${p.id}`);
+    if (subEl) subEl.textContent = sub > 0 ? `$${sub.toLocaleString('es-AR')}` : '$0';
+  });
+  // Pacas custom 1-3
   for (let i = 1; i <= 3; i++) {
-    const denom = parseFloat(document.getElementById(`ptpd${i}`)?.value) || 0;
-    const cant  = parseFloat(document.getElementById(`ptpc${i}`)?.value) || 0;
+    const denom = parseFloat(document.getElementById(`ptpd-c${i}`)?.value) || 0;
+    const cant  = parseFloat(document.getElementById(`ptpc-c${i}`)?.value) || 0;
     const sub   = denom * cant;
     totalPacas += sub;
-    const subEl = document.getElementById(`ptps${i}`);
+    const subEl = document.getElementById(`ptps-c${i}`);
     if (subEl) subEl.textContent = sub > 0 ? `$${sub.toLocaleString('es-AR')}` : '$0';
   }
   const totalPacasEl = document.getElementById('pt-total-pacas');
   if (totalPacasEl) totalPacasEl.textContent = `$${totalPacas.toLocaleString('es-AR')}`;
+  ptRecalc();
+}
+
+function ptRecalcVentas() {
+  const ef     = parseFloat(document.getElementById('ptven-efectivo')?.value) || 0;
+  const mp     = parseFloat(document.getElementById('ptven-mp')?.value)       || 0;
+  const debito = parseFloat(document.getElementById('ptven-debito')?.value)   || 0;
+  const total  = ef + mp + debito;
+  const totalEl = document.getElementById('ptven-total');
+  if (totalEl) totalEl.textContent = `$${total.toLocaleString('es-AR')}`;
+  // Sync hidden field used by ptRecalc for diferencia
+  const sis = document.getElementById('ptmed-sistema');
+  if (sis) sis.value = total > 0 ? total : '';
   ptRecalc();
 }
 
@@ -6273,11 +6409,18 @@ async function ptCerrar() {
   }
 
   const totalEf = PT_DENOM.reduce((acc,d) => acc + (parseInt(document.getElementById(d.id)?.value)||0)*d.val, 0);
-  const totalPacas = [1,2,3].reduce((acc,i) => {
-    const d = parseFloat(document.getElementById(`ptpd${i}`)?.value)||0;
-    const c = parseFloat(document.getElementById(`ptpc${i}`)?.value)||0;
-    return acc + d*c;
-  }, 0);
+  const totalPacas = (() => {
+    let t = 0;
+    [{id:'f1',val:10000},{id:'f2',val:50000},{id:'f3',val:100000}].forEach(p => {
+      t += (parseFloat(document.getElementById(`ptpc-${p.id}`)?.value)||0) * p.val;
+    });
+    for(let i=1;i<=3;i++){
+      const d = parseFloat(document.getElementById(`ptpd-c${i}`)?.value)||0;
+      const c = parseFloat(document.getElementById(`ptpc-c${i}`)?.value)||0;
+      t += d*c;
+    }
+    return t;
+  })();
   const totalGeneral = totalEf + totalPacas;
   const totalSis = parseFloat(document.getElementById('ptmed-sistema')?.value)||null;
 
@@ -6305,17 +6448,24 @@ async function ptCerrar() {
   const payload = {
     empleado_id: state.empleado_id, local: state.local,
     turno: state.turno, fecha: new Date().toISOString().split('T')[0],
+    b10:    parseInt(document.getElementById('ptb10')?.value)||0,
+    b20:    parseInt(document.getElementById('ptb20')?.value)||0,
+    b50:    parseInt(document.getElementById('ptb50')?.value)||0,
+    b100:   parseInt(document.getElementById('ptb100')?.value)||0,
+    b200:   parseInt(document.getElementById('ptb200')?.value)||0,
+    b500:   parseInt(document.getElementById('ptb500')?.value)||0,
     b1000:  parseInt(document.getElementById('ptb1000')?.value)||0,
     b2000:  parseInt(document.getElementById('ptb2000')?.value)||0,
-    b5000:  parseInt(document.getElementById('ptb5000')?.value)||0,
     b10000: parseInt(document.getElementById('ptb10000')?.value)||0,
     b20000: parseInt(document.getElementById('ptb20000')?.value)||0,
-    b50000: parseInt(document.getElementById('ptb50000')?.value)||0,
     m1: 0, m2: 0, m5: 0, m10: 0, m50: 0, // campos legacy — siempre 0
-    total_tarjeta: 0, total_qr: 0, total_rappi: 0, total_pya: 0, total_mp: 0,
-    total_efectivo:   totalGeneral,
-    total_sistema:    totalSis,
-    diferencia:       totalSis ? totalGeneral - totalSis : null,
+    total_tarjeta: parseFloat(document.getElementById('ptven-debito')?.value)||0,
+    total_qr:      parseFloat(document.getElementById('ptven-mp')?.value)||0,
+    total_rappi: 0, total_pya: 0, total_mp: 0,
+    ventas_efectivo: parseFloat(document.getElementById('ptven-efectivo')?.value)||0,
+    total_efectivo:  totalGeneral,
+    total_sistema:   totalSis,
+    diferencia:      totalSis ? totalGeneral - totalSis : null,
     observaciones:    document.getElementById('pt-obs-cierre')?.value.trim()||null,
     checks_json:      JSON.stringify(checksJson),
   };
@@ -6395,6 +6545,8 @@ function ptInitChecks() {
   ptRenderHielos();
 
   // Resetear recargas
+  ['ptven-efectivo','ptven-mp','ptven-debito'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  const vtEl=document.getElementById('ptven-total'); if(vtEl) vtEl.textContent='$0';
   ['ptck-rec-ant','ptck-rec-act','ptck-rec-ventas'].forEach(id => {
     const el = document.getElementById(id); if(el) el.value = '';
   });
@@ -6407,11 +6559,17 @@ function ptInitChecks() {
   const rotosObs = document.getElementById('ptck-rotos-obs');
   if (rotosObs) rotosObs.value = '';
 
-  // Resetear pacas
+  // Resetear pacas fijas
+  ['f1','f2','f3'].forEach(id => {
+    const c = document.getElementById(`ptpc-${id}`); if(c) c.value = '';
+    const s = document.getElementById(`ptps-${id}`); if(s) s.textContent = '$0';
+  });
+  // Resetear pacas custom
   for (let i = 1; i <= 3; i++) {
-    const d = document.getElementById(`ptpd${i}`); if(d) d.value = '';
-    const c = document.getElementById(`ptpc${i}`); if(c) c.value = '';
-    const s = document.getElementById(`ptps${i}`); if(s) s.textContent = '$0';
+    const n = document.getElementById(`ptpn-c${i}`); if(n) n.value = '';
+    const d = document.getElementById(`ptpd-c${i}`); if(d) d.value = '';
+    const c = document.getElementById(`ptpc-c${i}`); if(c) c.value = '';
+    const s = document.getElementById(`ptps-c${i}`); if(s) s.textContent = '$0';
   }
   const pacasEl = document.getElementById('pt-total-pacas');
   if (pacasEl) pacasEl.textContent = '$0';

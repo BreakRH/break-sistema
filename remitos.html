@@ -429,10 +429,10 @@ window.addEventListener('message', function(e) {
   if (!e.data || e.data.type !== 'break-context') return;
   const ctx = e.data;
 
-  if (ctx.rol === 'admin') {
+  if (ctx.rol === 'admin' || ctx.rol === 'encargado') {
     currentRol  = 'admin';
-    currentUser = 'Administración';
-    hubLocal    = null;   // admin ve todo
+    currentUser = ctx.rol === 'encargado' ? `Encargado · ${ctx.localName || ''}` : 'Administración';
+    hubLocal    = null;   // admin/encargado ve todo
   } else if (ctx.rol === 'repartidor') {
     currentRol  = 'repartidor';
     currentUser = 'Repartidor';
