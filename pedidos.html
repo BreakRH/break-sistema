@@ -474,9 +474,26 @@ body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-he
     <div class="calc-bar">
       <button class="btn-p" id="btn-calc" disabled onclick="calcularPedidos()">⚡ Calcular pedidos</button>
       <button class="btn-s" id="btn-clear" onclick="limpiarTodo()" style="display:none">↺ Limpiar</button>
+      <button class="btn-s" id="btn-ver-todos" onclick="toggleVerTodos()" style="display:none">👁 Ver todos los artículos</button>
+      <button class="btn-s" id="btn-pedido-gral" onclick="openPedidoGeneral()" style="display:none">📋 Pedido general</button>
       <span class="ci" id="calc-info">Cargá Stock Valorizado y Ventas para calcular</span>
     </div>
     <div class="stats-bar" id="sbar" style="display:none"></div>
+    <!-- Pedido General Modal -->
+    <div id="pedido-general-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:900;align-items:center;justify-content:center">
+      <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);padding:24px;width:min(600px,95vw);max-height:85vh;overflow-y:auto;position:relative">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <div style="font-size:15px;font-weight:600;color:var(--text)">📋 Pedido General</div>
+          <button onclick="closePedidoGeneral()" style="background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;line-height:1">×</button>
+        </div>
+        <div style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-bottom:14px">Listado completo del pedido calculado. Podés asignar un proveedor distinto al exportar.</div>
+        <div id="pg-content" style="margin-bottom:16px"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button onclick="exportarPedidoGeneral()" style="background:var(--accent);color:#0f0f0f;border:none;border-radius:var(--radius);padding:10px 18px;font-size:13px;font-weight:600;cursor:pointer">📋 Copiar resumen</button>
+          <button onclick="closePedidoGeneral()" style="background:transparent;border:1px solid var(--border2);color:var(--text3);border-radius:var(--radius);padding:10px 18px;font-size:13px;cursor:pointer">Cerrar</button>
+        </div>
+      </div>
+    </div>
     <div id="prov-container"></div>
   </div>
 
@@ -1393,38 +1410,147 @@ document.querySelectorAll('[data-tienda]').forEach(btn=>{
 // ============================================================
 // CALCULAR PEDIDOS — uses PDB lookup for proveedor & cantCaja
 // ============================================================
+// Sobrestock map: { codigo: [{tienda, stock, demSem}] } — populated on calcularPedidos
+let sobreStockMap = {};
+
+// All articles view (ver todos) state
+let verTodosActivo = false;
+let allArtsRows = []; // for "ver todos" mode
+
+const TIENDA_SHORT = { T:'Pal', R:'Bel', J:'BCH', S:'STel' };
+
+function buildSobreStockMap(){
+  sobreStockMap = {};
+  const {byCod,byDesc}=buildLookup();
+  const tiendas = Object.keys(artsData);
+  for(const tid of tiendas){
+    if(tid===curTienda) continue;
+    const arts = artsData[tid];
+    const ventas = ventasData[tid]||{};
+    if(!arts) continue;
+    for(const art of arts){
+      const v30=(ventas[art.codigo]||{ventas30:0}).ventas30;
+      const demSem=Math.ceil(v30/30*7);
+      const stockMin=Math.ceil(demSem/7*2);
+      const stockSeg=Math.ceil(stockMin*0.2);
+      const stockReq=demSem+stockMin+stockSeg;
+      // Sobrestock: stock > stockReq * 1.5 (significant surplus)
+      if(art.stock>0 && (stockReq===0 ? art.stock>3 : art.stock > stockReq*1.5)){
+        const cod=art.codigo;
+        if(!sobreStockMap[cod]) sobreStockMap[cod]=[];
+        sobreStockMap[cod].push({ tienda:tid, stock:art.stock, demSem, stockReq });
+      }
+    }
+  }
+}
+
 function calcularPedidos(){
   const arts=artsData[curTienda],ventas=ventasData[curTienda];
   if(!arts||!ventas){showToast('Cargá Stock Valorizado y Ventas primero','error');return;}
   const {byCod,byDesc}=buildLookup();
+  // Build sobrestock map from other tiendas
+  buildSobreStockMap();
   const byProv={};
+  allArtsRows=[];
   for(const art of arts){
     const vData=ventas[art.codigo]||{ventas30:0};
     const v30=vData.ventas30;
-    // Find in PDB
     let pdbEntry=byCod[art.codigo]||byDesc[normalize(art.desc)];
     const prov=pdbEntry?pdbEntry.p:'Sin proveedor';
     const cantCaja=pdbEntry?Math.max(1,pdbEntry.q):1;
-    // Skip inactive / no proveedor entries
     if(prov==='Sin proveedor'||prov==='Sin Proveedor'||prov==='Eliminado')continue;
-    // Calc
     const demSem=Math.ceil(v30/30*7);
     const stockMin=Math.ceil(demSem/7*2);
     const stockSeg=Math.ceil(stockMin*0.2);
     const stockReq=demSem+stockMin+stockSeg;
+    const sobrestock=sobreStockMap[art.codigo]||[];
+    // Build "ver todos" row
+    allArtsRows.push({desc:art.desc,codigo:art.codigo,prov,stock:art.stock,demSem,stockReq,cantCaja,v30,pu:art.costo,sobrestock});
+    // Pedido logic
     if(v30===0&&art.stock>0)continue;
     let pedido=0;
     if(art.stock<stockReq){pedido=Math.ceil((stockReq-art.stock)/cantCaja)*cantCaja;}
     if(pedido<=0)continue;
     if(!byProv[prov])byProv[prov]=[];
-    byProv[prov].push({desc:art.desc,codigo:art.codigo,qty:pedido,pu:art.costo,stock:art.stock,demanda:demSem,cantCaja,v30});
+    byProv[prov].push({desc:art.desc,codigo:art.codigo,qty:pedido,pu:art.costo,stock:art.stock,demanda:demSem,cantCaja,v30,sobrestock});
   }
   pedidoActual[curTienda]=byProv;
+  verTodosActivo=false;
   renderPedido(curTienda);
-  buildInvRows();  // refresh inventory data
+  buildInvRows();
   document.getElementById('badge-inv').textContent = invRows.length||'—';
   document.getElementById('btn-clear').style.display='inline-flex';
+  document.getElementById('btn-ver-todos').style.display='inline-flex';
+  document.getElementById('btn-pedido-gral').style.display='inline-flex';
   showToast('Pedidos calculados','success');
+}
+
+function toggleVerTodos(){
+  verTodosActivo=!verTodosActivo;
+  const btn=document.getElementById('btn-ver-todos');
+  if(verTodosActivo){
+    btn.textContent='📋 Ver solo necesarios';
+    renderVerTodos();
+  } else {
+    btn.textContent='👁 Ver todos los artículos';
+    renderPedido(curTienda);
+  }
+}
+
+function renderVerTodos(){
+  const container=document.getElementById('prov-container');
+  const sbar=document.getElementById('sbar');
+  sbar.style.display='none';
+  if(!allArtsRows.length){
+    container.innerHTML='<div class="empty"><div class="empty-icon">⚠</div><div class="empty-title">Sin artículos cargados</div></div>';
+    return;
+  }
+  // Group by proveedor
+  const byProv={};
+  allArtsRows.forEach(r=>{ if(!byProv[r.prov])byProv[r.prov]=[]; byProv[r.prov].push(r); });
+  const sorted=Object.keys(byProv).sort((a,b)=>a.localeCompare(b));
+  container.innerHTML=`<div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:8px 0 12px">Mostrando todos los artículos. Artículos con sobrestock en otra tienda tienen aviso 🔄.</div>`+
+  sorted.map(prov=>{
+    const items=byProv[prov];
+    const pk='vt_'+prov.replace(/[^a-zA-Z0-9]/g,'_');
+    return`<div class="pb has-items open" id="pb_${pk}">
+      <div class="ph" onclick="togglePB('${pk}')">
+        <div class="chev">▶</div>
+        <div class="ph-left"><div><div class="pn">${prov}</div><div class="pm">${items.length} artículos</div></div></div>
+      </div>
+      <div class="pbody" id="pbody_${pk}">
+        <table class="it"><thead><tr>
+          <th>Descripción</th><th class="r">Stock</th><th class="r">Dem/sem</th><th class="r">Stock req.</th><th class="r">Acción</th>
+        </tr></thead>
+        <tbody>${items.map(r=>{
+          const sc=r.stock<=0?'scrit':r.stock<r.demSem?'slow':'sok';
+          const necesita=r.stock<r.stockReq;
+          const sob=r.sobrestock||[];
+          const sobTag=sob.length?`<span style="font-family:var(--mono);font-size:10px;background:var(--blue-bg,rgba(80,160,255,.12));color:var(--blue);border-radius:4px;padding:2px 6px;margin-left:6px" title="${sob.map(s=>TIENDA_SHORT[s.tienda]+'·'+s.stock).join(', ')}">🔄 Sobrestock en ${sob.map(s=>TIENDA_SHORT[s.tienda]).join(', ')}</span>`:'';
+          const addBtn=`<button style="font-size:11px;padding:4px 10px;border:1px solid var(--accent);background:transparent;color:var(--accent);border-radius:4px;cursor:pointer" onclick="agregarAllArts('${prov}',${JSON.stringify(r).replace(/'/g,"&#39;")})">+ Agregar al pedido</button>`;
+          return`<tr>
+            <td><div class="idesc">${r.desc}${sobTag}</div><div class="inv-prov">${r.codigo||''}</div></td>
+            <td class="r"><span class="istk ${sc}">${fmtN(r.stock)}</span></td>
+            <td class="r">${fmtN(r.demSem)}</td>
+            <td class="r" style="color:${necesita?'var(--red)':'var(--text3)'}">${fmtN(r.stockReq)}</td>
+            <td class="r">${addBtn}</td>
+          </tr>`;
+        }).join('')}</tbody></table>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function agregarAllArts(prov, item){
+  const cantCaja=item.cantCaja||1;
+  const stockReq=item.stockReq||0;
+  const pedido=Math.max(cantCaja, Math.ceil((stockReq-item.stock)/cantCaja)*cantCaja);
+  if(!pedidoActual[curTienda]) pedidoActual[curTienda]={};
+  if(!pedidoActual[curTienda][prov]) pedidoActual[curTienda][prov]=[];
+  const ya=pedidoActual[curTienda][prov].find(r=>r.codigo===item.codigo);
+  if(ya){ ya.qty+=pedido; }
+  else { pedidoActual[curTienda][prov].push({desc:item.desc,codigo:item.codigo,qty:pedido,pu:item.pu,stock:item.stock,demanda:item.demSem,cantCaja,v30:item.v30,sobrestock:item.sobrestock}); }
+  showToast(`${item.desc} agregado al pedido`,'success');
 }
 
 // ============================================================
@@ -1649,6 +1775,65 @@ function agregarRefuerzo(){
 // ============================================================
 // RENDER PEDIDO
 // ============================================================
+
+// ── PEDIDO GENERAL ──────────────────────────────────────────
+function openPedidoGeneral(){
+  const byProv=pedidoActual[curTienda];
+  if(!byProv||!Object.keys(byProv).length){
+    showToast('No hay pedido calculado','error'); return;
+  }
+  const el=document.getElementById('pg-content');
+  const sorted=Object.keys(byProv).sort((a,b)=>a.localeCompare(b));
+  let html='';
+  sorted.forEach(prov=>{
+    const items=byProv[prov].filter(i=>i.qty>0);
+    if(!items.length)return;
+    const tot=items.reduce((s,i)=>s+i.qty*i.pu,0);
+    html+=`<div style="margin-bottom:14px;border:0.5px solid var(--border);border-radius:8px;overflow:hidden">
+      <div style="background:var(--bg3);padding:8px 12px;font-size:12px;font-weight:600;color:var(--text);display:flex;justify-content:space-between">
+        <span>${prov}</span><span style="font-family:var(--mono);color:var(--text3)">${fmt(tot)}</span>
+      </div>
+      <table style="width:100%;border-collapse:collapse">
+        ${items.map(i=>{
+          const sob=(i.sobrestock||[]);
+          const sobTag=sob.length?` <span style="font-family:var(--mono);font-size:9px;color:var(--blue)">🔄${sob.map(s=>TIENDA_SHORT[s.tienda]).join('/')}</span>`:'';
+          return`<tr style="border-top:0.5px solid var(--border)">
+            <td style="padding:6px 12px;font-size:12px;color:var(--text)">${i.desc}${sobTag}</td>
+            <td style="padding:6px 12px;font-family:var(--mono);font-size:11px;color:var(--text3);text-align:right">×${i.qty}</td>
+            <td style="padding:6px 12px;font-family:var(--mono);font-size:11px;color:var(--text2);text-align:right">${fmt(i.qty*i.pu)}</td>
+          </tr>`;
+        }).join('')}
+      </table>
+    </div>`;
+  });
+  el.innerHTML=html;
+  const ov=document.getElementById('pedido-general-overlay');
+  ov.style.display='flex';
+}
+
+function closePedidoGeneral(){
+  document.getElementById('pedido-general-overlay').style.display='none';
+}
+
+function exportarPedidoGeneral(){
+  const byProv=pedidoActual[curTienda];
+  if(!byProv)return;
+  const tiendaNom=TIENDAS[curTienda]||curTienda;
+  const fecha=new Date().toLocaleDateString('es-AR');
+  let txt=`PEDIDO GENERAL — ${tiendaNom} — ${fecha}\n${'─'.repeat(50)}\n`;
+  const sorted=Object.keys(byProv).sort((a,b)=>a.localeCompare(b));
+  sorted.forEach(prov=>{
+    const items=byProv[prov].filter(i=>i.qty>0);
+    if(!items.length)return;
+    txt+=`\n${prov}\n`;
+    items.forEach(i=>{
+      const sob=(i.sobrestock||[]).map(s=>TIENDA_SHORT[s.tienda]).join('/');
+      txt+=`  • ${i.desc} × ${i.qty}${sob?' [🔄'+sob+']':''}\n`;
+    });
+  });
+  navigator.clipboard.writeText(txt).then(()=>showToast('Copiado al portapapeles ✓','success')).catch(()=>showToast('Error al copiar','error'));
+}
+
 function renderPedido(tienda){
   const byProv=pedidoActual[tienda],container=document.getElementById('prov-container'),sbar=document.getElementById('sbar');
   if(!byProv||Object.keys(byProv).length===0){
@@ -1693,8 +1878,10 @@ function rowHTML(item,pk,idx){
   const zc=item.qty===0?'zero-row':'';
   const movedTag=item.movedFrom?`<span class="move-tag" title="Movido desde ${item.movedFrom}">↪ ${item.movedFrom}</span>`:'';
   const movCls=item.movedFrom?'rmov moved':'rmov';
+  const sob=(item.sobrestock||[]);
+  const sobTag=sob.length?`<span style="font-family:var(--mono);font-size:10px;background:var(--blue-bg,rgba(80,160,255,.12));color:var(--blue);border-radius:4px;padding:2px 5px;margin-left:5px" title="Sobrestock en: ${sob.map(s=>TIENDA_SHORT[s.tienda]+' ('+s.stock+')').join(', ')}">🔄 ${sob.map(s=>TIENDA_SHORT[s.tienda]).join('/')}</span>`:'';
   return`<tr class="${zc}" id="row_${pk}_${idx}">
-    <td><div class="idesc">${item.desc}${movedTag}</div></td>
+    <td><div class="idesc">${item.desc}${movedTag}${sobTag}</div></td>
     <td class="r"><span class="istk ${sc}">${fmtN(item.stock)}</span></td>
     <td class="r"><span class="idem">${fmtN(item.demanda)}</span></td>
     <td class="r"><span class="ipu">${fmt(item.pu)}</span></td>
@@ -1871,6 +2058,9 @@ function limpiarTodo(){
     document.getElementById(`fi-${t}-info`).classList.remove('vis');
     document.getElementById(`fi-${t}`).value='';
   });
+  verTodosActivo=false; allArtsRows=[];
+  const btnVT=document.getElementById('btn-ver-todos');
+  if(btnVT){btnVT.style.display='none';btnVT.textContent='👁 Ver todos los artículos';}
   document.getElementById('prov-container').innerHTML='';
   document.getElementById('sbar').style.display='none';
   document.getElementById('btn-clear').style.display='none';

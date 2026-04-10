@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Break — Reportes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+  :root {
+    --bg: #0f0f0f; --bg2: #161616; --bg3: #1e1e1e; --bg4: #262626;
+    --border: rgba(255,255,255,0.08); --border2: rgba(255,255,255,0.14);
+    --text: #f0ede8; --text2: #b0ada8; --text3: #848180;
+    --accent: #e8c547; --accent2: #b89b2e;
+    --red: #e85d4a; --red-bg: rgba(232,93,74,0.12);
+    --green: #4caf82; --green-bg: rgba(76,175,130,0.12);
+    --blue: #5b9cf6; --blue-bg: rgba(91,156,246,0.12);
+    --orange: #f0884a; --orange-bg: rgba(240,136,74,0.12);
+    --teal: #4dffc8;
+    --radius: 10px; --mono: 'DM Mono', monospace; --sans: 'Syne', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 15px; min-height: 100vh; overflow-x: hidden; }
+
+  .screen { display: none; min-height: 100vh; }
+  .screen.active { display: flex; flex-direction: column; }
+
+  .topbar { position: sticky; top: 0; z-index: 100; background: var(--bg); border-bottom: 0.5px solid var(--border); padding: 14px 20px; display: flex; align-items: center; gap: 12px; }
+  .topbar-back { width: 44px; height: 44px; border: 0.5px solid var(--border2); border-radius: 10px; background: var(--bg3); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; font-size: 18px; color: var(--text2); transition: background 0.15s; }
+  .topbar-back:hover { background: var(--bg4); }
+  .topbar-title { font-size: 15px; font-weight: 500; flex: 1; color: var(--text); }
+  .topbar-badge { font-family: var(--mono); font-size: 11px; color: var(--text3); background: var(--bg3); border: 0.5px solid var(--border); padding: 3px 8px; border-radius: 6px; }
+
+  #toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(100px); background: #2a2a2a; border: 1px solid rgba(255,255,255,0.18); border-radius: 14px; padding: 13px 22px; font-size: 14px; font-family: var(--sans); font-weight: 500; box-shadow: 0 8px 32px rgba(0,0,0,0.55); transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1), opacity 0.35s ease; z-index: 998; white-space: nowrap; opacity: 0; display: flex; align-items: center; gap: 10px; }
+  #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+  #toast.success { border-color: rgba(76,175,130,0.5); background: #1e2e26; color: var(--text); }
+  #toast.error { border-color: rgba(232,93,74,0.5); background: #2e1e1b; color: var(--text); }
+
+  .spinner { width: 24px; height: 24px; border: 1.5px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes pop { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  select, input, textarea { width: 100%; background: var(--bg2); border: 0.5px solid var(--border2); border-radius: var(--radius); color: var(--text); font-family: var(--sans); font-size: 15px; padding: 13px 14px; outline: none; appearance: none; -webkit-appearance: none; transition: border-color 0.15s; min-height: 48px; }
+  select:focus, input:focus, textarea:focus { border-color: var(--accent); background: var(--bg3); }
+  select option { background: var(--bg3); }
+  textarea { resize: none; line-height: 1.5; min-height: 90px; }
+
+  .form-scroll { flex: 1; overflow-y: auto; padding: 20px 20px 120px; }
+  .form-scroll > * { animation: fadeIn 0.25s ease forwards; }
+  .form-section { margin-bottom: 24px; }
+  .form-section-title { font-family: var(--mono); font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; }
+
+  .chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { background: var(--bg3); border: 0.5px solid var(--border); border-radius: 20px; padding: 9px 16px; font-size: 13px; color: var(--text2); cursor: pointer; transition: all 0.12s; white-space: nowrap; min-height: 40px; display: flex; align-items: center; }
+  .chip:hover { border-color: var(--border2); color: var(--text); }
+  .chip.selected { background: rgba(232,197,71,0.1); border-color: var(--accent); color: var(--accent); }
+  .chip.sel-red.selected { background: var(--red-bg); border-color: var(--red); color: var(--red); }
+  .chip.sel-blue.selected { background: var(--blue-bg); border-color: var(--blue); color: var(--blue); }
+
+  .item-card { background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 10px; }
+  .item-card-header { font-family: var(--mono); font-size: 11px; color: var(--accent); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+  .add-item-btn { width: 100%; padding: 14px; background: transparent; border: 0.5px dashed var(--border2); border-radius: var(--radius); color: var(--text3); font-family: var(--mono); font-size: 13px; cursor: pointer; transition: all 0.15s; min-height: 52px; }
+  .add-item-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(232,197,71,0.04); }
+
+  .photo-area { border: 0.5px dashed var(--border2); border-radius: var(--radius); padding: 28px 20px; text-align: center; cursor: pointer; background: var(--bg2); transition: all 0.15s; position: relative; overflow: hidden; }
+  .photo-area:hover { border-color: var(--accent); background: rgba(232,197,71,0.04); }
+  .photo-area.has-file { border-color: var(--green); background: var(--green-bg); border-style: solid; }
+  .photo-area input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .photo-icon { font-size: 24px; margin-bottom: 8px; }
+  .photo-text { font-size: 14px; color: var(--text2); margin-bottom: 4px; }
+  .photo-sub { font-family: var(--mono); font-size: 11px; color: var(--text3); }
+
+  .toggle-row { display: flex; gap: 8px; }
+  .toggle-opt { flex: 1; padding: 13px 8px; text-align: center; background: var(--bg3); border: 0.5px solid var(--border); border-radius: var(--radius); font-size: 14px; color: var(--text2); cursor: pointer; transition: all 0.12s; min-height: 48px; display: flex; align-items: center; justify-content: center; }
+  .toggle-opt.selected-yes { background: var(--green-bg); border-color: var(--green); color: var(--green); }
+  .toggle-opt.selected-no { background: var(--red-bg); border-color: var(--red); color: var(--red); }
+
+  .submit-bar { position: fixed; bottom: 0; left: 0; right: 0; padding: 14px 20px 32px; background: linear-gradient(to top, var(--bg) 65%, transparent); z-index: 50; }
+  .submit-btn { width: 100%; padding: 16px; background: var(--accent); border: none; border-radius: 14px; color: #0f0f0f; font-family: var(--sans); font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 16px rgba(232,197,71,0.25); }
+  .submit-btn:hover { background: #f0d050; box-shadow: 0 6px 20px rgba(232,197,71,0.35); transform: translateY(-1px); }
+  .submit-btn:active { transform: translateY(0); }
+  .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; transform: none; }
+  .submit-btn .btn-spinner { width: 18px; height: 18px; border: 2px solid rgba(0,0,0,0.2); border-top-color: #0f0f0f; border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
+  .submit-btn.loading .btn-spinner { display: block; }
+  .submit-btn.loading .btn-text { display: none; }
+
+  .success-screen { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 32px; text-align: center; }
+  .success-ring { width: 72px; height: 72px; border-radius: 50%; background: var(--green-bg); border: 1px solid var(--green); display: flex; align-items: center; justify-content: center; font-size: 30px; margin-bottom: 20px; animation: pop 0.4s cubic-bezier(0.175,0.885,0.32,1.275); }
+  .success-title { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+  .success-sub { font-size: 13px; color: var(--text3); font-family: var(--mono); margin-bottom: 32px; line-height: 1.6; }
+  .success-meta { background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 14px 16px; width: 100%; text-align: left; margin-bottom: 24px; }
+  .success-meta-row { display: flex; justify-content: space-between; font-size: 12px; padding: 4px 0; }
+  .success-meta-row span:first-child { color: var(--text3); font-family: var(--mono); }
+  .success-meta-row span:last-child { color: var(--text); font-weight: 500; }
+  .new-btn { width: 100%; padding: 15px; background: var(--bg3); border: 0.5px solid var(--border2); border-radius: 14px; color: var(--text); font-family: var(--sans); font-size: 15px; cursor: pointer; transition: background 0.15s; min-height: 52px; }
+  .new-btn:hover { background: var(--bg4); }
+
+  .ticket-notice { background: var(--orange-bg); border: 0.5px solid rgba(240,136,74,0.3); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 20px; font-family: var(--mono); font-size: 12px; color: var(--orange); line-height: 1.5; }
+
+  /* Selector de tipo reporte */
+  .reporte-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 20px; }
+  .reporte-card { background: var(--bg2); border: 0.5px solid var(--border); border-radius: 14px; padding: 22px 16px; cursor: pointer; transition: all 0.18s; display: flex; flex-direction: column; gap: 10px; -webkit-tap-highlight-color: transparent; }
+  .reporte-card:hover { border-color: var(--border2); background: var(--bg3); transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.3); }
+  .reporte-card:active { transform: translateY(0); }
+  .reporte-card-icon { font-size: 26px; }
+  .reporte-card-name { font-size: 14px; font-weight: 600; color: var(--text); }
+  .reporte-card-desc { font-family: var(--mono); font-size: 11px; color: var(--text3); line-height: 1.4; }
+</style>
+</head>
+<body>
+
+<!-- ══ SELECTOR TIPO ══════════════════════ -->
+<div class="screen active" id="screen-reporte-tipo">
+  <div class="topbar">
+    <div class="topbar-back" onclick="goBack()">←</div>
+    <span class="topbar-title">Nuevo reporte</span>
+    <span class="topbar-badge" id="badge-local-tipo">—</span>
+  </div>
+  <div class="reporte-grid">
+    <div class="reporte-card" onclick="openForm('falla_tienda')">
+      <div class="reporte-card-icon">⚠️</div>
+      <div class="reporte-card-name">Falla en tienda</div>
+      <div class="reporte-card-desc">organización · limpieza · delivery · etiquetas</div>
+    </div>
+    <div class="reporte-card" onclick="openForm('edilicio')">
+      <div class="reporte-card-icon">🏚️</div>
+      <div class="reporte-card-name">Falla edilicia</div>
+      <div class="reporte-card-desc">infraestructura · equipos · instalaciones</div>
+    </div>
+    <div class="reporte-card" onclick="openForm('rotos_vencidos')">
+      <div class="reporte-card-icon">🗑️</div>
+      <div class="reporte-card-name">Rotos / Vencidos</div>
+      <div class="reporte-card-desc">productos dañados o fuera de fecha</div>
+    </div>
+    <div class="reporte-card" onclick="openForm('pedido')">
+      <div class="reporte-card-icon">📦</div>
+      <div class="reporte-card-name">Pedido delivery</div>
+      <div class="reporte-card-desc">cancelados · deducciones · reintegros</div>
+    </div>
+    <div class="reporte-card" onclick="openForm('ticket')">
+      <div class="reporte-card-icon">🎫</div>
+      <div class="reporte-card-name">Ticket de sistema</div>
+      <div class="reporte-card-desc">cambios · errores · artículos nuevos</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ FALLA EN TIENDA ════════════════════ -->
+<div class="screen" id="screen-falla-tienda">
+  <div class="topbar">
+    <div class="topbar-back" onclick="goTo('reporte-tipo')">←</div>
+    <span class="topbar-title">Falla en tienda</span>
+    <span class="topbar-badge" id="badge-ft">—</span>
+  </div>
+  <div class="form-scroll">
+    <div class="form-section">
+      <div class="form-section-title">Categoría</div>
+      <div class="chip-row" id="chips-ft-cat">
+        <div class="chip selected" onclick="selChip(this,'ft-cat')">Organización</div>
+        <div class="chip" onclick="selChip(this,'ft-cat')">Limpieza</div>
+        <div class="chip" onclick="selChip(this,'ft-cat')">Delivery</div>
+        <div class="chip" onclick="selChip(this,'ft-cat')">Cierre de caja</div>
+        <div class="chip" onclick="selChip(this,'ft-cat')">Etiquetas/Precios</div>
+        <div class="chip" onclick="selChip(this,'ft-cat')">Orden de trabajo</div>
+        <div class="chip" onclick="selChip(this,'ft-cat')">Otro</div>
+      </div>
+    </div>
+    <div class="form-section" id="ft-subcats">
+      <div class="form-section-title">¿Qué falla específicamente?</div>
+      <div class="chip-row" id="chips-ft-sub"></div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">Responsable de la falla</div>
+      <select id="ft-responsable">
+        <option value="">— sin responsable específico —</option>
+      </select>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">Descripción adicional</div>
+      <textarea id="ft-desc" placeholder="Detallá si es necesario..." rows="3"></textarea>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">Foto</div>
+      <div class="photo-area" id="photo-ft">
+        <input type="file" accept="image/*" onchange="handlePhoto(this,'ft')">
+        <div class="photo-icon">📷</div>
+        <div class="photo-text">Galería o cámara</div>
+        <div class="photo-sub" id="photo-ft-name">se sube a Google Drive</div>
+      </div>
+    </div>
+  </div>
+  <div class="submit-bar">
+    <button class="submit-btn" id="btn-ft" onclick="submitForm('falla_tienda')">
+      <div class="btn-spinner spinner"></div>
+      <span class="btn-text">Enviar reporte →</span>
+    </button>
+  </div>
+</div>
+
+<!-- ══ EDILICIO ═══════════════════════════ -->
+<div class="screen" id="screen-edilicio">
+  <div class="topbar">
+    <div class="topbar-back" onclick="goTo('reporte-tipo')">←</div>
+    <span class="topbar-title">Falla edilicia</span>
+    <span class="topbar-badge" id="badge-ed">—</span>
+  </div>
+  <div class="form-scroll">
+    <div class="form-section">
+      <div class="form-section-title">Tipo de falla</div>
+      <div class="chip-row">
+        <div class="chip selected" onclick="selChip(this,'ed-tipo')">Lámpara quemada</div>
+        <div class="chip" onclick="selChip(this,'ed-tipo')">Cartel roto</div>
+        <div class="chip" onclick="selChip(this,'ed-tipo')">Publicidad deteriorada</div>
+        <div class="chip" onclick="selChip(this,'ed-tipo')">Rejas/puertas dañadas</div>
+        <div class="chip" onclick="selChip(this,'ed-tipo')">Rotura piso/paredes</div>
+        <div class="chip" onclick="selChip(this,'ed-tipo')">Pintura deteriorada</div>
+        <div class="chip" onclick="selChip(this,'ed-tipo')">Filtraciones</div>
+        <div class="chip" onclick="selChip(this,'ed-tipo')">Roedores</div>
+        <div class="chip" onclick="selChip(this,'ed-tipo')">Equipos periféricos PC</div>
+        <div class="chip" onclick="selChip(this,'ed-tipo')">Posnets/Scanners</div>
+        <div class="chip" onclick="selChip(this,'ed-tipo')">Falla en heladeras</div>
+        <div class="chip" onclick="selChip(this,'ed-tipo')">Equipos sanitarios</div>
+        <div class="chip" onclick="selChip(this,'ed-tipo')">Pérdida de agua</div>
+        <div class="chip" onclick="selChip(this,'ed-tipo')">Falta equipos limpieza</div>
+        <div class="chip" onclick="selChip(this,'ed-tipo')">Falta productos limpieza</div>
+        <div class="chip" onclick="selChip(this,'ed-tipo')">Rotura equipamiento</div>
+        <div class="chip" onclick="selChip(this,'ed-tipo')">Otro</div>
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">Descripción</div>
+      <textarea id="ed-desc" placeholder="Describí la falla con detalle..." rows="3"></textarea>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">Foto</div>
+      <div class="photo-area" id="photo-ed">
+        <input type="file" accept="image/*" onchange="handlePhoto(this,'ed')">
+        <div class="photo-icon">📷</div>
+        <div class="photo-text">Galería o cámara</div>
+        <div class="photo-sub" id="photo-ed-name">se sube a Google Drive</div>
+      </div>
+    </div>
+  </div>
+  <div class="submit-bar">
+    <button class="submit-btn" id="btn-ed" onclick="submitForm('edilicio')">
+      <div class="btn-spinner spinner"></div>
+      <span class="btn-text">Enviar reporte →</span>
+    </button>
+  </div>
+</div>
+
+<!-- ══ ROTOS / VENCIDOS ═══════════════════ -->
+<div class="screen" id="screen-rotos-vencidos">
+  <div class="topbar">
+    <div class="topbar-back" onclick="goTo('reporte-tipo')">←</div>
+    <span class="topbar-title">Rotos / Vencidos</span>
+    <span class="topbar-badge" id="badge-rv">—</span>
+  </div>
+  <div class="form-scroll">
+    <div class="form-section">
+      <div class="form-section-title">Tipo</div>
+      <div class="chip-row">
+        <div class="chip sel-red selected" onclick="selChip(this,'rv-tipo');updateRVTipo(this.textContent)">Roto</div>
+        <div class="chip sel-red" onclick="selChip(this,'rv-tipo');updateRVTipo(this.textContent)">Vencido</div>
+        <div class="chip sel-red" onclick="selChip(this,'rv-tipo');updateRVTipo(this.textContent)">Otro</div>
+      </div>
+    </div>
+    <div id="rv-items-container"></div>
+    <button class="add-item-btn" id="rv-add-btn" onclick="addRVItem()">+ Agregar otro producto</button>
+    <div id="rv-otro-section" style="display:none;margin-top:16px">
+      <div class="form-section">
+        <div class="form-section-title">Descripción</div>
+        <textarea id="rv-otro-desc" placeholder="Describí el problema..." rows="3"></textarea>
+      </div>
+    </div>
+  </div>
+  <div class="submit-bar">
+    <button class="submit-btn" id="btn-rv" onclick="submitForm('rotos_vencidos')">
+      <div class="btn-spinner spinner"></div>
+      <span class="btn-text">Enviar reporte →</span>
+    </button>
+  </div>
+</div>
+
+<!-- ══ PEDIDO ═════════════════════════════ -->
+<div class="screen" id="screen-pedido">
+  <div class="topbar">
+    <div class="topbar-back" onclick="goTo('reporte-tipo')">←</div>
+    <span class="topbar-title">Pedido delivery</span>
+    <span class="topbar-badge" id="badge-ped">—</span>
+  </div>
+  <div class="form-scroll">
+    <div class="form-section">
+      <div class="form-section-title">Plataforma</div>
+      <div class="chip-row">
+        <div class="chip sel-blue selected" onclick="selChip(this,'ped-plat')">PedidosYa</div>
+        <div class="chip sel-blue" onclick="selChip(this,'ped-plat')">MP Delivery</div>
+        <div class="chip sel-blue" onclick="selChip(this,'ped-plat')">Rappi</div>
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">Tipo de incidente</div>
+      <div class="chip-row">
+        <div class="chip selected" onclick="selChip(this,'ped-tipo');updatePedTipo(this.dataset.val)" data-val="cancelado">Cancelado</div>
+        <div class="chip" onclick="selChip(this,'ped-tipo');updatePedTipo(this.dataset.val)" data-val="deduccion">Deducción</div>
+        <div class="chip" onclick="selChip(this,'ped-tipo');updatePedTipo(this.dataset.val)" data-val="reintegro">Reintegro</div>
+        <div class="chip" onclick="selChip(this,'ped-tipo');updatePedTipo(this.dataset.val)" data-val="otro">Otro</div>
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">ID del pedido</div>
+      <input type="text" id="ped-id" placeholder="Número de orden de la plataforma">
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">ID FácilVirtual</div>
+      <input type="text" id="ped-fv" placeholder="ID en el sistema">
+    </div>
+    <!-- Cancelado -->
+    <div id="ped-sec-cancelado">
+      <div class="grid-2">
+        <div class="form-section"><div class="form-section-title">Fecha</div><input type="date" id="ped-fecha"></div>
+        <div class="form-section"><div class="form-section-title">Hora</div><input type="time" id="ped-hora"></div>
+      </div>
+      <div class="form-section">
+        <div class="form-section-title">Monto total del pedido</div>
+        <input type="number" id="ped-monto-total" placeholder="$ 0.00">
+      </div>
+      <div class="form-section">
+        <div class="form-section-title">Artículos del pedido</div>
+        <textarea id="ped-articulos" placeholder="Listá los artículos..." rows="3"></textarea>
+      </div>
+    </div>
+    <!-- Deducción -->
+    <div id="ped-sec-deduccion" style="display:none">
+      <div class="form-section">
+        <div class="form-section-title">Monto deducido</div>
+        <input type="number" id="ped-monto-deduccion" placeholder="$ 0.00">
+      </div>
+      <div class="form-section">
+        <div class="form-section-title">Artículo / motivo</div>
+        <input type="text" id="ped-art-reclamo" placeholder="Nombre del artículo o motivo">
+      </div>
+      <div class="form-section">
+        <div class="form-section-title">Explicación</div>
+        <textarea id="ped-explicacion" placeholder="Detallá qué pasó..." rows="3"></textarea>
+      </div>
+    </div>
+    <!-- Reintegro -->
+    <div id="ped-sec-reintegro" style="display:none">
+      <div class="form-section">
+        <div class="form-section-title">Monto reintegrado</div>
+        <input type="number" id="ped-monto-reintegro" placeholder="$ 0.00">
+      </div>
+      <div class="form-section">
+        <div class="form-section-title">Motivo del reintegro</div>
+        <input type="text" id="ped-motivo-reintegro" placeholder="Describí el motivo">
+      </div>
+    </div>
+    <!-- Responsable -->
+    <div id="ped-sec-responsable">
+      <div class="form-section">
+        <div class="form-section-title">Responsable</div>
+        <div class="chip-row" id="chips-ped-resp">
+          <div class="chip selected" onclick="selChip(this,'ped-resp');updatePedResp(this.dataset.val)" data-val="empleado">Empleado</div>
+          <div class="chip" onclick="selChip(this,'ped-resp');updatePedResp(this.dataset.val)" data-val="plataforma">Plataforma</div>
+          <div class="chip" onclick="selChip(this,'ped-resp');updatePedResp(this.dataset.val)" data-val="rider">Rider</div>
+          <div class="chip" onclick="selChip(this,'ped-resp');updatePedResp(this.dataset.val)" data-val="cliente">Cliente</div>
+        </div>
+      </div>
+      <div id="ped-resp-empleado-sec">
+        <div class="form-section">
+          <div class="form-section-title">Empleado responsable</div>
+          <select id="ped-resp-empleado"><option value="">— seleccioná un empleado —</option></select>
+        </div>
+      </div>
+      <div id="ped-resp-plataforma-sec" style="display:none">
+        <div class="form-section">
+          <div class="form-section-title">¿Qué plataforma?</div>
+          <div class="chip-row">
+            <div class="chip sel-blue selected" onclick="selChip(this,'ped-plat-resp')">PedidosYa</div>
+            <div class="chip sel-blue" onclick="selChip(this,'ped-plat-resp')">MP Delivery</div>
+            <div class="chip sel-blue" onclick="selChip(this,'ped-plat-resp')">Rappi</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Otro -->
+    <div id="ped-sec-otro" style="display:none">
+      <div class="form-section">
+        <div class="form-section-title">Descripción</div>
+        <textarea id="ped-otro-desc" placeholder="Describí el problema..." rows="4"></textarea>
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">Foto (opcional)</div>
+      <div class="photo-area" id="photo-ped">
+        <input type="file" accept="image/*" onchange="handlePhoto(this,'ped')">
+        <div class="photo-icon">📷</div>
+        <div class="photo-text">Galería o cámara</div>
+        <div class="photo-sub" id="photo-ped-name">opcional</div>
+      </div>
+    </div>
+  </div>
+  <div class="submit-bar">
+    <button class="submit-btn" id="btn-ped" onclick="submitForm('pedido')">
+      <div class="btn-spinner spinner"></div>
+      <span class="btn-text">Enviar reporte →</span>
+    </button>
+  </div>
+</div>
+
+<!-- ══ TICKET ══════════════════════════════ -->
+<div class="screen" id="screen-ticket">
+  <div class="topbar">
+    <div class="topbar-back" onclick="goTo('reporte-tipo')">←</div>
+    <span class="topbar-title">Ticket de sistema</span>
+    <span class="topbar-badge" id="badge-tk">—</span>
+  </div>
+  <div class="form-scroll">
+    <div class="ticket-notice">⊞ Este ticket queda en cola de resolución para el administrador.</div>
+    <div class="form-section">
+      <div class="form-section-title">Tipo de ticket</div>
+      <div class="chip-row">
+        <div class="chip selected" onclick="selChip(this,'tk-tipo');updateTkTipo(this.dataset.val)" data-val="cambio_cb">Cambio de CB</div>
+        <div class="chip" onclick="selChip(this,'tk-tipo');updateTkTipo(this.dataset.val)" data-val="articulo_nuevo">Artículo nuevo</div>
+        <div class="chip" onclick="selChip(this,'tk-tipo');updateTkTipo(this.dataset.val)" data-val="ajuste_stock">Ajuste de stock</div>
+        <div class="chip" onclick="selChip(this,'tk-tipo');updateTkTipo(this.dataset.val)" data-val="error_precio">Error de precio</div>
+        <div class="chip" onclick="selChip(this,'tk-tipo');updateTkTipo(this.dataset.val)" data-val="error_nombre">Error de nombre</div>
+        <div class="chip" onclick="selChip(this,'tk-tipo');updateTkTipo(this.dataset.val)" data-val="otro">Otro</div>
+      </div>
+    </div>
+    <div id="tk-sec-items">
+      <div id="tk-items-container"></div>
+      <button class="add-item-btn" id="tk-add-btn" onclick="addTkItem()">+ Agregar otro artículo</button>
+    </div>
+    <div id="tk-sec-stock" style="display:none">
+      <div class="form-section"><div class="form-section-title">Artículo</div><input type="text" id="tk-stock-art" placeholder="Nombre exacto"></div>
+      <div class="form-section">
+        <div class="form-section-title">¿Sumar o restar?</div>
+        <div class="toggle-row">
+          <div class="toggle-opt" onclick="selToggle(this,'tk-stock-op','sumar')" id="tks-sum">Sumar</div>
+          <div class="toggle-opt" onclick="selToggle(this,'tk-stock-op','restar')" id="tks-res">Restar</div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="form-section"><div class="form-section-title">Cantidad</div><input type="number" id="tk-stock-cant" placeholder="0"></div>
+        <div class="form-section"><div class="form-section-title">Motivo</div><select id="tk-stock-motivo"><option>Factura/remito</option><option>Venta</option><option>Otro</option></select></div>
+      </div>
+      <div class="form-section"><div class="form-section-title">Comentarios</div><textarea id="tk-stock-comentario" rows="2" placeholder="Detalles adicionales..."></textarea></div>
+    </div>
+    <div id="tk-sec-precio" style="display:none">
+      <div class="form-section"><div class="form-section-title">Artículo o promoción</div><input type="text" id="tk-precio-art" placeholder="Nombre exacto"></div>
+      <div class="form-section">
+        <div class="form-section-title">Ubicación del error</div>
+        <div class="chip-row">
+          <div class="chip selected" onclick="selChip(this,'tk-precio-ubi')">Tienda</div>
+          <div class="chip" onclick="selChip(this,'tk-precio-ubi')">PedidosYa</div>
+          <div class="chip" onclick="selChip(this,'tk-precio-ubi')">Mercadopago</div>
+          <div class="chip" onclick="selChip(this,'tk-precio-ubi')">Rappi</div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="form-section"><div class="form-section-title">Precio con error</div><input type="number" id="tk-precio-error" placeholder="$ 0"></div>
+        <div class="form-section"><div class="form-section-title">Precio correcto</div><input type="number" id="tk-precio-correcto" placeholder="$ 0"></div>
+      </div>
+    </div>
+    <div id="tk-sec-nombre" style="display:none">
+      <div class="form-section"><div class="form-section-title">Artículo con error</div><input type="text" id="tk-nombre-error" placeholder="Nombre incorrecto actual"></div>
+      <div class="form-section"><div class="form-section-title">Nombre correcto</div><input type="text" id="tk-nombre-correcto" placeholder="Cómo debería llamarse"></div>
+      <div class="form-section">
+        <div class="form-section-title">Ubicación</div>
+        <div class="chip-row">
+          <div class="chip selected" onclick="selChip(this,'tk-nombre-ubi')">Tienda</div>
+          <div class="chip" onclick="selChip(this,'tk-nombre-ubi')">PedidosYa</div>
+          <div class="chip" onclick="selChip(this,'tk-nombre-ubi')">Mercadopago</div>
+          <div class="chip" onclick="selChip(this,'tk-nombre-ubi')">Rappi</div>
+        </div>
+      </div>
+    </div>
+    <div id="tk-sec-otro" style="display:none">
+      <div class="form-section"><div class="form-section-title">Descripción</div><textarea id="tk-otro-desc" placeholder="Describí el problema..." rows="4"></textarea></div>
+    </div>
+    <div class="form-section" style="margin-top:8px">
+      <div class="form-section-title">Foto (recomendado)</div>
+      <div class="photo-area" id="photo-tk">
+        <input type="file" accept="image/*" onchange="handlePhoto(this,'tk')">
+        <div class="photo-icon">📷</div>
+        <div class="photo-text">Galería o cámara</div>
+        <div class="photo-sub" id="photo-tk-name">se sube a Google Drive</div>
+      </div>
+    </div>
+  </div>
+  <div class="submit-bar">
+    <button class="submit-btn" id="btn-tk" onclick="submitForm('ticket')">
+      <div class="btn-spinner spinner"></div>
+      <span class="btn-text">Enviar ticket →</span>
+    </button>
+  </div>
+</div>
+
+<!-- ══ SUCCESS ════════════════════════════ -->
+<div class="screen" id="screen-success">
+  <div class="topbar">
+    <div class="topbar-back" onclick="goTo('hub')">←</div>
+    <span class="topbar-title">Enviado</span>
+  </div>
+  <div class="success-screen">
+    <div class="success-ring">✓</div>
+    <div class="success-title">Reporte registrado</div>
+    <div class="success-sub" id="success-sub">Quedó guardado con fecha y hora.<br>El admin puede verlo en el dashboard.</div>
+    <div class="success-meta" id="success-meta"></div>
+    <button class="new-btn" onclick="goTo('reporte-tipo')">Hacer otro reporte</button>
+    <div style="height:10px"></div>
+    <button class="new-btn" style="border-color:transparent;color:var(--text3)" onclick="goBack()">Volver al inicio</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════
+const SUPABASE_URL = 'https://oiuualqixcccfhtpcist.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pdXVhbHFpeGNjY2ZodHBjaXN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NzUxNjEsImV4cCI6MjA4OTQ1MTE2MX0.ms4MHVhKDTKfID0WGi05EFPySf350SA66uNi4wPfsOo';
+
+const DRIVE_FOLDERS = {
+  falla_tienda:   '1hn9ZtrlHX_iktOOgCF2362x8mOyZxGUy',
+  edilicio:       '1s_aevibI1ICB204AsjbABi_dLU-Ik0wl',
+  rotos_vencidos: '1DL-Jx09UcDu399NrXogHWg5tvcS2jjQe',
+  pedido:         '1OKZvQei5U4AwR2z8yCRLLOSBhMEOwZT5',
+  ticket:         '1esO2aKwGoR0ITNksATPveRyCI_2sovL4',
+};
+
+const LOCALES = {
+  palermo:     'Thames · Palermo',
+  belgrano:    'Roosevelt · Belgrano',
+  barrio_chino:'Juramento · B. Chino',
+  san_telmo:   'Independencia · S. Telmo',
+};
+
+const TIPO_LABELS = {
+  falla_tienda:   'Falla en tienda',
+  edilicio:       'Falla edilicia',
+  rotos_vencidos: 'Rotos / Vencidos',
+  pedido:         'Pedido delivery',
+  ticket:         'Ticket de sistema',
+};
+
+// ═══════════════════════════════════════
+// STATE — recibido por postMessage
+// ═══════════════════════════════════════
+let ctx = {
+  local: null, localName: '', empleado_id: null,
+  empleado_nombre: '', turno: null, rol: 'empleado',
+};
+let photos = {};
+let rvItemCount = 0;
+let tkItemCount = 0;
+let tkTipo = 'cambio_cb';
+let pedTipo = 'cancelado';
+let pedResp = 'empleado';
+
+// ═══════════════════════════════════════
+// POSTMESSAGE — recibir contexto del hub
+// ═══════════════════════════════════════
+window.addEventListener('message', e => {
+  if (e.data?.type === 'break-context-reportes') {
+    ctx = { ...ctx, ...e.data };
+    updateBadges();
+    cargarEmpleados();
+  }
+});
+
+function updateBadges() {
+  const label = LOCALES[ctx.local] || ctx.localName || '—';
+  ['badge-local-tipo','badge-ft','badge-ed','badge-rv','badge-ped','badge-tk'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = label;
+  });
+}
+
+function goBack() {
+  window.parent.postMessage({ type: 'reportes-back' }, '*');
+}
+
+// ═══════════════════════════════════════
+// SUPABASE
+// ═══════════════════════════════════════
+let _appSecret = null;
+
+async function sbLoadAppSecret() {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/config?clave=eq.app_secret&select=valor`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json' }
+    });
+    if (res.ok) { const data = await res.json(); _appSecret = data?.[0]?.valor || null; }
+  } catch(e) { console.warn('[Break] No se pudo cargar app_secret:', e); }
+}
+
+async function sbFetch(path, opts = {}) {
+  if (!_appSecret) await sbLoadAppSecret();
+  const { extraHeaders, ...fetchOpts } = opts;
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    headers: {
+      'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json', 'Prefer': 'return=representation',
+      ...(_appSecret ? { 'x-app-secret': _appSecret } : {}),
+      ...opts.headers, ...(extraHeaders || {}),
+    },
+    ...fetchOpts
+  });
+  if (!res.ok) { const err = await res.text(); throw new Error(err); }
+  return res.status === 204 ? null : res.json();
+}
+
+// ═══════════════════════════════════════
+// GOOGLE DRIVE
+// ═══════════════════════════════════════
+const OAUTH_CLIENT_ID = '780824362766-h1te7jdtsjbfourv1vhvg6ipevc603ms.apps.googleusercontent.com';
+const OAUTH_SCOPE     = 'https://www.googleapis.com/auth/drive.file';
+let _driveToken = null, _driveTokenExp = 0, _gisClient = null;
+
+function driveGetOAuthToken() {
+  return new Promise((resolve, reject) => {
+    if (_driveToken && Date.now() < _driveTokenExp - 120000) return resolve(_driveToken);
+    if (!_gisClient) {
+      if (!window.google?.accounts?.oauth2) return reject(new Error('Google Identity Services no cargó aún. Intentá de nuevo.'));
+      _gisClient = google.accounts.oauth2.initTokenClient({
+        client_id: OAUTH_CLIENT_ID, scope: OAUTH_SCOPE,
+        callback: (resp) => {
+          if (resp.error) return reject(new Error('OAuth error: ' + resp.error));
+          _driveToken = resp.access_token;
+          _driveTokenExp = Date.now() + (resp.expires_in || 3600) * 1000;
+          resolve(_driveToken);
+        },
+      });
+    }
+    _gisClient.requestAccessToken();
+  });
+}
+
+async function driveGetOrCreateFolder(token, parentId, name) {
+  const q = encodeURIComponent(`name='${name}' and '${parentId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`);
+  const r = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id)`, { headers: { Authorization: `Bearer ${token}` } });
+  if (!r.ok) { const err = await r.json().catch(() => ({})); throw new Error(`Drive folder search ${r.status}: ${err?.error?.message || 'sin acceso'}`); }
+  const d = await r.json();
+  if (d.files?.length > 0) return d.files[0].id;
+  const cr = await fetch('https://www.googleapis.com/drive/v3/files', {
+    method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, mimeType: 'application/vnd.google-apps.folder', parents: [parentId] })
+  });
+  if (!cr.ok) { const err = await cr.json().catch(() => ({})); throw new Error(`Drive folder create ${cr.status}: ${err?.error?.message}`); }
+  const cd = await cr.json();
+  if (!cd.id) throw new Error('Drive no devolvió ID de carpeta');
+  return cd.id;
+}
+
+async function uploadToDrive(file, formType, localKey) {
+  try {
+    const token = await driveGetOAuthToken();
+    const folderId = DRIVE_FOLDERS[formType];
+    if (!folderId) throw new Error(`Sin carpeta para tipo: ${formType}`);
+    const localName = LOCALES[localKey] || localKey;
+    const subFolderId = await driveGetOrCreateFolder(token, folderId, localName);
+    const ts = new Date().toISOString().replace(/[:.]/g, '-');
+    const ext = file.name.split('.').pop();
+    const fileName = `${formType}_${localKey}_${ts}.${ext}`;
+    const metadata = JSON.stringify({ name: fileName, parents: [subFolderId] });
+    const form = new FormData();
+    form.append('metadata', new Blob([metadata], { type: 'application/json' }));
+    form.append('file', file);
+    const uploadRes = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink', {
+      method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: form
+    });
+    const uploadData = await uploadRes.json();
+    if (!uploadRes.ok) throw new Error(`Drive upload ${uploadRes.status}: ${uploadData?.error?.message}`);
+    return uploadData.webViewLink || `https://drive.google.com/file/d/${uploadData.id}/view`;
+  } catch(e) { console.error('Drive upload error:', e); return null; }
+}
+
+// ═══════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════
+const SCREEN_MAP = {
+  'reporte-tipo': 'screen-reporte-tipo',
+  'falla_tienda': 'screen-falla-tienda',
+  'edilicio':     'screen-edilicio',
+  'rotos_vencidos':'screen-rotos-vencidos',
+  'pedido':       'screen-pedido',
+  'ticket':       'screen-ticket',
+  'success':      'screen-success',
+  'hub':          'reporte-tipo',
+};
+
+function goTo(screen) {
+  if (screen === 'hub') { goBack(); return; }
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const id = SCREEN_MAP[screen] || ('screen-' + screen);
+  const el = document.getElementById(id);
+  if (el) el.classList.add('active');
+}
+
+function openForm(tipo) {
+  if (tipo === 'rotos_vencidos') { initRVItems(); }
+  if (tipo === 'pedido') {
+    pedResp = 'empleado';
+    updatePedTipo('cancelado');
+    document.querySelectorAll('[data-val].chip[onclick*="ped-tipo"]').forEach(c => c.classList.remove('selected'));
+    const ch = document.querySelector('[data-val="cancelado"]');
+    if (ch) ch.classList.add('selected');
+  }
+  if (tipo === 'ticket') {
+    document.querySelectorAll('[onclick*="tk-tipo"]').forEach(c => c.classList.remove('selected'));
+    const cbChip = document.querySelector('[data-val="cambio_cb"]');
+    if (cbChip) cbChip.classList.add('selected');
+    updateTkTipo('cambio_cb');
+  }
+  goTo(tipo);
+}
+
+// ═══════════════════════════════════════
+// UTILIDADES
+// ═══════════════════════════════════════
+function selChip(el, group) {
+  el.closest('.chip-row').querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function selToggle(el, group, val) {
+  document.querySelectorAll(`[onclick*="${group}"]`).forEach(e => e.classList.remove('selected-yes','selected-no'));
+  el.classList.add(val === 'yes' ? 'selected-yes' : 'selected-no');
+}
+
+let toastTimer;
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = `show ${type}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.className = ''; }, 2800);
+}
+
+function handlePhoto(input, key) {
+  const file = input.files[0];
+  if (!file) return;
+  photos[key] = file;
+  const nameEl = document.getElementById(`photo-${key}-name`);
+  const area = input.closest('.photo-area');
+  if (nameEl) nameEl.textContent = file.name;
+  if (area) area.classList.add('has-file');
+}
+
+// ═══════════════════════════════════════
+// EMPLEADOS — cargar para selectores
+// ═══════════════════════════════════════
+async function cargarEmpleados() {
+  try {
+    const cuentas = await sbFetch('cuentas?tipo=eq.empleado&order=nombre.asc&select=id,nombre,rol');
+    // ft-responsable
+    const selResp = document.getElementById('ft-responsable');
+    if (selResp && selResp.options.length <= 1) {
+      (cuentas||[]).forEach(e => {
+        const opt = document.createElement('option');
+        opt.value = e.id; opt.textContent = e.nombre;
+        selResp.appendChild(opt);
+      });
+    }
+    // ped-resp-empleado
+    const selPed = document.getElementById('ped-resp-empleado');
+    if (selPed && selPed.options.length <= 1) {
+      (cuentas||[]).forEach(e => {
+        const opt = document.createElement('option');
+        opt.value = e.id; opt.textContent = e.nombre;
+        selPed.appendChild(opt);
+      });
+    }
+  } catch(e) { console.warn('No se pudieron cargar empleados:', e); }
+}
+
+// ═══════════════════════════════════════
+// FALLA TIENDA — subcategorías
+// ═══════════════════════════════════════
+const FT_SUBS = {
+  'Organización': ['Productos sin enfriar','Sin exhibir','Lugar incorrecto','Cajas mal ubicadas','Falta bolsas/vasos','Sin reponer en góndolas'],
+  'Limpieza': ['Espacio de trabajo','Baño','Góndolas','Caramelera','Heladeras','Piso','Vereda','Otro'],
+  'Delivery': ['Tienda cerrada sin auth','Hielo desactivado sin auth','Productos sin activar','Error armado pedido / cancelación','Limitación cantidades sin auth'],
+  'Cierre de caja': ['Diferencia de caja','Error en billetes','Sin cierre registrado','Otro'],
+  'Etiquetas/Precios': ['Precio incorrecto','Sin etiqueta','Etiqueta ilegible','Otro'],
+  'Orden de trabajo': ['No llenó planilla OT','No pasó foto de factura','No registró factura','No exhibió artículos','No activó en delivery','Error registro cantidades','Error artículo incorrecto','No informó falta de hielo'],
+  'Otro': [],
+};
+
+document.getElementById('chips-ft-cat')?.addEventListener('click', e => {
+  const chip = e.target.closest('.chip');
+  if (!chip) return;
+  setTimeout(() => {
+    const cat = chip.textContent.trim();
+    const subs = FT_SUBS[cat] || [];
+    const row = document.getElementById('chips-ft-sub');
+    const sec = document.getElementById('ft-subcats');
+    if (!row || !sec) return;
+    if (!subs.length) { sec.style.display = 'none'; return; }
+    sec.style.display = 'block';
+    row.innerHTML = subs.map((s, i) =>
+      `<div class="chip${i===0?' selected':''}" onclick="selChip(this,'ft-sub')">${s}</div>`
+    ).join('');
+  }, 50);
+});
+
+// ═══════════════════════════════════════
+// ROTOS / VENCIDOS
+// ═══════════════════════════════════════
+function initRVItems() {
+  rvItemCount = 0;
+  document.getElementById('rv-items-container').innerHTML = '';
+  document.getElementById('rv-otro-section').style.display = 'none';
+  document.getElementById('rv-add-btn').style.display = 'block';
+  addRVItem();
+}
+
+function updateRVTipo(tipo) {
+  const isOtro = tipo === 'Otro';
+  document.getElementById('rv-otro-section').style.display = isOtro ? 'block' : 'none';
+  document.getElementById('rv-items-container').style.display = isOtro ? 'none' : 'block';
+  document.getElementById('rv-add-btn').style.display = isOtro ? 'none' : 'block';
+  if (!isOtro && rvItemCount === 0) addRVItem();
+}
+
+function addRVItem() {
+  rvItemCount++;
+  const n = rvItemCount;
+  const isVenc = document.querySelector('.chip.sel-red.selected')?.textContent?.trim() === 'Vencido';
+  const container = document.getElementById('rv-items-container');
+  const div = document.createElement('div');
+  div.className = 'item-card'; div.id = `rv-item-${n}`;
+  div.innerHTML = `
+    <div class="item-card-header">Producto ${n}</div>
+    <input type="text" id="rv-nombre-${n}" placeholder="Nombre exacto del artículo" style="margin-bottom:8px">
+    <input type="text" id="rv-pres-${n}" placeholder="Presentación (500ml, 1kg, etc.)" style="margin-bottom:8px">
+    <div class="grid-2">
+      <input type="number" id="rv-cant-${n}" placeholder="Cantidad" style="margin:0">
+      <input type="number" id="rv-precio-${n}" placeholder="Precio venta $" style="margin:0">
+    </div>
+    ${isVenc ? `<div style="margin-top:8px"><input type="date" id="rv-venc-${n}"></div>` : ''}
+    <div style="margin-top:10px">
+      <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);margin-bottom:6px">Responsable</div>
+      <div class="chip-row" id="rv-resp-chips-${n}">
+        <div class="chip selected" onclick="selChip(this,'rv-resp-${n}');rvRespChange(${n},this.dataset.val)" data-val="empresa">Empresa</div>
+        <div class="chip" onclick="selChip(this,'rv-resp-${n}');rvRespChange(${n},this.dataset.val)" data-val="empleado">Empleado</div>
+        <div class="chip" onclick="selChip(this,'rv-resp-${n}');rvRespChange(${n},this.dataset.val)" data-val="cliente">Cliente</div>
+        <div class="chip" onclick="selChip(this,'rv-resp-${n}');rvRespChange(${n},this.dataset.val)" data-val="proveedor">Proveedor</div>
+      </div>
+      <div id="rv-resp-prov-sec-${n}" style="display:none;margin-top:8px">
+        <input type="text" id="rv-resp-prov-${n}" placeholder="Nombre del proveedor" style="margin:0">
+      </div>
+    </div>
+    <div class="photo-area" id="photo-rv-${n}" style="margin-top:10px">
+      <input type="file" accept="image/*" onchange="handlePhoto(this,'rv-${n}')">
+      <div class="photo-icon" style="font-size:16px">📷</div>
+      <div class="photo-text" style="font-size:12px">Galería o cámara</div>
+      <div class="photo-sub" id="photo-rv-${n}-name">adjuntar imagen</div>
+    </div>
+  `;
+  container.appendChild(div);
+}
+
+function rvRespChange(n, resp) {
+  const provSec = document.getElementById('rv-resp-prov-sec-' + n);
+  if (provSec) provSec.style.display = resp === 'proveedor' ? 'block' : 'none';
+}
+
+// ═══════════════════════════════════════
+// TICKET
+// ═══════════════════════════════════════
+function updateTkTipo(tipo) {
+  tkTipo = tipo;
+  ['items','stock','precio','nombre','otro'].forEach(s => {
+    const el = document.getElementById(`tk-sec-${s}`);
+    if (el) el.style.display = 'none';
+  });
+  if (['cambio_cb','articulo_nuevo'].includes(tipo)) {
+    document.getElementById('tk-sec-items').style.display = 'block';
+    document.getElementById('tk-add-btn').style.display = 'block';
+    const cont = document.getElementById('tk-items-container');
+    if (cont) cont.innerHTML = '';
+    tkItemCount = 0;
+    addTkItem();
+  } else if (tipo === 'ajuste_stock') {
+    document.getElementById('tk-sec-stock').style.display = 'block';
+  } else if (tipo === 'error_precio') {
+    document.getElementById('tk-sec-precio').style.display = 'block';
+  } else if (tipo === 'error_nombre') {
+    document.getElementById('tk-sec-nombre').style.display = 'block';
+  } else {
+    document.getElementById('tk-sec-otro').style.display = 'block';
+  }
+}
+
+function addTkItem() {
+  tkItemCount++;
+  const n = tkItemCount;
+  const isCB  = tkTipo === 'cambio_cb';
+  const isNew = tkTipo === 'articulo_nuevo';
+  const container = document.getElementById('tk-items-container');
+  const div = document.createElement('div');
+  div.className = 'item-card';
+  div.innerHTML = `
+    <div class="item-card-header">Artículo ${n}</div>
+    <input type="text" id="tk-nombre-${n}" placeholder="Nombre exacto del artículo" style="margin-bottom:8px">
+    <input type="text" id="tk-pres-${n}" placeholder="Presentación (litros, gramos...)" style="margin-bottom:8px">
+    <input type="text" id="tk-cb-${n}" placeholder="${isCB ? 'Nuevo código de barras' : 'Código de barras'}" style="margin-bottom:8px">
+    ${isNew ? `
+      <div class="grid-2" style="margin-bottom:8px">
+        <input type="number" id="tk-costo-${n}" placeholder="Precio costo $" style="margin:0">
+        <input type="number" id="tk-pventa-${n}" placeholder="Precio venta $" style="margin:0">
+      </div>
+      <div class="grid-2" style="margin-bottom:8px">
+        <input type="number" id="tk-cant-${n}" placeholder="Cantidad recibida" style="margin:0">
+        <input type="text" id="tk-prov-${n}" placeholder="Nombre del proveedor" style="margin:0">
+      </div>
+    ` : ''}
+    <div class="photo-area" id="photo-tki-${n}" style="margin-top:4px">
+      <input type="file" accept="image/*" onchange="handlePhoto(this,'tki-${n}')">
+      <div class="photo-icon" style="font-size:16px">📷</div>
+      <div class="photo-text" style="font-size:12px">Galería o cámara</div>
+      <div class="photo-sub" id="photo-tki-${n}-name">recomendado</div>
+    </div>
+  `;
+  container.appendChild(div);
+}
+
+// ═══════════════════════════════════════
+// PEDIDO
+// ═══════════════════════════════════════
+function updatePedTipo(tipo) {
+  pedTipo = tipo;
+  document.getElementById('ped-sec-cancelado').style.display  = tipo === 'cancelado'  ? 'block' : 'none';
+  document.getElementById('ped-sec-deduccion').style.display  = tipo === 'deduccion'  ? 'block' : 'none';
+  document.getElementById('ped-sec-reintegro').style.display  = tipo === 'reintegro'  ? 'block' : 'none';
+  document.getElementById('ped-sec-responsable').style.display = tipo !== 'otro'      ? 'block' : 'none';
+  document.getElementById('ped-sec-otro').style.display       = tipo === 'otro'       ? 'block' : 'none';
+  updatePedResp('empleado');
+  document.querySelectorAll('#chips-ped-resp .chip').forEach(c => c.classList.remove('selected'));
+  const empChip = document.querySelector('#chips-ped-resp .chip[data-val="empleado"]');
+  if (empChip) empChip.classList.add('selected');
+}
+
+function updatePedResp(resp) {
+  pedResp = resp;
+  document.getElementById('ped-resp-empleado-sec').style.display   = resp === 'empleado'   ? 'block' : 'none';
+  document.getElementById('ped-resp-plataforma-sec').style.display  = resp === 'plataforma'  ? 'block' : 'none';
+}
+
+// ═══════════════════════════════════════
+// SUBMIT
+// ═══════════════════════════════════════
+async function submitForm(tipo) {
+  const btnId = { falla_tienda:'btn-ft', edilicio:'btn-ed', rotos_vencidos:'btn-rv', pedido:'btn-ped', ticket:'btn-tk' }[tipo];
+  const btn = document.getElementById(btnId);
+  btn.classList.add('loading'); btn.disabled = true;
+  try {
+    let fotoUrl = null;
+    const fotoKey = { falla_tienda:'ft', edilicio:'ed', pedido:'ped', ticket:'tk' }[tipo];
+    if (fotoKey && photos[fotoKey]) {
+      showToast('Subiendo foto...', '');
+      fotoUrl = await uploadToDrive(photos[fotoKey], tipo, ctx.local);
+    }
+    const reporte = {
+      tipo,
+      local:          ctx.local || null,
+      empleado_id:    ctx.empleado_id,
+      turno:          ctx.turno,
+      foto_url:       fotoUrl,
+      datos_json:     buildDatosJson(tipo),
+      subtipo:        getSubtipo(tipo),
+      responsable_id: getResponsable(tipo),
+      descripcion:    getDescripcion(tipo),
+    };
+    const result = await sbFetch('reportes', { method: 'POST', body: JSON.stringify(reporte) });
+    const reporteId = result?.[0]?.id;
+    if (!reporteId) throw new Error('No se obtuvo ID del reporte guardado');
+    if (tipo === 'rotos_vencidos' && rvItemCount > 0) await saveRVItems(reporteId);
+    if (tipo === 'ticket' && ['cambio_cb','articulo_nuevo'].includes(tkTipo)) await saveTkItems(reporteId);
+    showSuccess(tipo);
+    resetFotos(tipo);
+  } catch(e) {
+    console.error(e);
+    showToast('Error al enviar. Intentá de nuevo.', 'error');
+  } finally {
+    btn.classList.remove('loading'); btn.disabled = false;
+  }
+}
+
+function buildDatosJson(tipo) {
+  if (tipo === 'falla_tienda') return {
+    categoria: document.querySelector('#chips-ft-cat .chip.selected')?.textContent?.trim(),
+    subfalla:  document.querySelector('#chips-ft-sub .chip.selected')?.textContent?.trim(),
+  };
+  if (tipo === 'edilicio') return {
+    tipo_falla: document.querySelector('.chip.selected[onclick*="ed-tipo"]')?.textContent?.trim()
+  };
+  if (tipo === 'pedido') {
+    const resp = pedResp || 'empleado';
+    const respEmpleadoId = resp === 'empleado'   ? (document.getElementById('ped-resp-empleado')?.value || null) : null;
+    const respPlataforma = resp === 'plataforma' ? (document.querySelector('#ped-resp-plataforma-sec .chip.sel-blue.selected')?.textContent?.trim() || null) : null;
+    const base = {
+      tipo_pedido:             pedTipo,
+      plataforma:              document.querySelector('.chip.sel-blue.selected')?.textContent?.trim(),
+      id_pedido:               document.getElementById('ped-id')?.value || null,
+      id_facilvirtual:         document.getElementById('ped-fv')?.value || null,
+      responsable_tipo:        resp,
+      responsable_empleado_id: respEmpleadoId,
+      responsable_plataforma:  respPlataforma,
+    };
+    if (pedTipo === 'cancelado') {
+      base.fecha       = document.getElementById('ped-fecha')?.value || null;
+      base.hora        = document.getElementById('ped-hora')?.value || null;
+      base.monto_total = document.getElementById('ped-monto-total')?.value || null;
+      base.articulos   = document.getElementById('ped-articulos')?.value || null;
+    } else if (pedTipo === 'deduccion') {
+      base.monto_deduccion  = document.getElementById('ped-monto-deduccion')?.value || null;
+      base.articulo_reclamo = document.getElementById('ped-art-reclamo')?.value || null;
+      base.explicacion      = document.getElementById('ped-explicacion')?.value || null;
+    } else if (pedTipo === 'reintegro') {
+      base.monto_reintegro  = document.getElementById('ped-monto-reintegro')?.value || null;
+      base.motivo_reintegro = document.getElementById('ped-motivo-reintegro')?.value || null;
+    }
+    return base;
+  }
+  if (tipo === 'ticket') {
+    if (tkTipo === 'ajuste_stock') return {
+      articulo:  document.getElementById('tk-stock-art')?.value,
+      operacion: document.getElementById('tks-sum')?.classList.contains('selected-yes') ? 'sumar' : 'restar',
+      cantidad:  document.getElementById('tk-stock-cant')?.value,
+      motivo:    document.getElementById('tk-stock-motivo')?.value,
+    };
+    if (tkTipo === 'error_precio') return {
+      articulo:        document.getElementById('tk-precio-art')?.value,
+      precio_error:    document.getElementById('tk-precio-error')?.value,
+      precio_correcto: document.getElementById('tk-precio-correcto')?.value,
+      ubicacion:       document.querySelector('.chip.selected[onclick*="tk-precio-ubi"]')?.textContent?.trim(),
+    };
+    if (tkTipo === 'error_nombre') return {
+      nombre_error:    document.getElementById('tk-nombre-error')?.value,
+      nombre_correcto: document.getElementById('tk-nombre-correcto')?.value,
+      ubicacion:       document.querySelector('.chip.selected[onclick*="tk-nombre-ubi"]')?.textContent?.trim(),
+    };
+    return { tipo_ticket: tkTipo };
+  }
+  return {};
+}
+
+function getSubtipo(tipo) {
+  if (tipo === 'falla_tienda')   return document.querySelector('#chips-ft-cat .chip.selected')?.textContent?.trim();
+  if (tipo === 'edilicio')       return document.querySelector('.chip.selected[onclick*="ed-tipo"]')?.textContent?.trim();
+  if (tipo === 'rotos_vencidos') return document.querySelector('.chip.sel-red.selected')?.textContent?.trim();
+  if (tipo === 'pedido')         return pedTipo;
+  if (tipo === 'ticket')         return tkTipo;
+  return null;
+}
+
+function getResponsable(tipo) {
+  if (tipo === 'falla_tienda') return document.getElementById('ft-responsable')?.value || null;
+  return null;
+}
+
+function getDescripcion(tipo) {
+  if (tipo === 'falla_tienda')   return document.getElementById('ft-desc')?.value || null;
+  if (tipo === 'edilicio')       return document.getElementById('ed-desc')?.value || null;
+  if (tipo === 'pedido' && pedTipo === 'otro') return document.getElementById('ped-otro-desc')?.value || null;
+  if (tipo === 'ticket' && tkTipo === 'otro')  return document.getElementById('tk-otro-desc')?.value || null;
+  if (tipo === 'rotos_vencidos') return document.getElementById('rv-otro-desc')?.value || null;
+  return null;
+}
+
+async function saveRVItems(reporteId) {
+  const items = [];
+  for (let i = 1; i <= rvItemCount; i++) {
+    const nombre = document.getElementById(`rv-nombre-${i}`)?.value;
+    if (!nombre) continue;
+    let fotoUrl = null;
+    if (photos[`rv-${i}`]) fotoUrl = await uploadToDrive(photos[`rv-${i}`], 'rotos_vencidos', ctx.local);
+    const respVal  = document.querySelector(`#rv-resp-chips-${i} .chip.selected`)?.dataset?.val || 'empresa';
+    const respProv = respVal === 'proveedor' ? (document.getElementById(`rv-resp-prov-${i}`)?.value || null) : null;
+    items.push({
+      reporte_id: reporteId,
+      nombre_articulo: nombre,
+      presentacion:   document.getElementById(`rv-pres-${i}`)?.value || null,
+      cantidad:       parseInt(document.getElementById(`rv-cant-${i}`)?.value) || null,
+      precio_venta:   parseFloat(document.getElementById(`rv-precio-${i}`)?.value) || null,
+      fecha_vencimiento: document.getElementById(`rv-venc-${i}`)?.value || null,
+      responsable:    respVal,
+      responsable_proveedor: respProv,
+      foto_url:       fotoUrl,
+    });
+  }
+  if (items.length > 0) await sbFetch('reporte_items', { method: 'POST', body: JSON.stringify(items) });
+}
+
+async function saveTkItems(reporteId) {
+  const items = [];
+  for (let i = 1; i <= tkItemCount; i++) {
+    const nombre = document.getElementById(`tk-nombre-${i}`)?.value;
+    if (!nombre) continue;
+    let fotoUrl = null;
+    if (photos[`tki-${i}`]) fotoUrl = await uploadToDrive(photos[`tki-${i}`], 'ticket', ctx.local);
+    items.push({
+      reporte_id:      reporteId,
+      nombre_articulo: nombre,
+      presentacion:    document.getElementById(`tk-pres-${i}`)?.value || null,
+      codigo_barras:   document.getElementById(`tk-cb-${i}`)?.value || null,
+      costo:           parseFloat(document.getElementById(`tk-costo-${i}`)?.value) || null,
+      precio_venta:    parseFloat(document.getElementById(`tk-pventa-${i}`)?.value) || null,
+      cantidad:        parseInt(document.getElementById(`tk-cant-${i}`)?.value) || null,
+      proveedor:       document.getElementById(`tk-prov-${i}`)?.value || null,
+      foto_url:        fotoUrl,
+    });
+  }
+  if (items.length > 0) await sbFetch('ticket_items', { method: 'POST', body: JSON.stringify(items) });
+}
+
+function resetFotos(tipo) {
+  photos = {};
+  rvItemCount = 0; tkItemCount = 0;
+  const rvCont = document.getElementById('rv-items-container');
+  if (rvCont) rvCont.innerHTML = '';
+  const tkCont = document.getElementById('tk-items-container');
+  if (tkCont) tkCont.innerHTML = '';
+  if (tipo === 'ticket') tkTipo = 'cambio_cb';
+}
+
+function showSuccess(tipo) {
+  const now = new Date();
+  const meta = document.getElementById('success-meta');
+  meta.innerHTML = `
+    <div class="success-meta-row"><span>tipo</span><span>${TIPO_LABELS[tipo] || tipo}</span></div>
+    <div class="success-meta-row"><span>local</span><span>${LOCALES[ctx.local] || ctx.localName || '—'}</span></div>
+    <div class="success-meta-row"><span>empleado</span><span>${ctx.empleado_nombre || '—'}</span></div>
+    <div class="success-meta-row"><span>turno</span><span>${ctx.turno || '—'}</span></div>
+    <div class="success-meta-row"><span>hora</span><span>${now.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})}</span></div>
+  `;
+  document.getElementById('success-sub').textContent = tipo === 'ticket'
+    ? 'Ticket en cola. El admin lo resolverá y marcará como listo.'
+    : 'Quedó guardado con fecha y hora.\nEl admin puede verlo en el dashboard.';
+  goTo('success');
+}
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+initRVItems();
+addTkItem();
+</script>
+</body>
+</html>

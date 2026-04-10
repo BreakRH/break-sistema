@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Orden de Trabajo · Break</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://apis.google.com/js/api.js" async defer></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -39,7 +41,7 @@
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
-    font-size: 13px;
+    font-size: 14px;
   }
 
   /* HEADER */
@@ -80,16 +82,17 @@
     border-bottom: 1px solid var(--border);
   }
   .tab-btn {
-    padding: 10px 16px;
+    padding: 14px 16px;
     background: none;
     border: none;
     border-bottom: 2px solid transparent;
     color: var(--text2);
     cursor: pointer;
     font-family: 'DM Mono', monospace;
-    font-size: 12px;
+    font-size: 13px;
     transition: all 0.15s;
     white-space: nowrap;
+    min-height: 48px;
   }
   .tab-btn:hover { color: var(--text); }
   .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
@@ -114,55 +117,60 @@
   /* FILTERS */
   .filter-group { display: flex; gap: 6px; flex-wrap: wrap; }
   .filter-chip {
-    padding: 5px 10px;
+    padding: 8px 12px;
     background: var(--surface2);
     border: 1px solid var(--border);
-    border-radius: 4px;
+    border-radius: 6px;
     color: var(--text2);
     cursor: pointer;
     font-family: 'DM Mono', monospace;
-    font-size: 11px;
+    font-size: 12px;
     transition: all 0.15s;
+    min-height: 40px;
+    display: flex; align-items: center;
   }
   .filter-chip:hover { border-color: var(--border2); color: var(--text); }
   .filter-chip.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
 
   /* SEARCH */
   .search-input {
-    padding: 6px 12px;
+    padding: 10px 14px;
     background: var(--surface2);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     color: var(--text);
     font-family: 'DM Mono', monospace;
-    font-size: 12px;
+    font-size: 13px;
     width: 200px;
     outline: none;
     transition: border-color 0.15s;
+    min-height: 44px;
   }
   .search-input:focus { border-color: var(--accent); }
   .search-input::placeholder { color: var(--text3); }
 
   /* BTN */
   .btn {
-    padding: 7px 14px;
+    padding: 10px 16px;
     border-radius: var(--radius);
     border: none;
     cursor: pointer;
     font-family: 'DM Mono', monospace;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 500;
     transition: all 0.15s;
     display: inline-flex;
     align-items: center;
     gap: 6px;
+    min-height: 44px;
+    -webkit-tap-highlight-color: transparent;
   }
-  .btn-primary { background: var(--accent); color: #0a0a0a; }
-  .btn-primary:hover { background: #d4f54a; }
+  .btn-primary { background: var(--accent); color: #0a0a0a; box-shadow: 0 2px 10px rgba(200,241,53,0.2); }
+  .btn-primary:hover { background: #d4f54a; box-shadow: 0 4px 14px rgba(200,241,53,0.3); }
   .btn-ghost { background: var(--surface2); border: 1px solid var(--border); color: var(--text2); }
   .btn-ghost:hover { border-color: var(--border2); color: var(--text); }
   .btn-danger { background: var(--red-dim); border: 1px solid var(--red); color: var(--red); }
-  .btn-sm { padding: 4px 8px; font-size: 11px; }
+  .btn-sm { padding: 6px 10px; font-size: 12px; min-height: 36px; }
 
   /* TABLE */
   .table-wrap {
@@ -519,6 +527,20 @@
         <div style="font-size:11px;color:var(--text2);">Registrá la factura o remito del proveedor</div>
       </div>
 
+      <!-- TOGGLE para admin: alternar entre formulario completo y aviso rápido -->
+      <div id="admin-form-toggle" style="display:none;margin-bottom:16px">
+        <div style="display:flex;gap:8px">
+          <button id="btn-toggle-full" onclick="admToggleOTForm('full')"
+            style="flex:1;padding:9px 14px;border-radius:8px;border:1.5px solid var(--accent);background:rgba(232,197,71,0.12);color:var(--accent);font-family:var(--mono);font-size:12px;font-weight:600;cursor:pointer">
+            📋 Formulario completo
+          </button>
+          <button id="btn-toggle-sv" onclick="admToggleOTForm('sv')"
+            style="flex:1;padding:9px 14px;border-radius:8px;border:1.5px solid var(--border2);background:transparent;color:var(--text2);font-family:var(--mono);font-size:12px;cursor:pointer">
+            ⚡ Aviso rápido
+          </button>
+        </div>
+      </div>
+
       <!-- FORMULARIO SUPERVISOR: solo proveedor, local, fecha, pago, monto -->
       <div id="sv-form" style="display:none;">
         <div class="form-grid">
@@ -855,12 +877,17 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 let _sbSecret = null;
 (async () => {
   try {
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/config?clave=eq.app_secret&select=valor`, {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/config?clave=in.(app_secret,drive_picker_api_key)&select=clave,valor`, {
       headers: {'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json'}
     });
     const d = await r.json();
-    if (d?.[0]?.valor) _sbSecret = d[0].valor;
-  } catch(e) { console.warn('[ordenes] app_secret no disponible', e); }
+    if (Array.isArray(d)) {
+      d.forEach(row => {
+        if (row.clave === 'app_secret') _sbSecret = row.valor;
+        if (row.clave === 'drive_picker_api_key') _pickerApiKey = row.valor;
+      });
+    }
+  } catch(e) { console.warn('[ordenes] config no disponible', e); }
 })();
 
 async function sbFetch(path, opts = {}) {
@@ -1126,6 +1153,18 @@ function openDetalle(id) {
       </div>
     </div>
     ${o.notas ? `<div class="detail-section"><div class="detail-section-title">Notas</div><div style="font-size:12px;color:var(--text2);line-height:1.5;">${o.notas}</div></div>` : ''}
+    <div class="detail-section">
+      <div class="detail-section-title" style="margin-bottom:10px">📎 Foto de factura</div>
+      <div id="modal-fotos-wrap" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+        ${(o.foto_factura_urls||[]).length
+          ? (o.foto_factura_urls).map(url=>`<a href="${url}" target="_blank"><img src="${url}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;border:1px solid var(--border2)"></a>`).join('')
+          : '<span style="font-family:var(--mono);font-size:11px;color:var(--text3)">Sin fotos adjuntas</span>'}
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button onclick="abrirDrivePicker()" style="font-size:12px;padding:7px 14px;background:transparent;border:1px solid var(--border2);color:var(--text2);border-radius:6px;cursor:pointer">📷 Adjuntar desde Drive</button>
+        <span id="modal-foto-status" style="font-family:var(--mono);font-size:11px;color:var(--text3)"></span>
+      </div>
+    </div>
   `;
 
   document.getElementById('modal-detalle').classList.add('open');
@@ -1268,6 +1307,33 @@ function editFromModal() {
 }
 
 // ─── FORM ────────────────────────────────────────────────────
+
+// ── ADMIN: alternar entre formulario completo y aviso rápido ──
+function admToggleOTForm(mode) {
+  const svForm   = document.getElementById('sv-form');
+  const fullForm = document.getElementById('ot-form-wrap');
+  const btnFull  = document.getElementById('btn-toggle-full');
+  const btnSv    = document.getElementById('btn-toggle-sv');
+  if (!svForm || !fullForm) return;
+  if (mode === 'sv') {
+    svForm.style.display   = 'block';
+    fullForm.style.display = 'none';
+    svForm.dataset.adminMode = '1';
+    poblarSelectProveedores();
+    const fd = document.getElementById('sv-fecha');
+    if (fd && !fd.value) fd.value = today();
+    if (btnFull) { btnFull.style.background='transparent'; btnFull.style.color='var(--text2)'; btnFull.style.borderColor='var(--border2)'; }
+    if (btnSv)   { btnSv.style.background='rgba(232,197,71,0.12)'; btnSv.style.color='var(--accent)'; btnSv.style.borderColor='var(--accent)'; }
+  } else {
+    svForm.style.display   = 'none';
+    fullForm.style.display = 'block';
+    svForm.dataset.adminMode = '';
+    if (!editingId) resetForm();
+    if (btnFull) { btnFull.style.background='rgba(232,197,71,0.12)'; btnFull.style.color='var(--accent)'; btnFull.style.borderColor='var(--accent)'; }
+    if (btnSv)   { btnSv.style.background='transparent'; btnSv.style.color='var(--text2)'; btnSv.style.borderColor='var(--border2)'; }
+  }
+}
+
 function switchTab(tab) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -1285,13 +1351,26 @@ function switchTab(tab) {
     // Si el rol aún no llegó por postMessage, esperar hasta 1.5s
     const aplicarFormNueva = () => {
       const esSupervisor = rolActual === 'supervisor';
-      document.getElementById('sv-form').style.display       = esSupervisor ? 'block' : 'none';
-      document.getElementById('ot-form-wrap').style.display  = esSupervisor ? 'none'  : 'block';
+      const esAdmin = rolActual === 'admin';
+      const toggleWrap = document.getElementById('admin-form-toggle');
+      if (toggleWrap) toggleWrap.style.display = esAdmin ? 'block' : 'none';
       if (esSupervisor) {
+        document.getElementById('sv-form').style.display      = 'block';
+        document.getElementById('ot-form-wrap').style.display = 'none';
         poblarSelectProveedores();
         document.getElementById('sv-fecha').value = today();
-      } else if (!editingId) {
-        resetForm();
+      } else if (esAdmin) {
+        // Admin: por defecto formulario completo, pero puede alternar
+        if (!document.getElementById('sv-form').dataset.adminMode) {
+          document.getElementById('sv-form').style.display      = 'none';
+          document.getElementById('ot-form-wrap').style.display = 'block';
+          admToggleOTForm('full');
+        }
+        poblarSelectProveedores();
+      } else {
+        document.getElementById('sv-form').style.display      = 'none';
+        document.getElementById('ot-form-wrap').style.display = 'block';
+        if (!editingId) resetForm();
       }
     };
     aplicarFormNueva();
@@ -1718,6 +1797,203 @@ function getOrigenBadge(o) {
     : '<span class="badge badge-gray" style="font-size:9px;">Manual</span>';
   return origenBadge + localBadge;
 }
+
+
+// ── DRIVE — FOTO FACTURA + PICKER ────────────────────────────
+const GIS_CLIENT_ID = '780824362766-h1te7jdtsjbfourv1vhvg6ipevc603ms.apps.googleusercontent.com';
+// Carpeta raíz OT Facturas — leída desde config de Supabase
+// Estructura: OT Facturas / [Local] / [Proveedor] / fotos
+const DRIVE_FOLDER_OT_ROOT_ID = '1jKQeNv9YED_E-2qcxNKAvNYQVGosN2eh';
+const LOCAL_FOLDER_NAMES = {
+  palermo:      'Thames · Palermo',
+  belgrano:     'Roosevelt · Belgrano',
+  barrio_chino: 'Juramento · B. Chino',
+  san_telmo:    'Independencia · S. Telmo',
+};
+let _otTokenClient = null;
+let _otAccessToken = null;
+let _pendingPickerOpen = false;
+let _otNeedsConsent = false;
+let _pickerApiKey = null;
+
+function getOTTokenClient() {
+  if (_otTokenClient) return _otTokenClient;
+  if (!window.google) { showToast('GIS no disponible', 'error'); return null; }
+  _otTokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: GIS_CLIENT_ID,
+    scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive',
+    callback: async (tokenResponse) => {
+      if (tokenResponse.error) {
+        // prompt:'none' falló — necesita interacción directa del usuario
+        _pendingPickerOpen = true;
+        const statusEl = document.getElementById('modal-foto-status');
+        if (statusEl) statusEl.textContent = 'Tocá el botón nuevamente para autorizar';
+        showToast('Autorizá el acceso a Drive tocando el botón nuevamente', 'info');
+        // En el próximo click se llamará con prompt:'select_account'
+        _otNeedsConsent = true;
+        return;
+      }
+      _otNeedsConsent = false;
+      _otAccessToken = tokenResponse.access_token;
+      if (_pendingPickerOpen) { _pendingPickerOpen = false; _abrirPickerConToken(); }
+    },
+  });
+  return _otTokenClient;
+}
+
+// ── Punto de entrada: botón "Adjuntar desde Drive" ────────────
+function abrirDrivePicker() {
+  const statusEl = document.getElementById('modal-foto-status');
+  if (_otAccessToken) {
+    _abrirPickerConToken();
+    return;
+  }
+  _pendingPickerOpen = true;
+  if (statusEl) statusEl.textContent = 'Conectando con Drive...';
+  const tc = getOTTokenClient();
+  if (!tc) return;
+  // Primera vez: prompt none (silencioso). Si falla el callback pide tocar de nuevo.
+  // Segunda vez (_otNeedsConsent=true): prompt select_account abre popup de Google.
+  tc.requestAccessToken({ prompt: _otNeedsConsent ? 'select_account' : 'none' });
+}
+
+// ── Carga gapi.client + Picker, luego lo muestra ─────────────
+function _abrirPickerConToken() {
+  const statusEl = document.getElementById('modal-foto-status');
+  if (!window.gapi) {
+    if (statusEl) statusEl.textContent = 'Error: gapi no cargado';
+    showToast('Google API no disponible. Recargá la página.', 'error');
+    return;
+  }
+  gapi.load('picker', () => {
+    const APP_ID = '780824362766';
+    const view = new google.picker.DocsView(google.picker.ViewId.DOCS)
+      .setIncludeFolders(false)
+      .setSelectFolderEnabled(false)
+      .setMimeTypes('image/jpeg,image/png,image/webp,image/heic,application/pdf');
+
+    const builder = new google.picker.PickerBuilder()
+      .setAppId(APP_ID)
+      .setOAuthToken(_otAccessToken)
+      .addView(view)
+      .addView(new google.picker.DocsUploadView().setMimeTypes('image/jpeg,image/png,image/webp,image/heic,application/pdf'))
+      .setTitle('Seleccioná o escaneá la factura')
+      .setCallback(_pickerCallback);
+
+    if (_pickerApiKey) builder.setDeveloperKey(_pickerApiKey);
+
+    const picker = builder.build();
+    picker.setVisible(true);
+    if (statusEl) statusEl.textContent = '';
+  });
+}
+
+// ── Callback cuando el usuario elige un archivo en el Picker ──
+async function _pickerCallback(data) {
+  if (data[google.picker.Response.ACTION] !== google.picker.Action.PICKED) return;
+  const doc = data[google.picker.Response.DOCUMENTS][0];
+  const fileId = doc[google.picker.Document.ID];
+  const fileName = doc[google.picker.Document.NAME];
+  const statusEl = document.getElementById('modal-foto-status');
+  if (statusEl) statusEl.textContent = 'Procesando...';
+  try {
+    await _moverYGuardarArchivo(fileId, fileName);
+  } catch(e) {
+    console.error('[otPicker] error', e);
+    if (statusEl) statusEl.textContent = 'Error al procesar';
+    if (e.message?.includes('401')) {
+      _otAccessToken = null;
+      showToast('Sesión Drive expirada, intentá nuevamente', 'error');
+    } else {
+      showToast('Error: ' + e.message, 'error');
+    }
+  }
+}
+
+// ── Mueve el fileId a carpeta OT correcta y persiste en Supabase
+async function _moverYGuardarArchivo(fileId, originalName) {
+  const statusEl = document.getElementById('modal-foto-status');
+  const orden = ordenes.find(o => o.id === modalOrdenId);
+  const localNombre = LOCAL_FOLDER_NAMES[orden?.local || localKey] || orden?.local || 'Sin local';
+  const provNombre  = (orden?.proveedor || 'Sin proveedor').replace(/[/\\:*?"<>|]/g, '-').substring(0, 80);
+
+  // 1. Obtener o crear carpetas destino
+  if (statusEl) statusEl.textContent = 'Organizando en Drive...';
+  const localFolderId = await _driveGetOrCreateFolder(localNombre, DRIVE_FOLDER_OT_ROOT_ID);
+  const provFolderId  = await _driveGetOrCreateFolder(provNombre, localFolderId);
+
+  // 2. Renombrar archivo con nomenclatura estándar
+  const fecha = new Date().toISOString().split('T')[0];
+  const ext   = originalName.includes('.') ? originalName.split('.').pop() : 'jpg';
+  const nuevoNombre = `${fecha}_ot${modalOrdenId || 'x'}.${ext}`;
+
+  // 3. Mover archivo a carpeta destino (patch parents) + renombrar
+  if (statusEl) statusEl.textContent = 'Moviendo archivo...';
+  const moveRes = await fetch(
+    `https://www.googleapis.com/drive/v3/files/${fileId}?addParents=${provFolderId}&fields=id,parents`,
+    {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${_otAccessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ name: nuevoNombre })
+    }
+  );
+  if (!moveRes.ok) {
+    const err = await moveRes.json();
+    throw new Error('No se pudo mover el archivo: ' + JSON.stringify(err));
+  }
+
+  // 4. Hacer público para poder mostrar como imagen en la UI
+  await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/permissions`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${_otAccessToken}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ role: 'reader', type: 'anyone' })
+  });
+
+  const url = `https://drive.google.com/uc?export=view&id=${fileId}`;
+
+  // 5. Persistir en Supabase
+  if (statusEl) statusEl.textContent = 'Guardando...';
+  const existing = orden?.foto_factura_urls || [];
+  const newUrls = [...existing, url];
+  await sbFetch(`ordenes_trabajo?id=eq.${modalOrdenId}`, {
+    method: 'PATCH',
+    headers: { 'Prefer': 'return=minimal' },
+    body: JSON.stringify({ foto_factura_urls: newUrls })
+  });
+
+  // 6. Actualizar estado local y UI
+  if (orden) orden.foto_factura_urls = newUrls;
+  const wrap = document.getElementById('modal-fotos-wrap');
+  if (wrap) {
+    wrap.innerHTML = newUrls.map(u =>
+      `<a href="${u}" target="_blank"><img src="${u}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;border:1px solid var(--border2)"></a>`
+    ).join('');
+  }
+  if (statusEl) statusEl.textContent = '✓ Adjuntado';
+  showToast('Factura adjuntada ✓', 'success');
+}
+
+
+async function _driveGetOrCreateFolder(name, parentId) {
+  const search = await fetch(
+    `https://www.googleapis.com/drive/v3/files?q=name='${encodeURIComponent(name)}' and mimeType='application/vnd.google-apps.folder' and '${parentId}' in parents and trashed=false&fields=files(id)`,
+    { headers: { Authorization: `Bearer ${_otAccessToken}` } }
+  );
+  const sd = await search.json();
+  if (sd.files?.length) return sd.files[0].id;
+  const create = await fetch('https://www.googleapis.com/drive/v3/files', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${_otAccessToken}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, mimeType: 'application/vnd.google-apps.folder', parents: [parentId] })
+  });
+  const cd = await create.json();
+  if (!cd.id) throw new Error('No se pudo crear carpeta Drive: ' + JSON.stringify(cd));
+  return cd.id;
+}
+
 
 </script>
 </body>

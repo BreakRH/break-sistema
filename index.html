@@ -16,8 +16,8 @@
     --border: rgba(255,255,255,0.08);
     --border2: rgba(255,255,255,0.14);
     --text: #f0ede8;
-    --text2: #9a9690;
-    --text3: #5a5754;
+    --text2: #b0ada8;
+    --text3: #848180;
     --accent: #e8c547;
     --accent2: #b89b2e;
     --red: #e85d4a;
@@ -60,13 +60,13 @@
     display: flex; align-items: center; gap: 12px;
   }
   .topbar-back {
-    width: 32px; height: 32px;
+    width: 44px; height: 44px;
     border: 0.5px solid var(--border2);
-    border-radius: 8px;
+    border-radius: 10px;
     background: var(--bg3);
     display: flex; align-items: center; justify-content: center;
     cursor: pointer; flex-shrink: 0;
-    font-size: 16px; color: var(--text2);
+    font-size: 18px; color: var(--text2);
     transition: background 0.15s;
   }
   .topbar-back:hover { background: var(--bg4); }
@@ -98,15 +98,22 @@
 
   /* ── TOAST ── */
   #toast {
-    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
-    background: var(--bg4); border: 0.5px solid var(--border2);
-    border-radius: var(--radius); padding: 10px 20px;
-    font-size: 13px; font-family: var(--mono);
-    transition: transform 0.3s ease; z-index: 998; white-space: nowrap;
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(100px);
+    background: #2a2a2a; border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 14px; padding: 13px 22px;
+    font-size: 14px; font-family: var(--sans); font-weight: 500;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.3);
+    transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1), opacity 0.35s ease;
+    z-index: 998; white-space: nowrap; opacity: 0;
+    display: flex; align-items: center; gap: 10px;
   }
-  #toast.show { transform: translateX(-50%) translateY(0); }
-  #toast.success { border-color: var(--green); color: var(--green); }
-  #toast.error { border-color: var(--red); color: var(--red); }
+  #toast .toast-icon { font-size: 16px; flex-shrink: 0; }
+  #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+  #toast.success { border-color: rgba(76,175,130,0.5); color: var(--text); background: #1e2e26; }
+  #toast.success .toast-icon::before { content: '✓'; color: var(--green); }
+  #toast.error { border-color: rgba(232,93,74,0.5); color: var(--text); background: #2e1e1b; }
+  #toast.error .toast-icon::before { content: '!'; color: var(--red); font-weight: 700; }
+  #toast:not(.success):not(.error) .toast-icon::before { content: 'ℹ'; color: var(--text3); }
 
   /* ── HUB SCREEN ── */
   #hub { background: var(--bg); }
@@ -139,15 +146,17 @@
     border-radius: var(--radius);
     color: var(--text);
     font-family: var(--sans);
-    font-size: 14px;
-    padding: 11px 14px;
+    font-size: 15px;
+    padding: 13px 14px;
     outline: none;
     appearance: none;
     -webkit-appearance: none;
     transition: border-color 0.15s;
+    min-height: 48px;
   }
   select:focus, input:focus, textarea:focus {
     border-color: var(--accent);
+    background: var(--bg3);
   }
   select option { background: var(--bg3); }
 
@@ -179,12 +188,13 @@
     background: var(--bg2);
     border: 0.5px solid var(--border);
     border-radius: var(--radius);
-    padding: 10px 8px;
-    font-size: 13px; color: var(--text2);
+    padding: 14px 8px;
+    font-size: 14px; color: var(--text2);
     cursor: pointer; text-align: center;
     transition: all 0.15s;
+    min-height: 52px; display: flex; align-items: center; justify-content: center;
   }
-  .turno-chip:hover { border-color: var(--border2); color: var(--text); }
+  .turno-chip:hover { border-color: var(--border2); color: var(--text); background: var(--bg3); }
   .turno-chip.selected {
     background: rgba(232,197,71,0.1);
     border-color: var(--accent);
@@ -209,11 +219,12 @@
     background: var(--bg2);
     border: 0.5px solid var(--border);
     border-radius: var(--radius-lg);
-    padding: 18px 16px;
+    padding: 20px 18px;
     cursor: pointer;
     transition: all 0.18s;
     position: relative;
     overflow: hidden;
+    -webkit-tap-highlight-color: transparent;
   }
   .module-card::before {
     content: '';
@@ -225,22 +236,24 @@
   .module-card:hover {
     border-color: var(--border2);
     background: var(--bg3);
-    transform: translateY(-1px);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
   }
+  .module-card:active { transform: translateY(0); box-shadow: none; }
   .module-card.wide { grid-column: span 2; }
   .module-card.disabled { opacity: 0.4; cursor: not-allowed; }
-  .module-card.disabled:hover { transform: none; background: var(--bg2); }
+  .module-card.disabled:hover { transform: none; background: var(--bg2); box-shadow: none; }
 
   .module-icon {
-    width: 32px; height: 32px;
-    border-radius: 8px;
+    width: 38px; height: 38px;
+    border-radius: 10px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 15px; margin-bottom: 12px;
+    font-size: 18px; margin-bottom: 12px;
     background: var(--icon-bg, var(--bg4));
   }
   .module-name {
-    font-size: 13px; font-weight: 500;
-    color: var(--text); margin-bottom: 3px;
+    font-size: 14px; font-weight: 600;
+    color: var(--text); margin-bottom: 4px;
   }
   .module-desc {
     font-size: 11px; color: var(--text3);
@@ -261,7 +274,7 @@
   .form-section { margin-bottom: 24px; }
   .form-section-title {
     font-family: var(--mono); font-size: 11px;
-    color: var(--text3); text-transform: uppercase;
+    color: var(--text); text-transform: uppercase; font-weight: 600;
     letter-spacing: 0.1em; margin-bottom: 10px;
   }
 
@@ -350,21 +363,24 @@
   /* ── SUBMIT BAR ── */
   .submit-bar {
     position: fixed; bottom: 0; left: 0; right: 0;
-    padding: 14px 20px 28px;
-    background: linear-gradient(to top, var(--bg) 70%, transparent);
+    padding: 14px 20px 32px;
+    background: linear-gradient(to top, var(--bg) 65%, transparent);
     z-index: 50;
   }
   .submit-btn {
-    width: 100%; padding: 14px;
+    width: 100%; padding: 16px;
     background: var(--accent);
-    border: none; border-radius: var(--radius);
+    border: none; border-radius: 14px;
     color: #0f0f0f; font-family: var(--sans);
-    font-size: 14px; font-weight: 700;
+    font-size: 15px; font-weight: 700;
     cursor: pointer; transition: all 0.15s;
     display: flex; align-items: center; justify-content: center; gap: 8px;
+    box-shadow: 0 4px 16px rgba(232,197,71,0.25);
+    letter-spacing: 0.01em;
   }
-  .submit-btn:hover { background: #f0d050; }
-  .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .submit-btn:hover { background: #f0d050; box-shadow: 0 6px 20px rgba(232,197,71,0.35); transform: translateY(-1px); }
+  .submit-btn:active { transform: translateY(0); }
+  .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; transform: none; }
   .submit-btn .btn-spinner {
     width: 16px; height: 16px;
     border: 2px solid rgba(0,0,0,0.2);
@@ -906,92 +922,157 @@
   .pt-venta-valor { font-family: var(--mono); font-size: 15px; font-weight: 500; color: var(--text2); }
 
   /* Cierre — billetes */
-  .pt-billetes-grid {
-    display: grid; grid-template-columns: repeat(3,1fr); gap: 7px;
+  /* ── CAJA CHICA — tabla compacta de billetes ── */
+  .pt-caja-table {
+    width: 100%; border-collapse: collapse;
+    background: var(--bg3); border: 1px solid var(--border2);
+    border-radius: var(--radius); overflow: hidden;
+    margin-bottom: 10px;
   }
-  .pt-billete {
-    background: var(--bg3); border: 0.5px solid var(--border);
-    border-radius: var(--radius); padding: 9px; display: flex;
-    flex-direction: column; gap: 5px;
+  .pt-caja-table thead th {
+    font-family: var(--mono); font-size: 9px; font-weight: 600;
+    color: var(--text2); text-transform: uppercase; letter-spacing: .07em;
+    padding: 7px 10px; background: var(--bg4);
+    border-bottom: 1px solid var(--border2); text-align: left;
   }
-  .pt-billete-denom {
-    font-family: var(--mono); font-size: 10px; color: var(--text2); font-weight: 500;
+  .pt-caja-table thead th:last-child { text-align: right; }
+  .pt-caja-table tbody tr { border-bottom: 1px solid var(--border); }
+  .pt-caja-table tbody tr:last-child { border-bottom: none; }
+  .pt-caja-table tbody tr:hover { background: var(--bg4); }
+  .pt-caja-denom {
+    font-family: var(--mono); font-size: 14px; font-weight: 500;
+    color: var(--text); padding: 8px 10px; width: 90px;
   }
+  .pt-caja-inp-wrap { padding: 5px 8px; }
   .pt-billete-inp {
-    background: var(--bg4); border: 0.5px solid var(--border2);
-    color: var(--text); border-radius: 6px; padding: 5px 7px;
-    font-family: var(--mono); font-size: 14px; width: 100%;
+    background: var(--bg2); border: 1px solid var(--border2);
+    color: var(--text); border-radius: 8px; padding: 9px 8px;
+    font-family: var(--mono); font-size: 15px; width: 80px;
     text-align: center; outline: none; transition: border-color 0.15s;
+    -webkit-appearance: none; appearance: none;
   }
-  .pt-billete-inp:focus { border-color: var(--accent); }
-  .pt-billete-sub {
-    font-family: var(--mono); font-size: 9px; color: var(--text3); text-align: right;
+  .pt-billete-inp:focus { border-color: var(--accent); background: var(--bg); }
+  .pt-caja-sub {
+    font-family: var(--mono); font-size: 13px; color: var(--text2);
+    padding: 8px 10px; text-align: right;
   }
 
+  /* ── PACAS — tabla compacta ── */
+  .pt-pacas-table {
+    width: 100%; border-collapse: collapse;
+    background: var(--bg3); border: 1px solid var(--border2);
+    border-radius: var(--radius); overflow: hidden;
+    margin-bottom: 10px;
+  }
+  .pt-pacas-table thead th {
+    font-family: var(--mono); font-size: 9px; font-weight: 600;
+    color: var(--text2); text-transform: uppercase; letter-spacing: .07em;
+    padding: 7px 10px; background: var(--bg4);
+    border-bottom: 1px solid var(--border2); text-align: left;
+  }
+  .pt-pacas-table thead th:last-child { text-align: right; }
+  .pt-pacas-table tbody tr { border-bottom: 1px solid var(--border); }
+  .pt-pacas-table tbody tr:last-child { border-bottom: none; }
+  .pt-pacas-table tbody tr:hover { background: var(--bg4); }
+  .pt-paca-lbl {
+    font-family: var(--mono); font-size: 12px; color: var(--text);
+    padding: 6px 10px;
+  }
+  .pt-paca-inp-wrap { padding: 4px 8px; }
+  .pt-paca-inp {
+    background: var(--bg2); border: 1px solid var(--border2);
+    color: var(--text); border-radius: 5px; padding: 5px 8px;
+    font-family: var(--mono); font-size: 13px; width: 64px;
+    text-align: center; outline: none; transition: border-color 0.15s;
+  }
+  .pt-paca-inp:focus { border-color: var(--accent); background: var(--bg); }
+  .pt-paca-name-inp {
+    background: var(--bg2); border: 1px solid var(--border2);
+    color: var(--text); border-radius: 5px; padding: 5px 8px;
+    font-family: var(--mono); font-size: 12px; width: 110px;
+    outline: none; transition: border-color 0.15s;
+  }
+  .pt-paca-name-inp:focus { border-color: var(--accent); }
+  .pt-paca-val-inp {
+    background: var(--bg2); border: 1px solid var(--border2);
+    color: var(--text); border-radius: 5px; padding: 5px 8px;
+    font-family: var(--mono); font-size: 12px; width: 90px;
+    outline: none; transition: border-color 0.15s;
+  }
+  .pt-paca-val-inp:focus { border-color: var(--accent); }
+  .pt-paca-sub {
+    font-family: var(--mono); font-size: 12px; color: var(--text2);
+    padding: 6px 10px; text-align: right;
+  }
+
+  /* ── TOTALES ── */
   .pt-total-ef {
     background: var(--bg3);
-    border: 0.5px solid var(--accent);
+    border: 1px solid var(--accent);
     border-radius: var(--radius); padding: 12px 15px;
     display: flex; justify-content: space-between; align-items: center;
   }
   .pt-total-ef-lbl {
-    font-family: var(--mono); font-size: 11px; color: var(--text2);
-    text-transform: uppercase; letter-spacing: 0.08em;
+    font-family: var(--mono); font-size: 11px; color: var(--text);
+    text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600;
   }
   .pt-total-ef-val {
-    font-family: var(--mono); font-size: 20px; font-weight: 500; color: var(--accent);
+    font-family: var(--mono); font-size: 22px; font-weight: 600; color: var(--accent);
   }
 
-  /* Medios de pago */
-  .pt-medios-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 7px; }
+  /* ── VENTAS DEL TURNO ── */
   .pt-medio-item {
-    background: var(--bg3); border: 0.5px solid var(--border);
-    border-radius: var(--radius); padding: 9px 11px;
-    display: flex; align-items: center; gap: 8px;
+    background: var(--bg3); border: 1px solid var(--border2);
+    border-radius: var(--radius); padding: 11px 13px;
+    display: flex; align-items: center; gap: 10px;
   }
   .pt-medio-lbl {
-    font-family: var(--mono); font-size: 10px; color: var(--text3);
-    text-transform: uppercase; width: 72px; flex-shrink: 0;
+    font-family: var(--mono); font-size: 11px; color: var(--text);
+    font-weight: 500; width: 130px; flex-shrink: 0;
   }
   .pt-medio-inp {
-    background: transparent; border: none; border-bottom: 0.5px solid var(--border2);
-    color: var(--text); font-family: var(--mono); font-size: 13px;
-    flex: 1; padding: 2px 0; outline: none; transition: border-color 0.15s;
+    background: var(--bg2); border: 1px solid var(--border2);
+    color: var(--text); font-family: var(--mono); font-size: 14px;
+    flex: 1; padding: 5px 8px; outline: none;
+    transition: border-color 0.15s; border-radius: 5px; text-align: right;
   }
-  .pt-medio-inp:focus { border-color: var(--accent); }
+  .pt-medio-inp:focus { border-color: var(--accent); background: var(--bg); }
 
-  /* Diferencia */
+  /* ── DIFERENCIA ── */
   .pt-diferencia {
-    border-radius: var(--radius); padding: 12px 15px;
+    border-radius: var(--radius); padding: 14px 16px;
     display: flex; justify-content: space-between; align-items: center;
     transition: all 0.25s;
   }
-  .pt-dif-neutral  { background: var(--bg3);       border: 0.5px solid var(--border); }
-  .pt-dif-ok       { background: var(--green-bg);   border: 0.5px solid var(--green); }
-  .pt-dif-sobrante { background: var(--blue-bg);    border: 0.5px solid var(--blue); }
-  .pt-dif-faltante { background: var(--red-bg);     border: 0.5px solid var(--red); }
-  .pt-dif-lbl { font-family: var(--mono); font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; }
-  .pt-dif-neutral  .pt-dif-lbl { color: var(--text3); }
+  .pt-dif-neutral  { background: var(--bg3); border: 1px solid var(--border2); }
+  .pt-dif-ok       { background: var(--green-bg); border: 1px solid var(--green); }
+  .pt-dif-sobrante { background: var(--blue-bg);  border: 1px solid var(--blue); }
+  .pt-dif-faltante { background: var(--red-bg);   border: 1px solid var(--red); }
+  .pt-dif-lbl { font-family: var(--mono); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; }
+  .pt-dif-neutral  .pt-dif-lbl { color: var(--text2); }
   .pt-dif-ok       .pt-dif-lbl { color: var(--green); }
   .pt-dif-sobrante .pt-dif-lbl { color: var(--blue); }
   .pt-dif-faltante .pt-dif-lbl { color: var(--red); }
-  .pt-dif-desc { font-family: var(--mono); font-size: 10px; color: var(--text3); margin-top: 2px; }
-  .pt-dif-val { font-family: var(--mono); font-size: 20px; font-weight: 500; }
-  .pt-dif-neutral  .pt-dif-val { color: var(--text3); }
+  .pt-dif-desc { font-family: var(--mono); font-size: 11px; color: var(--text2); margin-top: 3px; }
+  .pt-dif-val { font-family: var(--mono); font-size: 24px; font-weight: 600; }
+  .pt-dif-neutral  .pt-dif-val { color: var(--text2); }
   .pt-dif-ok       .pt-dif-val { color: var(--green); }
   .pt-dif-sobrante .pt-dif-val { color: var(--blue); }
   .pt-dif-faltante .pt-dif-val { color: var(--red); }
 
   /* Botón cierre */
   .pt-cerrar-btn {
-    width: 100%; padding: 14px;
-    background: var(--accent); border: none; border-radius: var(--radius);
-    color: #0f0f0f; font-family: var(--sans); font-size: 14px; font-weight: 700;
+    width: 100%; padding: 17px;
+    background: var(--accent); border: none; border-radius: 14px;
+    color: #0f0f0f; font-family: var(--sans); font-size: 16px; font-weight: 700;
     cursor: pointer; transition: all 0.15s;
     display: flex; align-items: center; justify-content: center; gap: 8px;
+    letter-spacing: 0.01em;
+    box-shadow: 0 4px 16px rgba(232,197,71,0.25);
   }
-  .pt-cerrar-btn:hover { background: #f0d050; }
-  .pt-cerrar-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .pt-cerrar-btn:hover { background: #f0d050; box-shadow: 0 6px 20px rgba(232,197,71,0.35); transform: translateY(-1px); }
+  .pt-cerrar-btn:active { transform: translateY(0); }
+  .pt-cerrar-btn:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; transform: none; }
 
   /* Confirmado */
   .pt-confirmado {
@@ -1089,14 +1170,14 @@
 
   .pt-check-item {
     background: var(--bg3); border: 0.5px solid var(--border);
-    border-radius: var(--radius); padding: 12px 14px;
-    transition: border-color 0.15s;
+    border-radius: var(--radius); padding: 14px 14px;
+    transition: border-color 0.2s, background 0.2s;
   }
   .pt-check-item.done   { border-color: var(--green); background: var(--green-bg); }
   .pt-check-item.alert  { border-color: var(--orange); background: var(--orange-bg); }
 
   .pt-check-row {
-    display: flex; align-items: center; gap: 10px;
+    display: flex; align-items: center; gap: 12px;
   }
   .pt-check-toggle {
     width: 22px; height: 22px; border-radius: 6px;
@@ -1109,14 +1190,28 @@
   .pt-check-item.done .pt-check-toggle {
     background: var(--green); border-color: var(--green); color: #0f0f0f;
   }
+  /* Botones ok/no por check */
+  .pt-check-btns { display:flex; gap:6px; flex-shrink:0; }
+  .pt-check-btn-ok, .pt-check-btn-no {
+    width:44px; height:44px; border-radius:10px; border:1.5px solid var(--border2);
+    background:transparent; cursor:pointer; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    transition:all 0.15s; font-size:18px; color:var(--text3);
+  }
+  .pt-check-btn-ok:hover  { border-color:var(--green); color:var(--green); background: var(--green-bg); }
+  .pt-check-btn-no:hover  { border-color:var(--red);   color:var(--red);   background: var(--red-bg); }
+  .pt-check-item.done  .pt-check-btn-ok { background:var(--green); border-color:var(--green); color:#0f0f0f; }
+  .pt-check-item.alert .pt-check-btn-no { background:var(--red);   border-color:var(--red);   color:#fff; }
+  .pt-check-item.alert { border-color:var(--red); background:rgba(255,60,60,.04); }
+  .pt-check-item.alert .pt-check-label  { color:var(--red); }
 
   .pt-check-info { flex: 1; }
   .pt-check-label {
-    font-size: 13px; font-weight: 500; color: var(--text);
+    font-size: 15px; font-weight: 500; color: var(--text);
   }
-  .pt-check-item.done .pt-check-label { color: var(--text3); }
+  .pt-check-item.done .pt-check-label { color: var(--text2); text-decoration: line-through; }
   .pt-check-sublabel {
-    font-family: var(--mono); font-size: 10px; color: var(--text3); margin-top: 2px;
+    font-family: var(--mono); font-size: 12px; color: var(--text2); margin-top: 4px;
   }
 
   /* Hielos — contador */
@@ -1151,8 +1246,8 @@
   }
   .pt-recarga-field { display: flex; flex-direction: column; gap: 4px; }
   .pt-recarga-lbl {
-    font-family: var(--mono); font-size: 9px; color: var(--text3);
-    text-transform: uppercase; letter-spacing: 0.08em;
+    font-family: var(--mono); font-size: 10px; color: var(--text2);
+    text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500;
   }
   .pt-recarga-inp {
     background: var(--bg4); border: 0.5px solid var(--border2);
@@ -1167,7 +1262,7 @@
     border-radius: 6px; padding: 8px 10px;
     display: flex; justify-content: space-between; align-items: center;
   }
-  .pt-recarga-res-lbl { font-family: var(--mono); font-size: 10px; color: var(--text3); }
+  .pt-recarga-res-lbl { font-family: var(--mono); font-size: 10px; color: var(--text2); font-weight: 500; }
   .pt-recarga-res-val { font-family: var(--mono); font-size: 14px; font-weight: 500; }
 
   /* Sub-checks de delivery */
@@ -1184,7 +1279,7 @@
   }
   .pt-sub-check-box:hover { border-color: var(--green); }
   .pt-sub-check-box.checked { background: var(--green); border-color: var(--green); color: #0f0f0f; }
-  .pt-sub-check-lbl { font-size: 12px; color: var(--text2); font-family: var(--mono); }
+  .pt-sub-check-lbl { font-size: 12px; color: var(--text); font-family: var(--mono); font-weight: 500; }
 
   /* Barra progreso checks */
   .pt-checks-progress {
@@ -1201,8 +1296,8 @@
     width: 0%;
   }
   .pt-checks-count {
-    font-family: var(--mono); font-size: 10px; color: var(--text3);
-    white-space: nowrap;
+    font-family: var(--mono); font-size: 11px; color: var(--text2);
+    white-space: nowrap; font-weight: 500;
   }
 
   /* ── TICKET BADGE ── */
@@ -1538,7 +1633,7 @@
 </div>
 
 <!-- TOAST -->
-<div id="toast"></div>
+<div id="toast"><span class="toast-icon"></span><span id="toast-msg"></span></div>
 
 <!-- ════════════════════════════════════════
      SCREEN: HUB
@@ -1583,6 +1678,21 @@
         <div class="turno-chip" id="tc-manana" onclick="selTurno('manana',this)">Mañana</div>
         <div class="turno-chip" id="tc-tarde"  onclick="selTurno('tarde',this)">Tarde</div>
         <div class="turno-chip" id="tc-noche"  onclick="selTurno('noche',this)">Noche</div>
+      </div>
+    </div>
+
+    <!-- Selector de tienda para admin/logística -->
+    <div id="admin-tienda-wrap" style="display:none;margin-top:0">
+      <label class="field-label">Tienda</label>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div id="admin-tienda-chips" style="display:flex;gap:6px;flex-wrap:wrap">
+          <div class="turno-chip admin-tienda-chip selected" id="atch-todas" onclick="admSelTienda('',this)">Todas</div>
+          <div class="turno-chip admin-tienda-chip" id="atch-palermo" onclick="admSelTienda('palermo',this)">🌿 Thames</div>
+          <div class="turno-chip admin-tienda-chip" id="atch-belgrano" onclick="admSelTienda('belgrano',this)">🏛️ Belgrano</div>
+          <div class="turno-chip admin-tienda-chip" id="atch-barrio_chino" onclick="admSelTienda('barrio_chino',this)">🏮 B. Chino</div>
+          <div class="turno-chip admin-tienda-chip" id="atch-san_telmo" onclick="admSelTienda('san_telmo',this)">🎭 San Telmo</div>
+        </div>
+        <div id="admin-tienda-label" style="font-family:var(--mono);font-size:10px;color:var(--text3)">Todas las tiendas seleccionadas</div>
       </div>
     </div>
   </div>
@@ -1683,497 +1793,15 @@
 </div>
 
 <!-- ════════════════════════════════════════
-     SCREEN: SELECTOR TIPO REPORTE
+     MÓDULO: REPORTES (iframe)
 ════════════════════════════════════════ -->
-<div class="screen" id="screen-reporte-tipo">
-  <div class="topbar">
-    <div class="topbar-back" onclick="if(state.rol==='repartidor')state.local=null;goTo('hub')">←</div>
-    <span class="topbar-title">Nuevo reporte</span>
-    <span class="topbar-badge" id="badge-local-tipo">—</span>
-  </div>
-  <div class="form-scroll">
-    <div style="height:8px"></div>
-    <div class="form-section-title" style="margin-bottom:14px">¿Qué querés reportar?</div>
-
-    <div style="display:flex;flex-direction:column;gap:10px;">
-
-      <div class="module-card" style="--card-accent:var(--orange);--icon-bg:var(--orange-bg)"
-           onclick="openForm('falla_tienda')">
-        <div class="module-icon" style="width:28px;height:28px;font-size:13px">⚑</div>
-        <div class="module-name">Falla en tienda</div>
-        <div class="module-desc">organización · limpieza · delivery · caja · etiquetas · OT</div>
-      </div>
-
-      <div class="module-card" style="--card-accent:var(--text2);--icon-bg:var(--bg4)"
-           onclick="openForm('edilicio')">
-        <div class="module-icon" style="width:28px;height:28px;font-size:13px">◈</div>
-        <div class="module-name">Falla edilicia</div>
-        <div class="module-desc">infraestructura · equipos · limpieza · sanitarios</div>
-      </div>
-
-      <div class="module-card" style="--card-accent:var(--red);--icon-bg:var(--red-bg)"
-           onclick="openForm('rotos_vencidos')">
-        <div class="module-icon" style="width:28px;height:28px;font-size:13px">⊠</div>
-        <div class="module-name">Rotos / Vencidos</div>
-        <div class="module-desc">baja de productos · nombre · cantidad · precio</div>
-      </div>
-
-      <div class="module-card" style="--card-accent:var(--blue);--icon-bg:var(--blue-bg)"
-           onclick="openForm('pedido')">
-        <div class="module-icon" style="width:28px;height:28px;font-size:13px">◎</div>
-        <div class="module-name">Pedido cancelado</div>
-        <div class="module-desc">Rappi · PedidosYa · MP Delivery · deducciones</div>
-      </div>
-
-      <div class="module-card" style="--card-accent:var(--accent);--icon-bg:rgba(232,197,71,0.1)"
-           onclick="openForm('ticket')">
-        <div class="module-icon" style="width:28px;height:28px;font-size:13px">⊞</div>
-        <div class="module-name">Ticket de sistema</div>
-        <div class="module-desc">CB · artículo nuevo · stock · error de precio/nombre</div>
-      </div>
-
-    </div>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════
-     SCREEN: FORM — FALLA EN TIENDA
-════════════════════════════════════════ -->
-<div class="screen" id="screen-falla-tienda">
-  <div class="topbar">
-    <div class="topbar-back" onclick="goTo('reporte-tipo')">←</div>
-    <span class="topbar-title">Falla en tienda</span>
-    <span class="topbar-badge" id="badge-ft">—</span>
-  </div>
-  <div class="form-scroll">
-
-    <div class="form-section">
-      <div class="form-section-title">Categoría</div>
-      <div class="chip-row" id="chips-ft-cat">
-        <div class="chip selected" onclick="selChip(this,'ft-cat')">Organización</div>
-        <div class="chip" onclick="selChip(this,'ft-cat')">Limpieza</div>
-        <div class="chip" onclick="selChip(this,'ft-cat')">Delivery</div>
-        <div class="chip" onclick="selChip(this,'ft-cat')">Cierre de caja</div>
-        <div class="chip" onclick="selChip(this,'ft-cat')">Etiquetas/Precios</div>
-        <div class="chip" onclick="selChip(this,'ft-cat')">Orden de trabajo</div>
-        <div class="chip" onclick="selChip(this,'ft-cat')">Otro</div>
-      </div>
-    </div>
-
-    <div class="form-section" id="ft-subcats">
-      <div class="form-section-title">¿Qué falla específicamente?</div>
-      <div class="chip-row" id="chips-ft-sub"></div>
-    </div>
-
-    <div class="form-section">
-      <div class="form-section-title">Responsable de la falla</div>
-      <select id="ft-responsable">
-        <option value="">— sin responsable específico —</option>
-      </select>
-    </div>
-
-    <div class="form-section">
-      <div class="form-section-title">Descripción adicional</div>
-      <textarea id="ft-desc" placeholder="Detallá si es necesario..." rows="3"></textarea>
-    </div>
-
-    <div class="form-section">
-      <div class="form-section-title">Foto</div>
-      <div class="photo-area" id="photo-ft">
-        <input type="file" accept="image/*" onchange="handlePhoto(this,'ft')">
-        <div class="photo-icon">📷</div>
-        <div class="photo-text">Galería o cámara</div>
-        <div class="photo-sub" id="photo-ft-name">se sube a Google Drive</div>
-      </div>
-    </div>
-
-  </div>
-  <div class="submit-bar">
-    <button class="submit-btn" id="btn-ft" onclick="submitForm('falla_tienda')">
-      <div class="btn-spinner spinner"></div>
-      <span class="btn-text">Enviar reporte →</span>
-    </button>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════
-     SCREEN: FORM — FALLA EDILICIA
-════════════════════════════════════════ -->
-<div class="screen" id="screen-edilicio">
-  <div class="topbar">
-    <div class="topbar-back" onclick="goTo('reporte-tipo')">←</div>
-    <span class="topbar-title">Falla edilicia</span>
-    <span class="topbar-badge" id="badge-ed">—</span>
-  </div>
-  <div class="form-scroll">
-
-    <div class="form-section">
-      <div class="form-section-title">Tipo de falla</div>
-      <div class="chip-row">
-        <div class="chip selected" onclick="selChip(this,'ed-tipo')">Lámpara quemada</div>
-        <div class="chip" onclick="selChip(this,'ed-tipo')">Cartel roto</div>
-        <div class="chip" onclick="selChip(this,'ed-tipo')">Publicidad deteriorada</div>
-        <div class="chip" onclick="selChip(this,'ed-tipo')">Rejas/puertas dañadas</div>
-        <div class="chip" onclick="selChip(this,'ed-tipo')">Rotura piso/paredes</div>
-        <div class="chip" onclick="selChip(this,'ed-tipo')">Pintura deteriorada</div>
-        <div class="chip" onclick="selChip(this,'ed-tipo')">Filtraciones</div>
-        <div class="chip" onclick="selChip(this,'ed-tipo')">Roedores</div>
-        <div class="chip" onclick="selChip(this,'ed-tipo')">Equipos periféricos PC</div>
-        <div class="chip" onclick="selChip(this,'ed-tipo')">Posnets/Scanners</div>
-        <div class="chip" onclick="selChip(this,'ed-tipo')">Falla en heladeras</div>
-        <div class="chip" onclick="selChip(this,'ed-tipo')">Equipos sanitarios</div>
-        <div class="chip" onclick="selChip(this,'ed-tipo')">Pérdida de agua</div>
-        <div class="chip" onclick="selChip(this,'ed-tipo')">Falta equipos limpieza</div>
-        <div class="chip" onclick="selChip(this,'ed-tipo')">Falta productos limpieza</div>
-        <div class="chip" onclick="selChip(this,'ed-tipo')">Rotura equipamiento</div>
-        <div class="chip" onclick="selChip(this,'ed-tipo')">Otro</div>
-      </div>
-    </div>
-
-    <div class="form-section">
-      <div class="form-section-title">Descripción</div>
-      <textarea id="ed-desc" placeholder="Describí la falla con detalle..." rows="3"></textarea>
-    </div>
-
-    <div class="form-section">
-      <div class="form-section-title">Foto</div>
-      <div class="photo-area" id="photo-ed">
-        <input type="file" accept="image/*" onchange="handlePhoto(this,'ed')">
-        <div class="photo-icon">📷</div>
-        <div class="photo-text">Galería o cámara</div>
-        <div class="photo-sub" id="photo-ed-name">se sube a Google Drive</div>
-      </div>
-    </div>
-
-  </div>
-  <div class="submit-bar">
-    <button class="submit-btn" id="btn-ed" onclick="submitForm('edilicio')">
-      <div class="btn-spinner spinner"></div>
-      <span class="btn-text">Enviar reporte →</span>
-    </button>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════
-     SCREEN: FORM — ROTOS Y VENCIDOS
-════════════════════════════════════════ -->
-<div class="screen" id="screen-rotos-vencidos">
-  <div class="topbar">
-    <div class="topbar-back" onclick="goTo('reporte-tipo')">←</div>
-    <span class="topbar-title">Rotos / Vencidos</span>
-    <span class="topbar-badge" id="badge-rv">—</span>
-  </div>
-  <div class="form-scroll">
-
-    <div class="form-section">
-      <div class="form-section-title">Tipo</div>
-      <div class="chip-row">
-        <div class="chip sel-red selected" onclick="selChip(this,'rv-tipo');updateRVTipo(this.textContent)">Roto</div>
-        <div class="chip sel-red" onclick="selChip(this,'rv-tipo');updateRVTipo(this.textContent)">Vencido</div>
-        <div class="chip sel-red" onclick="selChip(this,'rv-tipo');updateRVTipo(this.textContent)">Otro</div>
-      </div>
-    </div>
-
-    <div id="rv-items-container">
-      <!-- items agregados dinámicamente -->
-    </div>
-    <button class="add-item-btn" id="rv-add-btn" onclick="addRVItem()">+ Agregar otro producto</button>
-
-    <div id="rv-otro-section" style="display:none;margin-top:16px">
-      <div class="form-section">
-        <div class="form-section-title">Descripción</div>
-        <textarea id="rv-otro-desc" placeholder="Describí el problema..." rows="3"></textarea>
-      </div>
-    </div>
-
-  </div>
-  <div class="submit-bar">
-    <button class="submit-btn" id="btn-rv" onclick="submitForm('rotos_vencidos')">
-      <div class="btn-spinner spinner"></div>
-      <span class="btn-text">Enviar reporte →</span>
-    </button>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════
-     SCREEN: FORM — PEDIDO CANCELADO
-════════════════════════════════════════ -->
-<div class="screen" id="screen-pedido">
-  <div class="topbar">
-    <div class="topbar-back" onclick="goTo('reporte-tipo')">←</div>
-    <span class="topbar-title">Pedido cancelado</span>
-    <span class="topbar-badge" id="badge-ped">—</span>
-  </div>
-  <div class="form-scroll">
-
-    <div class="form-section">
-      <div class="form-section-title">Plataforma</div>
-      <div class="chip-row">
-        <div class="chip sel-blue selected" onclick="selChip(this,'ped-plat')">PedidosYa</div>
-        <div class="chip sel-blue" onclick="selChip(this,'ped-plat')">MP Delivery</div>
-        <div class="chip sel-blue" onclick="selChip(this,'ped-plat')">Rappi</div>
-      </div>
-    </div>
-
-    <div class="form-section">
-      <div class="form-section-title">Tipo de reporte</div>
-      <div class="chip-row">
-        <div class="chip selected" onclick="selChip(this,'ped-tipo');updatePedTipo(this.dataset.val)" data-val="cancelado">Cancelado no devuelto</div>
-        <div class="chip" onclick="selChip(this,'ped-tipo');updatePedTipo(this.dataset.val)" data-val="deduccion_error">Deducción — mercadería errónea</div>
-        <div class="chip" onclick="selChip(this,'ped-tipo');updatePedTipo(this.dataset.val)" data-val="deduccion_faltante">Deducción — faltante</div>
-        <div class="chip" onclick="selChip(this,'ped-tipo');updatePedTipo(this.dataset.val)" data-val="otro">Otro</div>
-      </div>
-    </div>
-
-    <!-- Campos comunes -->
-    <div class="form-section">
-      <div class="form-section-title">ID del pedido</div>
-      <input type="text" id="ped-id" placeholder="Número de orden de la plataforma">
-    </div>
-    <div class="form-section">
-      <div class="form-section-title">ID FácilVirtual</div>
-      <input type="text" id="ped-fv" placeholder="ID en el sistema">
-    </div>
-
-    <!-- Cancelado no devuelto -->
-    <div id="ped-sec-cancelado">
-      <div class="form-section">
-        <div class="form-section-title">Motivo de cancelación</div>
-        <div class="chip-row">
-          <div class="chip selected" onclick="selChip(this,'ped-motivo')">Rider</div>
-          <div class="chip" onclick="selChip(this,'ped-motivo')">Cliente</div>
-          <div class="chip" onclick="selChip(this,'ped-motivo')">Plataforma</div>
-          <div class="chip" onclick="selChip(this,'ped-motivo')">Artículo no encontrado</div>
-        </div>
-      </div>
-      <div class="grid-2">
-        <div class="form-section">
-          <div class="form-section-title">Fecha</div>
-          <input type="date" id="ped-fecha">
-        </div>
-        <div class="form-section">
-          <div class="form-section-title">Hora</div>
-          <input type="time" id="ped-hora">
-        </div>
-      </div>
-      <div class="form-section">
-        <div class="form-section-title">Monto total del pedido</div>
-        <input type="number" id="ped-monto-total" placeholder="$ 0.00">
-      </div>
-      <div class="form-section">
-        <div class="form-section-title">Artículos del pedido</div>
-        <textarea id="ped-articulos" placeholder="Listá los artículos..." rows="3"></textarea>
-      </div>
-    </div>
-
-    <!-- Deducción error / faltante -->
-    <div id="ped-sec-deduccion" style="display:none">
-      <div class="form-section">
-        <div class="form-section-title">¿Reclamo del cliente es justificado?</div>
-        <div class="toggle-row">
-          <div class="toggle-opt" onclick="selToggle(this,'ped-just','yes')" id="pedj-yes">Sí — error nuestro</div>
-          <div class="toggle-opt" onclick="selToggle(this,'ped-just','no')" id="pedj-no">No — pedido correcto</div>
-        </div>
-      </div>
-      <div class="form-section">
-        <div class="form-section-title">Artículo reclamado</div>
-        <input type="text" id="ped-art-reclamo" placeholder="Nombre del artículo">
-      </div>
-      <div class="form-section">
-        <div class="form-section-title">Monto del reclamo / deducción</div>
-        <input type="number" id="ped-monto-rec" placeholder="$ 0.00">
-      </div>
-      <div class="form-section">
-        <div class="form-section-title">Explicación</div>
-        <textarea id="ped-explicacion" placeholder="Detallá qué pasó..." rows="3"></textarea>
-      </div>
-    </div>
-
-    <!-- Otro -->
-    <div id="ped-sec-otro" style="display:none">
-      <div class="form-section">
-        <div class="form-section-title">Descripción</div>
-        <textarea id="ped-otro-desc" placeholder="Describí el problema..." rows="4"></textarea>
-      </div>
-    </div>
-
-    <div class="form-section">
-      <div class="form-section-title">Foto (opcional)</div>
-      <div class="photo-area" id="photo-ped">
-        <input type="file" accept="image/*" onchange="handlePhoto(this,'ped')">
-        <div class="photo-icon">📷</div>
-        <div class="photo-text">Galería o cámara</div>
-        <div class="photo-sub" id="photo-ped-name">opcional</div>
-      </div>
-    </div>
-
-  </div>
-  <div class="submit-bar">
-    <button class="submit-btn" id="btn-ped" onclick="submitForm('pedido')">
-      <div class="btn-spinner spinner"></div>
-      <span class="btn-text">Enviar reporte →</span>
-    </button>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════
-     SCREEN: FORM — TICKET DE SISTEMA
-════════════════════════════════════════ -->
-<div class="screen" id="screen-ticket">
-  <div class="topbar">
-    <div class="topbar-back" onclick="goTo('reporte-tipo')">←</div>
-    <span class="topbar-title">Ticket de sistema</span>
-    <span class="topbar-badge" id="badge-tk">—</span>
-  </div>
-  <div class="form-scroll">
-
-    <div class="ticket-notice">
-      ⊞ Este ticket queda en cola de resolución para el administrador.
-    </div>
-
-    <div class="form-section">
-      <div class="form-section-title">Tipo de ticket</div>
-      <div class="chip-row">
-        <div class="chip selected" onclick="selChip(this,'tk-tipo');updateTkTipo(this.dataset.val)" data-val="cambio_cb">Cambio de CB</div>
-        <div class="chip" onclick="selChip(this,'tk-tipo');updateTkTipo(this.dataset.val)" data-val="articulo_nuevo">Artículo nuevo</div>
-        <div class="chip" onclick="selChip(this,'tk-tipo');updateTkTipo(this.dataset.val)" data-val="ajuste_stock">Ajuste de stock</div>
-        <div class="chip" onclick="selChip(this,'tk-tipo');updateTkTipo(this.dataset.val)" data-val="error_precio">Error de precio</div>
-        <div class="chip" onclick="selChip(this,'tk-tipo');updateTkTipo(this.dataset.val)" data-val="error_nombre">Error de nombre</div>
-        <div class="chip" onclick="selChip(this,'tk-tipo');updateTkTipo(this.dataset.val)" data-val="otro">Otro</div>
-      </div>
-    </div>
-
-    <!-- Cambio CB / Artículo nuevo -->
-    <div id="tk-sec-items">
-      <div id="tk-items-container"></div>
-      <button class="add-item-btn" id="tk-add-btn" onclick="addTkItem()">+ Agregar otro artículo</button>
-    </div>
-
-    <!-- Ajuste de stock -->
-    <div id="tk-sec-stock" style="display:none">
-      <div class="form-section">
-        <div class="form-section-title">Artículo</div>
-        <input type="text" id="tk-stock-art" placeholder="Nombre exacto (si es cigarrillo, especificar tipo)">
-      </div>
-      <div class="form-section">
-        <div class="form-section-title">¿Sumar o restar?</div>
-        <div class="toggle-row">
-          <div class="toggle-opt" onclick="selToggle(this,'tk-stock-op','sumar')" id="tks-sum">Sumar</div>
-          <div class="toggle-opt" onclick="selToggle(this,'tk-stock-op','restar')" id="tks-res">Restar</div>
-        </div>
-      </div>
-      <div class="grid-2">
-        <div class="form-section">
-          <div class="form-section-title">Cantidad</div>
-          <input type="number" id="tk-stock-cant" placeholder="0">
-        </div>
-        <div class="form-section">
-          <div class="form-section-title">Motivo</div>
-          <select id="tk-stock-motivo">
-            <option>Factura/remito</option>
-            <option>Venta</option>
-            <option>Otro</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-section">
-        <div class="form-section-title">Comentarios</div>
-        <textarea id="tk-stock-comentario" rows="2" placeholder="Detalles adicionales..."></textarea>
-      </div>
-    </div>
-
-    <!-- Error precio -->
-    <div id="tk-sec-precio" style="display:none">
-      <div class="form-section">
-        <div class="form-section-title">Artículo o promoción</div>
-        <input type="text" id="tk-precio-art" placeholder="Nombre exacto">
-      </div>
-      <div class="form-section">
-        <div class="form-section-title">Ubicación del error</div>
-        <div class="chip-row">
-          <div class="chip selected" onclick="selChip(this,'tk-precio-ubi')">Tienda</div>
-          <div class="chip" onclick="selChip(this,'tk-precio-ubi')">PedidosYa</div>
-          <div class="chip" onclick="selChip(this,'tk-precio-ubi')">Mercadopago</div>
-          <div class="chip" onclick="selChip(this,'tk-precio-ubi')">Rappi</div>
-        </div>
-      </div>
-      <div class="grid-2">
-        <div class="form-section">
-          <div class="form-section-title">Precio con error</div>
-          <input type="number" id="tk-precio-error" placeholder="$ 0">
-        </div>
-        <div class="form-section">
-          <div class="form-section-title">Precio correcto</div>
-          <input type="number" id="tk-precio-correcto" placeholder="$ 0">
-        </div>
-      </div>
-    </div>
-
-    <!-- Error nombre -->
-    <div id="tk-sec-nombre" style="display:none">
-      <div class="form-section">
-        <div class="form-section-title">Artículo con error</div>
-        <input type="text" id="tk-nombre-error" placeholder="Nombre incorrecto actual">
-      </div>
-      <div class="form-section">
-        <div class="form-section-title">Nombre correcto</div>
-        <input type="text" id="tk-nombre-correcto" placeholder="Cómo debería llamarse">
-      </div>
-      <div class="form-section">
-        <div class="form-section-title">Ubicación</div>
-        <div class="chip-row">
-          <div class="chip selected" onclick="selChip(this,'tk-nombre-ubi')">Tienda</div>
-          <div class="chip" onclick="selChip(this,'tk-nombre-ubi')">PedidosYa</div>
-          <div class="chip" onclick="selChip(this,'tk-nombre-ubi')">Mercadopago</div>
-          <div class="chip" onclick="selChip(this,'tk-nombre-ubi')">Rappi</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Otro -->
-    <div id="tk-sec-otro" style="display:none">
-      <div class="form-section">
-        <div class="form-section-title">Descripción</div>
-        <textarea id="tk-otro-desc" placeholder="Describí el problema..." rows="4"></textarea>
-      </div>
-    </div>
-
-    <div class="form-section" style="margin-top:8px">
-      <div class="form-section-title">Foto (recomendado)</div>
-      <div class="photo-area" id="photo-tk">
-        <input type="file" accept="image/*" onchange="handlePhoto(this,'tk')">
-        <div class="photo-icon">📷</div>
-        <div class="photo-text">Galería o cámara</div>
-        <div class="photo-sub" id="photo-tk-name">se sube a Google Drive</div>
-      </div>
-    </div>
-
-  </div>
-  <div class="submit-bar">
-    <button class="submit-btn" id="btn-tk" onclick="submitForm('ticket')">
-      <div class="btn-spinner spinner"></div>
-      <span class="btn-text">Enviar ticket →</span>
-    </button>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════
-     SCREEN: SUCCESS
-════════════════════════════════════════ -->
-<div class="screen" id="screen-success">
-  <div class="topbar">
-    <div class="topbar-back" onclick="goTo('hub')">←</div>
-    <span class="topbar-title">Enviado</span>
-  </div>
-  <div class="success-screen">
-    <div class="success-ring">✓</div>
-    <div class="success-title">Reporte registrado</div>
-    <div class="success-sub" id="success-sub">Quedó guardado con fecha y hora.<br>El admin puede verlo en el dashboard.</div>
-    <div class="success-meta" id="success-meta"></div>
-    <button class="new-btn" onclick="goTo('reporte-tipo')">Hacer otro reporte</button>
-    <div style="height:10px"></div>
-    <button class="new-btn" style="border-color:transparent;color:var(--text3)" onclick="goTo('hub')">Volver al inicio</button>
-  </div>
+<div class="screen" id="screen-reportes" style="flex-direction:column">
+  <iframe
+    id="reportes-iframe"
+    src="reportes.html"
+    style="flex:1;border:none;width:100%;height:100%"
+    allow="camera"
+  ></iframe>
 </div>
 
 <!-- ════════════════════════════════════════
@@ -2631,122 +2259,10 @@
         <!-- Formulario -->
         <div id="pt-cierre-form">
 
-          <!-- Caja chica (vuelto) -->
-          <div class="form-section-title" style="margin-bottom:10px">💵 Dinero en caja (vuelto)</div>
-          <div class="pt-billetes-grid" style="margin-bottom:10px">
-            <div class="pt-billete"><div class="pt-billete-denom">$10</div><input type="number" min="0" class="pt-billete-inp" id="ptb10" value="0" oninput="ptRecalc()"><div class="pt-billete-sub" id="ptbs10">$0</div></div>
-            <div class="pt-billete"><div class="pt-billete-denom">$20</div><input type="number" min="0" class="pt-billete-inp" id="ptb20" value="0" oninput="ptRecalc()"><div class="pt-billete-sub" id="ptbs20">$0</div></div>
-            <div class="pt-billete"><div class="pt-billete-denom">$50</div><input type="number" min="0" class="pt-billete-inp" id="ptb50" value="0" oninput="ptRecalc()"><div class="pt-billete-sub" id="ptbs50">$0</div></div>
-            <div class="pt-billete"><div class="pt-billete-denom">$100</div><input type="number" min="0" class="pt-billete-inp" id="ptb100" value="0" oninput="ptRecalc()"><div class="pt-billete-sub" id="ptbs100">$0</div></div>
-            <div class="pt-billete"><div class="pt-billete-denom">$200</div><input type="number" min="0" class="pt-billete-inp" id="ptb200" value="0" oninput="ptRecalc()"><div class="pt-billete-sub" id="ptbs200">$0</div></div>
-            <div class="pt-billete"><div class="pt-billete-denom">$500</div><input type="number" min="0" class="pt-billete-inp" id="ptb500" value="0" oninput="ptRecalc()"><div class="pt-billete-sub" id="ptbs500">$0</div></div>
-            <div class="pt-billete"><div class="pt-billete-denom">$1.000</div><input type="number" min="0" class="pt-billete-inp" id="ptb1000" value="0" oninput="ptRecalc()"><div class="pt-billete-sub" id="ptbs1000">$0</div></div>
-            <div class="pt-billete"><div class="pt-billete-denom">$2.000</div><input type="number" min="0" class="pt-billete-inp" id="ptb2000" value="0" oninput="ptRecalc()"><div class="pt-billete-sub" id="ptbs2000">$0</div></div>
-            <div class="pt-billete"><div class="pt-billete-denom">$10.000</div><input type="number" min="0" class="pt-billete-inp" id="ptb10000" value="0" oninput="ptRecalc()"><div class="pt-billete-sub" id="ptbs10000">$0</div></div>
-            <div class="pt-billete"><div class="pt-billete-denom">$20.000</div><input type="number" min="0" class="pt-billete-inp" id="ptb20000" value="0" oninput="ptRecalc()"><div class="pt-billete-sub" id="ptbs20000">$0</div></div>
-          </div>
-
-          <!-- Caja grande (pacas) -->
-          <div class="form-section-title" style="margin-bottom:10px">📦 Caja grande (pacas)</div>
-          <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:8px">Pacas fijas y custom — ingresá la cantidad</div>
-          <div class="pt-billetes-grid" style="margin-bottom:10px">
-            <!-- Paca fija $10.000 -->
-            <div class="pt-billete">
-              <div class="pt-billete-denom" style="font-size:11px">$10.000</div>
-              <div style="font-family:var(--mono);font-size:9px;color:var(--text3);text-align:center">cant.</div>
-              <input type="number" min="0" class="pt-billete-inp" id="ptpc-f1" placeholder="0" oninput="ptRecalcPacas()">
-              <div class="pt-billete-sub" id="ptps-f1">$0</div>
-            </div>
-            <!-- Paca fija $50.000 -->
-            <div class="pt-billete">
-              <div class="pt-billete-denom" style="font-size:11px">$50.000</div>
-              <div style="font-family:var(--mono);font-size:9px;color:var(--text3);text-align:center">cant.</div>
-              <input type="number" min="0" class="pt-billete-inp" id="ptpc-f2" placeholder="0" oninput="ptRecalcPacas()">
-              <div class="pt-billete-sub" id="ptps-f2">$0</div>
-            </div>
-            <!-- Paca fija $100.000 -->
-            <div class="pt-billete">
-              <div class="pt-billete-denom" style="font-size:11px">$100.000</div>
-              <div style="font-family:var(--mono);font-size:9px;color:var(--text3);text-align:center">cant.</div>
-              <input type="number" min="0" class="pt-billete-inp" id="ptpc-f3" placeholder="0" oninput="ptRecalcPacas()">
-              <div class="pt-billete-sub" id="ptps-f3">$0</div>
-            </div>
-            <!-- Custom 1 -->
-            <div class="pt-billete">
-              <input type="text" class="pt-billete-inp" id="ptpn-c1" placeholder="Nombre" oninput="ptRecalcPacas()" style="margin-bottom:2px;font-size:10px">
-              <input type="number" min="0" class="pt-billete-inp" id="ptpd-c1" placeholder="Valor $" oninput="ptRecalcPacas()" style="margin-bottom:2px">
-              <input type="number" min="0" class="pt-billete-inp" id="ptpc-c1" placeholder="Cant." oninput="ptRecalcPacas()">
-              <div class="pt-billete-sub" id="ptps-c1">$0</div>
-            </div>
-            <!-- Custom 2 -->
-            <div class="pt-billete">
-              <input type="text" class="pt-billete-inp" id="ptpn-c2" placeholder="Nombre" oninput="ptRecalcPacas()" style="margin-bottom:2px;font-size:10px">
-              <input type="number" min="0" class="pt-billete-inp" id="ptpd-c2" placeholder="Valor $" oninput="ptRecalcPacas()" style="margin-bottom:2px">
-              <input type="number" min="0" class="pt-billete-inp" id="ptpc-c2" placeholder="Cant." oninput="ptRecalcPacas()">
-              <div class="pt-billete-sub" id="ptps-c2">$0</div>
-            </div>
-            <!-- Custom 3 -->
-            <div class="pt-billete">
-              <input type="text" class="pt-billete-inp" id="ptpn-c3" placeholder="Nombre" oninput="ptRecalcPacas()" style="margin-bottom:2px;font-size:10px">
-              <input type="number" min="0" class="pt-billete-inp" id="ptpd-c3" placeholder="Valor $" oninput="ptRecalcPacas()" style="margin-bottom:2px">
-              <input type="number" min="0" class="pt-billete-inp" id="ptpc-c3" placeholder="Cant." oninput="ptRecalcPacas()">
-              <div class="pt-billete-sub" id="ptps-c3">$0</div>
-            </div>
-          </div>
-
-          <!-- Total caja grande -->
-          <div class="pt-total-ef" style="margin-bottom:12px;border-color:var(--blue)">
-            <div class="pt-total-ef-lbl" style="color:var(--blue)">📦 Total caja grande</div>
-            <div class="pt-total-ef-val" id="pt-total-pacas" style="color:var(--blue)">$0</div>
-          </div>
-
-          <!-- Total efectivo caja chica -->
-          <div class="pt-total-ef" style="margin-bottom:12px">
-            <div class="pt-total-ef-lbl">💵 Total caja chica</div>
-            <div class="pt-total-ef-val" id="pt-total-ef">$0</div>
-          </div>
-
-          <!-- Total general -->
-          <div class="pt-total-ef" style="margin-bottom:12px;border-color:var(--accent)">
-            <div class="pt-total-ef-lbl">💰 Total general en caja</div>
-            <div class="pt-total-ef-val" id="pt-total-general">$0</div>
-          </div>
-
-          <!-- Ventas del turno (ingreso manual) -->
-          <div class="form-section-title" style="margin-bottom:8px">💳 Ventas del turno</div>
-          <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:10px">Ingresá lo que indica el sistema de ventas</div>
-          <div class="pt-medio-item" style="margin-bottom:8px">
-            <div class="pt-medio-lbl">Efectivo</div>
-            <input type="number" min="0" class="pt-medio-inp" id="ptven-efectivo" placeholder="$0" oninput="ptRecalcVentas()">
-          </div>
-          <div class="pt-medio-item" style="margin-bottom:8px">
-            <div class="pt-medio-lbl">Transferencia / MP</div>
-            <input type="number" min="0" class="pt-medio-inp" id="ptven-mp" placeholder="$0" oninput="ptRecalcVentas()">
-          </div>
-          <div class="pt-medio-item" style="margin-bottom:8px">
-            <div class="pt-medio-lbl">Débito / Crédito</div>
-            <input type="number" min="0" class="pt-medio-inp" id="ptven-debito" placeholder="$0" oninput="ptRecalcVentas()">
-          </div>
-          <div class="pt-total-ef" style="margin-bottom:16px;border-color:var(--purple)">
-            <div class="pt-total-ef-lbl" style="color:var(--purple)">💳 Total ventas sistema</div>
-            <div class="pt-total-ef-val" id="ptven-total" style="color:var(--purple)">$0</div>
-          </div>
-          <!-- Campo sistema legacy (oculto, se calcula automático) -->
-          <input type="hidden" id="ptmed-sistema">
-
-          <!-- Diferencia -->
-          <div class="pt-diferencia pt-dif-neutral" id="pt-diferencia" style="margin-bottom:20px">
-            <div>
-              <div class="pt-dif-lbl" id="pt-dif-lbl">Diferencia</div>
-              <div class="pt-dif-desc" id="pt-dif-desc">Ingresá el monto del sistema para calcular</div>
-            </div>
-            <div class="pt-dif-val" id="pt-dif-val">—</div>
-          </div>
-
           <!-- ══════════════════════════════
                CHECKLIST DE CIERRE
           ══════════════════════════════ -->
-          <div class="form-section-title" style="margin-bottom:6px">Checklist de cierre</div>
+          <div class="form-section-title" style="margin-bottom:8px">✅ Checklist de cierre</div>
           <div class="pt-checks-progress" style="margin-bottom:12px">
             <div class="pt-checks-bar-wrap"><div class="pt-checks-bar" id="pt-checks-bar"></div></div>
             <div class="pt-checks-count" id="pt-checks-count">0 / 7</div>
@@ -2757,7 +2273,7 @@
             <!-- 1. Recargas -->
             <div class="pt-check-item" id="ptck-recargas">
               <div class="pt-check-row">
-                <div class="pt-check-toggle" onclick="ptToggleCheck('recargas')" id="ptck-tog-recargas">✓</div>
+                <div class="pt-check-btns"><div class="pt-check-btn-ok" onclick="ptSetCheck('recargas','ok')" id="ptck-ok-recargas" title="Realizado">✓</div><div class="pt-check-btn-no" onclick="ptSetCheck('recargas','no')" id="ptck-no-recargas" title="No realizado">✗</div></div>
                 <div class="pt-check-info">
                   <div class="pt-check-label">Recargas de saldo</div>
                   <div class="pt-check-sublabel">Verificar stock y coincidencia con ventas</div>
@@ -2790,7 +2306,7 @@
             <!-- 2. Hielos -->
             <div class="pt-check-item" id="ptck-hielos">
               <div class="pt-check-row">
-                <div class="pt-check-toggle" onclick="ptToggleCheck('hielos')" id="ptck-tog-hielos">✓</div>
+                <div class="pt-check-btns"><div class="pt-check-btn-ok" onclick="ptSetCheck('hielos','ok')" id="ptck-ok-hielos" title="Realizado">✓</div><div class="pt-check-btn-no" onclick="ptSetCheck('hielos','no')" id="ptck-no-hielos" title="No realizado">✗</div></div>
                 <div class="pt-check-info">
                   <div class="pt-check-label">Ciclos de hielo</div>
                   <div class="pt-check-sublabel" id="ptck-hielos-sub">0 ciclos — 0 bolsas totales</div>
@@ -2803,7 +2319,7 @@
             <!-- 3. Delivery -->
             <div class="pt-check-item" id="ptck-delivery">
               <div class="pt-check-row">
-                <div class="pt-check-toggle" onclick="ptToggleCheck('delivery')" id="ptck-tog-delivery">✓</div>
+                <div class="pt-check-btns"><div class="pt-check-btn-ok" onclick="ptSetCheck('delivery','ok')" id="ptck-ok-delivery" title="Realizado">✓</div><div class="pt-check-btn-no" onclick="ptSetCheck('delivery','no')" id="ptck-no-delivery" title="No realizado">✗</div></div>
                 <div class="pt-check-info">
                   <div class="pt-check-label">Pedidos</div>
                   <div class="pt-check-sublabel">Facturación de plataformas</div>
@@ -2828,7 +2344,7 @@
             <!-- 4. Artículos rotos -->
             <div class="pt-check-item" id="ptck-rotos">
               <div class="pt-check-row">
-                <div class="pt-check-toggle" onclick="ptToggleCheck('rotos')" id="ptck-tog-rotos">✓</div>
+                <div class="pt-check-btns"><div class="pt-check-btn-ok" onclick="ptSetCheck('rotos','ok')" id="ptck-ok-rotos" title="Realizado">✓</div><div class="pt-check-btn-no" onclick="ptSetCheck('rotos','no')" id="ptck-no-rotos" title="No realizado">✗</div></div>
                 <div class="pt-check-info">
                   <div class="pt-check-label">Artículos rotos</div>
                   <div class="pt-check-sublabel">Revisión y registro de bajas</div>
@@ -2840,7 +2356,7 @@
             <!-- 5. Transferencias MP -->
             <div class="pt-check-item" id="ptck-transf">
               <div class="pt-check-row">
-                <div class="pt-check-toggle" onclick="ptToggleCheck('transf')" id="ptck-tog-transf">✓</div>
+                <div class="pt-check-btns"><div class="pt-check-btn-ok" onclick="ptSetCheck('transf','ok')" id="ptck-ok-transf" title="Realizado">✓</div><div class="pt-check-btn-no" onclick="ptSetCheck('transf','no')" id="ptck-no-transf" title="No realizado">✗</div></div>
                 <div class="pt-check-info">
                   <div class="pt-check-label">Transferencias Mercado Pago</div>
                   <div class="pt-check-sublabel">Ventas MP coinciden con el POS</div>
@@ -2851,7 +2367,7 @@
             <!-- 6. Cigarrillos -->
             <div class="pt-check-item" id="ptck-cigarrillos">
               <div class="pt-check-row">
-                <div class="pt-check-toggle" onclick="ptToggleCheck('cigarrillos')" id="ptck-tog-cigarrillos">✓</div>
+                <div class="pt-check-btns"><div class="pt-check-btn-ok" onclick="ptSetCheck('cigarrillos','ok')" id="ptck-ok-cigarrillos" title="Realizado">✓</div><div class="pt-check-btn-no" onclick="ptSetCheck('cigarrillos','no')" id="ptck-no-cigarrillos" title="No realizado">✗</div></div>
                 <div class="pt-check-info">
                   <div class="pt-check-label">Conteo de cigarrillos</div>
                   <div class="pt-check-sublabel">Conteo físico realizado y registrado</div>
@@ -2862,7 +2378,7 @@
             <!-- 7. 0.0 hrs FácilVirtual -->
             <div class="pt-check-item" id="ptck-cerohs">
               <div class="pt-check-row">
-                <div class="pt-check-toggle" onclick="ptToggleCheck('cerohs')" id="ptck-tog-cerohs">✓</div>
+                <div class="pt-check-btns"><div class="pt-check-btn-ok" onclick="ptSetCheck('cerohs','ok')" id="ptck-ok-cerohs" title="Realizado">✓</div><div class="pt-check-btn-no" onclick="ptSetCheck('cerohs','no')" id="ptck-no-cerohs" title="No realizado">✗</div></div>
                 <div class="pt-check-info">
                   <div class="pt-check-label">Revisión 0.0 hrs</div>
                   <div class="pt-check-sublabel">FácilVirtual — se elimina con nuevo POS</div>
@@ -2872,14 +2388,141 @@
 
           </div><!-- /pt-checks-list -->
 
-          <!-- Deudas del local -->
-          <div class="form-section-title" style="margin-bottom:8px;margin-top:18px">Deudas del local</div>
-          <div id="pt-deudas-local" style="background:var(--bg4,#1a1a1a);border:0.5px solid var(--border2);border-radius:var(--radius);padding:12px 14px;margin-bottom:18px;font-family:var(--mono);font-size:13px;color:var(--muted)">
+          <!-- ══════════════════════════════
+               CONTEO DE CAJA
+          ══════════════════════════════ -->
+          <div class="form-section-title" style="margin-bottom:10px;margin-top:24px">💵 Caja chica — billetes</div>
+          <table class="pt-caja-table" style="margin-bottom:10px">
+            <thead><tr>
+              <th>Billete</th>
+              <th style="text-align:center">Cantidad</th>
+              <th style="text-align:right">Subtotal</th>
+            </tr></thead>
+            <tbody>
+              <tr><td class="pt-caja-denom">$10</td><td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb10" value="0" oninput="ptRecalc()"></td><td class="pt-caja-sub" id="ptbs10">$0</td></tr>
+              <tr><td class="pt-caja-denom">$20</td><td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb20" value="0" oninput="ptRecalc()"></td><td class="pt-caja-sub" id="ptbs20">$0</td></tr>
+              <tr><td class="pt-caja-denom">$50</td><td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb50" value="0" oninput="ptRecalc()"></td><td class="pt-caja-sub" id="ptbs50">$0</td></tr>
+              <tr><td class="pt-caja-denom">$100</td><td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb100" value="0" oninput="ptRecalc()"></td><td class="pt-caja-sub" id="ptbs100">$0</td></tr>
+              <tr><td class="pt-caja-denom">$200</td><td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb200" value="0" oninput="ptRecalc()"></td><td class="pt-caja-sub" id="ptbs200">$0</td></tr>
+              <tr><td class="pt-caja-denom">$500</td><td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb500" value="0" oninput="ptRecalc()"></td><td class="pt-caja-sub" id="ptbs500">$0</td></tr>
+              <tr><td class="pt-caja-denom">$1.000</td><td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb1000" value="0" oninput="ptRecalc()"></td><td class="pt-caja-sub" id="ptbs1000">$0</td></tr>
+              <tr><td class="pt-caja-denom">$2.000</td><td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb2000" value="0" oninput="ptRecalc()"></td><td class="pt-caja-sub" id="ptbs2000">$0</td></tr>
+              <tr><td class="pt-caja-denom">$10.000</td><td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb10000" value="0" oninput="ptRecalc()"></td><td class="pt-caja-sub" id="ptbs10000">$0</td></tr>
+              <tr><td class="pt-caja-denom">$20.000</td><td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb20000" value="0" oninput="ptRecalc()"></td><td class="pt-caja-sub" id="ptbs20000">$0</td></tr>
+            </tbody>
+          </table>
+
+          <div class="form-section-title" style="margin-bottom:10px">📦 Caja grande — pacas</div>
+          <table class="pt-pacas-table" style="margin-bottom:10px">
+            <thead><tr>
+              <th>Denominación</th>
+              <th style="text-align:center">Cantidad</th>
+              <th style="text-align:right">Subtotal</th>
+            </tr></thead>
+            <tbody>
+              <tr>
+                <td class="pt-paca-lbl">$10.000</td>
+                <td class="pt-paca-inp-wrap"><input type="number" min="0" class="pt-paca-inp" id="ptpc-f1" placeholder="0" oninput="ptRecalcPacas()"></td>
+                <td class="pt-paca-sub" id="ptps-f1">$0</td>
+              </tr>
+              <tr>
+                <td class="pt-paca-lbl">$50.000</td>
+                <td class="pt-paca-inp-wrap"><input type="number" min="0" class="pt-paca-inp" id="ptpc-f2" placeholder="0" oninput="ptRecalcPacas()"></td>
+                <td class="pt-paca-sub" id="ptps-f2">$0</td>
+              </tr>
+              <tr>
+                <td class="pt-paca-lbl">$100.000</td>
+                <td class="pt-paca-inp-wrap"><input type="number" min="0" class="pt-paca-inp" id="ptpc-f3" placeholder="0" oninput="ptRecalcPacas()"></td>
+                <td class="pt-paca-sub" id="ptps-f3">$0</td>
+              </tr>
+              <tr>
+                <td class="pt-paca-inp-wrap" style="padding:6px 8px">
+                  <input type="text" class="pt-paca-name-inp" id="ptpn-c1" placeholder="Nombre paca..." oninput="ptRecalcPacas()">
+                  <input type="number" min="0" class="pt-paca-val-inp" id="ptpd-c1" placeholder="Valor $" oninput="ptRecalcPacas()" style="margin-left:4px">
+                </td>
+                <td class="pt-paca-inp-wrap"><input type="number" min="0" class="pt-paca-inp" id="ptpc-c1" placeholder="0" oninput="ptRecalcPacas()"></td>
+                <td class="pt-paca-sub" id="ptps-c1">$0</td>
+              </tr>
+              <tr>
+                <td class="pt-paca-inp-wrap" style="padding:6px 8px">
+                  <input type="text" class="pt-paca-name-inp" id="ptpn-c2" placeholder="Nombre paca..." oninput="ptRecalcPacas()">
+                  <input type="number" min="0" class="pt-paca-val-inp" id="ptpd-c2" placeholder="Valor $" oninput="ptRecalcPacas()" style="margin-left:4px">
+                </td>
+                <td class="pt-paca-inp-wrap"><input type="number" min="0" class="pt-paca-inp" id="ptpc-c2" placeholder="0" oninput="ptRecalcPacas()"></td>
+                <td class="pt-paca-sub" id="ptps-c2">$0</td>
+              </tr>
+              <tr>
+                <td class="pt-paca-inp-wrap" style="padding:6px 8px">
+                  <input type="text" class="pt-paca-name-inp" id="ptpn-c3" placeholder="Nombre paca..." oninput="ptRecalcPacas()">
+                  <input type="number" min="0" class="pt-paca-val-inp" id="ptpd-c3" placeholder="Valor $" oninput="ptRecalcPacas()" style="margin-left:4px">
+                </td>
+                <td class="pt-paca-inp-wrap"><input type="number" min="0" class="pt-paca-inp" id="ptpc-c3" placeholder="0" oninput="ptRecalcPacas()"></td>
+                <td class="pt-paca-sub" id="ptps-c3">$0</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Subtotales caja -->
+          <div class="pt-total-ef" style="margin-bottom:8px;border-color:var(--blue)">
+            <div class="pt-total-ef-lbl" style="color:var(--blue)">📦 Total caja grande</div>
+            <div class="pt-total-ef-val" id="pt-total-pacas" style="color:var(--blue)">$0</div>
+          </div>
+          <div class="pt-total-ef" style="margin-bottom:8px">
+            <div class="pt-total-ef-lbl">💵 Total caja chica</div>
+            <div class="pt-total-ef-val" id="pt-total-ef">$0</div>
+          </div>
+          <div class="pt-total-ef" style="margin-bottom:16px;border-color:var(--accent)">
+            <div class="pt-total-ef-lbl">💰 Total en caja</div>
+            <div class="pt-total-ef-val" id="pt-total-general">$0</div>
+          </div>
+
+          <!-- ══════════════════════════════
+               DEUDAS — solo total
+          ══════════════════════════════ -->
+          <div id="pt-deudas-local" style="background:var(--bg4,#1a1a1a);border:0.5px solid var(--border2);border-radius:var(--radius);padding:12px 14px;margin-bottom:8px;font-family:var(--mono);font-size:13px;color:var(--text3)">
             Cargando...
           </div>
 
+          <!-- Caja neta = total caja − deudas -->
+          <div class="pt-total-ef" style="margin-bottom:20px;border-color:var(--green)">
+            <div class="pt-total-ef-lbl" style="color:var(--green)">✅ Caja neta (después de deudas)</div>
+            <div class="pt-total-ef-val" id="pt-caja-neta" style="color:var(--green)">$0</div>
+          </div>
+
+          <!-- ══════════════════════════════
+               CIERRE DE CAJA vs SISTEMA
+          ══════════════════════════════ -->
+          <div class="form-section-title" style="margin-bottom:10px">🖥️ Cierre del sistema</div>
+          <div style="font-family:var(--mono);font-size:11px;color:var(--text2);margin-bottom:10px">Ingresá el monto de cierre que indica el sistema de ventas</div>
+          <div class="pt-medio-item" style="margin-bottom:8px">
+            <div class="pt-medio-lbl">Efectivo</div>
+            <input type="number" min="0" class="pt-medio-inp" id="ptven-efectivo" placeholder="$0" oninput="ptRecalcVentas()">
+          </div>
+          <div class="pt-medio-item" style="margin-bottom:8px">
+            <div class="pt-medio-lbl">Transferencia / MP</div>
+            <input type="number" min="0" class="pt-medio-inp" id="ptven-mp" placeholder="$0" oninput="ptRecalcVentas()">
+          </div>
+          <div class="pt-medio-item" style="margin-bottom:8px">
+            <div class="pt-medio-lbl">Débito / Crédito</div>
+            <input type="number" min="0" class="pt-medio-inp" id="ptven-debito" placeholder="$0" oninput="ptRecalcVentas()">
+          </div>
+          <div class="pt-total-ef" style="margin-bottom:12px;border-color:var(--purple)">
+            <div class="pt-total-ef-lbl" style="color:var(--purple)">🖥️ Total sistema</div>
+            <div class="pt-total-ef-val" id="ptven-total" style="color:var(--purple)">$0</div>
+          </div>
+          <input type="hidden" id="ptmed-sistema">
+
+          <!-- Diferencia caja vs sistema -->
+          <div class="pt-diferencia pt-dif-neutral" id="pt-diferencia" style="margin-bottom:20px">
+            <div>
+              <div class="pt-dif-lbl" id="pt-dif-lbl">Diferencia</div>
+              <div class="pt-dif-desc" id="pt-dif-desc">Ingresá el monto del sistema para calcular</div>
+            </div>
+            <div class="pt-dif-val" id="pt-dif-val">—</div>
+          </div>
+
           <!-- Observaciones -->
-          <div class="form-section-title" style="margin-bottom:8px;margin-top:18px">Observaciones del turno</div>
+          <div class="form-section-title" style="margin-bottom:8px">💬 Observaciones del turno</div>
           <textarea id="pt-obs-cierre" style="margin-bottom:14px;min-height:70px" placeholder="Novedad del turno, faltantes, incidentes..."></textarea>
 
           <!-- Botón -->
@@ -3117,14 +2760,24 @@ async function driveGetOrCreateFolder(token, parentId, name) {
   const r = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id)`, {
     headers: { Authorization: `Bearer ${token}` }
   });
+  if (!r.ok) {
+    const err = await r.json().catch(() => ({}));
+    throw new Error(`Drive folder search ${r.status}: ${err?.error?.message || 'sin acceso a la carpeta padre'}`);
+  }
   const d = await r.json();
   if (d.files?.length > 0) return d.files[0].id;
+  // No existe — crearla
   const cr = await fetch('https://www.googleapis.com/drive/v3/files', {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ name, mimeType: 'application/vnd.google-apps.folder', parents: [parentId] })
   });
+  if (!cr.ok) {
+    const err = await cr.json().catch(() => ({}));
+    throw new Error(`Drive folder create ${cr.status}: ${err?.error?.message || 'sin permisos para crear carpeta'}`);
+  }
   const cd = await cr.json();
+  if (!cd.id) throw new Error('Drive no devolvió ID de carpeta creada');
   return cd.id;
 }
 
@@ -3172,13 +2825,7 @@ function goTo(screen) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   const map = {
     'hub': 'screen-hub',
-    'reporte-tipo': 'screen-reporte-tipo',
-    'falla_tienda': 'screen-falla-tienda',
-    'edilicio': 'screen-edilicio',
-    'rotos_vencidos': 'screen-rotos-vencidos',
-    'pedido': 'screen-pedido',
-    'ticket': 'screen-ticket',
-    'success': 'screen-success',
+    'reportes': 'screen-reportes',
     'admin-pin': 'screen-admin-pin',
     'admin': 'screen-admin',
     'apertura':    'screen-apertura',
@@ -3210,12 +2857,12 @@ function openModule(mod) {
     if (mod === 'ordenes')    { ordenesOpen(); return; }
     if (mod === 'remitos')    { remitosOpen(); return; }
     if (mod === 'inventario') { inventarioOpen(); return; }
-    if (mod === 'reportes')   { goTo('reporte-tipo'); updateBadges(); return; }
+    if (mod === 'reportes')   { reportesOpen(); return; }
     showToast('No tenés acceso a ese módulo', 'error'); return;
   }
   // admin: no necesita empleado_id ni turno para pedidos/remitos/inventario/ordenes/pagos
   if (state.rol === 'admin') {
-    if (mod === 'reportes')    { goTo('reporte-tipo'); updateBadges(); return; }
+    if (mod === 'reportes')    { reportesOpen(); return; }
     if (mod === 'deudas')      { deudasOpen(); return; }
     if (mod === 'panel-turno') {
       if (!state.turno) { showToast('Seleccioná el turno', 'error'); return; }
@@ -3232,7 +2879,7 @@ function openModule(mod) {
   if (!state.empleado_id) { showToast('Seleccioná tu nombre primero', 'error'); return; }
   if (!state.local)        { showToast('Error: local no configurado', 'error'); return; }
   if (!state.turno)        { showToast('Seleccioná el turno', 'error'); return; }
-  if (mod === 'reportes')    { goTo('reporte-tipo'); updateBadges(); return; }
+  if (mod === 'reportes')    { reportesOpen(); return; }
   if (mod === 'deudas')      { deudasOpen(); return; }
   if (mod === 'panel-turno') { ptInit(); return; } // fix: ptInit() maneja la navegación internamente (apertura → panel)
   if (mod === 'pedidos')    { pedidosOpen(); return; }
@@ -3242,22 +2889,7 @@ function openModule(mod) {
   if (mod === 'pagos')      { pagosOpen(); return; }
 }
 
-function openForm(tipo) {
-  state.currentForm = tipo;
-  if (tipo === 'rotos_vencidos') { initRVItems(); }
-  if (tipo === 'ticket')         { updateTkTipo('cambio_cb'); }
-  if (tipo === 'pedido')         { updatePedTipo('cancelado'); }
-  goTo(tipo);
-  updateBadges();
-}
-
-function updateBadges() {
-  const local = LOCALES[state.local] || '—';
-  ['badge-local-tipo','badge-ft','badge-ed','badge-rv','badge-ped','badge-tk'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = local;
-  });
-}
+// openForm vive en reportes.html (iframe)
 
 // ═══════════════════════════════════════
 // CHIP SELECTION
@@ -3600,372 +3232,6 @@ function selToggle(el, group, val) {
   el.classList.add(val === 'yes' ? 'selected-yes' : 'selected-no');
 }
 
-// ═══════════════════════════════════════
-// FALLA EN TIENDA — subcategorías dinámicas
-// ═══════════════════════════════════════
-const FT_SUBS = {
-  'Organización': ['Productos sin enfriar','Sin exhibir','Lugar incorrecto','Cajas mal ubicadas','Falta bolsas/vasos','Sin reponer en góndolas'],
-  'Limpieza': ['Espacio de trabajo','Baño','Góndolas','Caramelera','Heladeras','Piso','Vereda','Otro'],
-  'Delivery': ['Tienda cerrada sin auth','Hielo desactivado sin auth','Productos sin activar','Error armado pedido / cancelación','Limitación cantidades sin auth'],
-  'Cierre de caja': ['Faltante/sobrante cigarrillos','No llenó planilla de cierre','Problema cuadre recargas'],
-  'Etiquetas/Precios': ['Sin etiqueta','Etiqueta corrida','Etiqueta incorrecta','Etiqueta vieja','Promoción con precio viejo'],
-  'Orden de trabajo': ['No llenó planilla OT','No pasó foto de factura','No registró factura','No exhibió artículos','No activó en delivery','Error registro cantidades','Error artículo incorrecto','No informó falta de hielo'],
-  'Otro': [],
-};
-
-document.querySelectorAll('#chips-ft-cat .chip').forEach(chip => {
-  chip.addEventListener('click', () => {
-    setTimeout(() => {
-      const cat = chip.textContent.trim();
-      const subs = FT_SUBS[cat] || [];
-      const row = document.getElementById('chips-ft-sub');
-      const sec = document.getElementById('ft-subcats');
-      if (subs.length === 0) { sec.style.display = 'none'; return; }
-      sec.style.display = 'block';
-      row.innerHTML = subs.map((s,i) =>
-        `<div class="chip ${i===0?'selected':''}" onclick="selChip(this,'ft-sub')">${s}</div>`
-      ).join('');
-    }, 10);
-  });
-});
-// Init
-setTimeout(() => document.querySelector('#chips-ft-cat .chip')?.click(), 100);
-
-// ═══════════════════════════════════════
-// ROTOS / VENCIDOS — items dinámicos
-// ═══════════════════════════════════════
-function initRVItems() {
-  state.rvItemCount = 0;
-  document.getElementById('rv-items-container').innerHTML = '';
-  document.getElementById('rv-otro-section').style.display = 'none';
-  document.getElementById('rv-add-btn').style.display = 'block';
-  addRVItem();
-}
-
-function updateRVTipo(tipo) {
-  const isOtro = tipo === 'Otro';
-  document.getElementById('rv-otro-section').style.display = isOtro ? 'block' : 'none';
-  document.getElementById('rv-items-container').style.display = isOtro ? 'none' : 'block';
-  document.getElementById('rv-add-btn').style.display = isOtro ? 'none' : 'block';
-  if (!isOtro && state.rvItemCount === 0) addRVItem();
-}
-
-function addRVItem() {
-  state.rvItemCount++;
-  const n = state.rvItemCount;
-  const isVenc = document.querySelector('#chips-ft-sub .chip.selected')?.textContent === 'Vencido';
-  const container = document.getElementById('rv-items-container');
-  const div = document.createElement('div');
-  div.className = 'item-card';
-  div.id = `rv-item-${n}`;
-  div.innerHTML = `
-    <div class="item-card-header">Producto ${n}</div>
-    <input type="text" id="rv-nombre-${n}" placeholder="Nombre exacto del artículo" style="margin-bottom:8px">
-    <input type="text" id="rv-pres-${n}" placeholder="Presentación (500ml, 1kg, etc.)" style="margin-bottom:8px">
-    <div class="grid-2">
-      <input type="number" id="rv-cant-${n}" placeholder="Cantidad" style="margin:0">
-      <input type="number" id="rv-precio-${n}" placeholder="Precio venta $" style="margin:0">
-    </div>
-    ${isVenc ? `<div style="margin-top:8px"><input type="date" id="rv-venc-${n}" placeholder="Fecha vencimiento"></div>` : ''}
-    <div class="photo-area" id="photo-rv-${n}" style="margin-top:10px">
-      <input type="file" accept="image/*" onchange="handlePhoto(this,'rv-${n}')">
-      <div class="photo-icon" style="font-size:16px">📷</div>
-      <div class="photo-text" style="font-size:12px">Galería o cámara</div>
-      <div class="photo-sub" id="photo-rv-${n}-name">adjuntar imagen</div>
-    </div>
-  `;
-  container.appendChild(div);
-}
-
-// ═══════════════════════════════════════
-// TICKETS — items dinámicos
-// ═══════════════════════════════════════
-function updateTkTipo(tipo) {
-  state.tkTipo = tipo;
-  const secs = ['items','stock','precio','nombre','otro'];
-  secs.forEach(s => {
-    const el = document.getElementById(`tk-sec-${s}`);
-    if (el) el.style.display = 'none';
-  });
-  if (['cambio_cb','articulo_nuevo'].includes(tipo)) {
-    document.getElementById('tk-sec-items').style.display = 'block';
-    if (state.tkItemCount === 0) { state.tkItemCount = 0; addTkItem(); }
-  } else if (tipo === 'ajuste_stock') {
-    document.getElementById('tk-sec-stock').style.display = 'block';
-  } else if (tipo === 'error_precio') {
-    document.getElementById('tk-sec-precio').style.display = 'block';
-  } else if (tipo === 'error_nombre') {
-    document.getElementById('tk-sec-nombre').style.display = 'block';
-  } else {
-    document.getElementById('tk-sec-otro').style.display = 'block';
-  }
-}
-
-function addTkItem() {
-  state.tkItemCount++;
-  const n = state.tkItemCount;
-  const isCB = state.tkTipo === 'cambio_cb';
-  const isNew = state.tkTipo === 'articulo_nuevo';
-  const container = document.getElementById('tk-items-container');
-  const div = document.createElement('div');
-  div.className = 'item-card';
-  div.innerHTML = `
-    <div class="item-card-header">Artículo ${n}</div>
-    <input type="text" id="tk-nombre-${n}" placeholder="Nombre exacto del artículo" style="margin-bottom:8px">
-    <input type="text" id="tk-pres-${n}" placeholder="Presentación (litros, gramos...)" style="margin-bottom:8px">
-    <input type="text" id="tk-cb-${n}" placeholder="${isCB ? 'Nuevo código de barras' : 'Código de barras'}" style="margin-bottom:8px">
-    ${isNew ? `
-      <div class="grid-2" style="margin-bottom:8px">
-        <input type="number" id="tk-costo-${n}" placeholder="Costo $" style="margin:0">
-        <input type="number" id="tk-cant-${n}" placeholder="Cantidad recibida" style="margin:0">
-      </div>
-      <input type="text" id="tk-prov-${n}" placeholder="Nombre del proveedor" style="margin-bottom:8px">
-    ` : ''}
-    <div class="photo-area" id="photo-tki-${n}" style="margin-top:4px">
-      <input type="file" accept="image/*" onchange="handlePhoto(this,'tki-${n}')">
-      <div class="photo-icon" style="font-size:16px">📷</div>
-      <div class="photo-text" style="font-size:12px">Galería o cámara</div>
-      <div class="photo-sub" id="photo-tki-${n}-name">recomendado</div>
-    </div>
-  `;
-  container.appendChild(div);
-}
-
-// ═══════════════════════════════════════
-// PEDIDOS — secciones dinámicas
-// ═══════════════════════════════════════
-function updatePedTipo(tipo) {
-  state.pedTipo = tipo;
-  document.getElementById('ped-sec-cancelado').style.display = tipo === 'cancelado' ? 'block' : 'none';
-  document.getElementById('ped-sec-deduccion').style.display = ['deduccion_error','deduccion_faltante'].includes(tipo) ? 'block' : 'none';
-  document.getElementById('ped-sec-otro').style.display = tipo === 'otro' ? 'block' : 'none';
-}
-
-// ═══════════════════════════════════════
-// PHOTOS
-// ═══════════════════════════════════════
-function handlePhoto(input, key) {
-  const file = input.files[0];
-  if (!file) return;
-  state.photos[key] = file;
-  const nameEl = document.getElementById(`photo-${key}-name`);
-  const area = input.closest('.photo-area');
-  if (nameEl) nameEl.textContent = file.name;
-  if (area) area.classList.add('has-file');
-}
-
-// ═══════════════════════════════════════
-// SUBMIT FORMS
-// ═══════════════════════════════════════
-async function submitForm(tipo) {
-  const btn = document.getElementById(`btn-${tipo === 'falla_tienda' ? 'ft' : tipo === 'edilicio' ? 'ed' : tipo === 'rotos_vencidos' ? 'rv' : tipo === 'pedido' ? 'ped' : 'tk'}`);
-  btn.classList.add('loading');
-  btn.disabled = true;
-
-  try {
-    let fotoUrl = null;
-    const fotoKey = tipo === 'falla_tienda' ? 'ft' : tipo === 'edilicio' ? 'ed' : tipo === 'pedido' ? 'ped' : tipo === 'ticket' ? 'tk' : null;
-    if (fotoKey && state.photos[fotoKey]) {
-      showToast('Subiendo foto...', '');
-      fotoUrl = await uploadToDrive(state.photos[fotoKey], tipo, state.local);
-    }
-
-    const reporte = {
-      tipo,
-      local: state.local || localStorage.getItem('break_local_fijo') || null,
-      empleado_id: state.empleado_id,
-      turno: state.turno,
-      foto_url: fotoUrl,
-      datos_json: buildDatosJson(tipo),
-      subtipo: getSubtipo(tipo),
-      responsable_id: getResponsable(tipo),
-      descripcion: getDescripcion(tipo),
-    };
-
-    const result = await sbFetch('reportes', {
-      method: 'POST',
-      body: JSON.stringify(reporte)
-    });
-
-    const reporteId = result?.[0]?.id;
-
-    // Guardar items si aplica
-    if (tipo === 'rotos_vencidos' && state.rvItemCount > 0) {
-      await saveRVItems(reporteId);
-    }
-    if (tipo === 'ticket' && ['cambio_cb','articulo_nuevo'].includes(state.tkTipo)) {
-      await saveTkItems(reporteId);
-    }
-
-    // Mostrar success
-    showSuccess(tipo);
-    resetFotos(tipo);
-
-  } catch(e) {
-    console.error(e);
-    showToast('Error al enviar. Intentá de nuevo.', 'error');
-  } finally {
-    btn.classList.remove('loading');
-    btn.disabled = false;
-  }
-}
-
-function buildDatosJson(tipo) {
-  if (tipo === 'falla_tienda') {
-    return {
-      categoria: document.querySelector('#chips-ft-cat .chip.selected')?.textContent?.trim(),
-      subfalla: document.querySelector('#chips-ft-sub .chip.selected')?.textContent?.trim(),
-    };
-  }
-  if (tipo === 'edilicio') {
-    return { tipo_falla: document.querySelector('.chip.selected[onclick*="ed-tipo"]')?.textContent?.trim() };
-  }
-  if (tipo === 'pedido') {
-    const base = {
-      tipo_pedido: state.pedTipo,
-      plataforma: document.querySelector('.chip.sel-blue.selected')?.textContent?.trim(),
-      id_pedido: document.getElementById('ped-id')?.value,
-      id_facilvirtual: document.getElementById('ped-fv')?.value,
-    };
-    if (state.pedTipo === 'cancelado') {
-      base.motivo = document.querySelector('.chip.selected[onclick*="ped-motivo"]')?.textContent?.trim();
-      base.monto_total = document.getElementById('ped-monto-total')?.value;
-      base.articulos = document.getElementById('ped-articulos')?.value;
-    } else if (['deduccion_error','deduccion_faltante'].includes(state.pedTipo)) {
-      base.reclamo_justificado = document.getElementById('pedj-yes')?.classList.contains('selected-yes');
-      base.articulo_reclamo = document.getElementById('ped-art-reclamo')?.value;
-      base.monto_reclamo = document.getElementById('ped-monto-rec')?.value;
-    }
-    return base;
-  }
-  if (tipo === 'ticket') {
-    if (state.tkTipo === 'ajuste_stock') return {
-      articulo: document.getElementById('tk-stock-art')?.value,
-      operacion: document.getElementById('tks-sum')?.classList.contains('selected-yes') ? 'sumar' : 'restar',
-      cantidad: document.getElementById('tk-stock-cant')?.value,
-      motivo: document.getElementById('tk-stock-motivo')?.value,
-    };
-    if (state.tkTipo === 'error_precio') return {
-      articulo: document.getElementById('tk-precio-art')?.value,
-      precio_error: document.getElementById('tk-precio-error')?.value,
-      precio_correcto: document.getElementById('tk-precio-correcto')?.value,
-      ubicacion: document.querySelector('.chip.selected[onclick*="tk-precio-ubi"]')?.textContent?.trim(),
-    };
-    if (state.tkTipo === 'error_nombre') return {
-      nombre_error: document.getElementById('tk-nombre-error')?.value,
-      nombre_correcto: document.getElementById('tk-nombre-correcto')?.value,
-      ubicacion: document.querySelector('.chip.selected[onclick*="tk-nombre-ubi"]')?.textContent?.trim(),
-    };
-    return { tipo_ticket: state.tkTipo };
-  }
-  return {};
-}
-
-function getSubtipo(tipo) {
-  if (tipo === 'falla_tienda') return document.querySelector('#chips-ft-cat .chip.selected')?.textContent?.trim();
-  if (tipo === 'edilicio') return document.querySelector('.chip.selected[onclick*="ed-tipo"]')?.textContent?.trim();
-  if (tipo === 'rotos_vencidos') return document.querySelector('.chip.sel-red.selected')?.textContent?.trim();
-  if (tipo === 'pedido') return state.pedTipo;
-  if (tipo === 'ticket') return state.tkTipo;
-  return null;
-}
-
-function getResponsable(tipo) {
-  if (tipo === 'falla_tienda') {
-    const sel = document.getElementById('ft-responsable');
-    return sel?.value || null;
-  }
-  return null;
-}
-
-function getDescripcion(tipo) {
-  if (tipo === 'falla_tienda') return document.getElementById('ft-desc')?.value || null;
-  if (tipo === 'edilicio') return document.getElementById('ed-desc')?.value || null;
-  if (tipo === 'pedido' && state.pedTipo === 'otro') return document.getElementById('ped-otro-desc')?.value || null;
-  if (tipo === 'ticket' && state.tkTipo === 'otro') return document.getElementById('tk-otro-desc')?.value || null;
-  if (tipo === 'rotos_vencidos') return document.getElementById('rv-otro-desc')?.value || null;
-  return null;
-}
-
-async function saveRVItems(reporteId) {
-  const items = [];
-  for (let i = 1; i <= state.rvItemCount; i++) {
-    const nombre = document.getElementById(`rv-nombre-${i}`)?.value;
-    if (!nombre) continue;
-    let fotoUrl = null;
-    if (state.photos[`rv-${i}`]) {
-      fotoUrl = await uploadToDrive(state.photos[`rv-${i}`], 'rotos_vencidos', state.local);
-    }
-    items.push({
-      reporte_id: reporteId,
-      nombre_articulo: nombre,
-      presentacion: document.getElementById(`rv-pres-${i}`)?.value,
-      cantidad: parseInt(document.getElementById(`rv-cant-${i}`)?.value) || null,
-      precio_venta: parseFloat(document.getElementById(`rv-precio-${i}`)?.value) || null,
-      fecha_vencimiento: document.getElementById(`rv-venc-${i}`)?.value || null,
-      foto_url: fotoUrl,
-    });
-  }
-  if (items.length > 0) await sbFetch('reporte_items', { method: 'POST', body: JSON.stringify(items) });
-}
-
-async function saveTkItems(reporteId) {
-  const items = [];
-  for (let i = 1; i <= state.tkItemCount; i++) {
-    const nombre = document.getElementById(`tk-nombre-${i}`)?.value;
-    if (!nombre) continue;
-    let fotoUrl = null;
-    if (state.photos[`tki-${i}`]) {
-      fotoUrl = await uploadToDrive(state.photos[`tki-${i}`], 'ticket', state.local);
-    }
-    items.push({
-      reporte_id: reporteId,
-      nombre_articulo: nombre,
-      presentacion: document.getElementById(`tk-pres-${i}`)?.value,
-      codigo_barras: document.getElementById(`tk-cb-${i}`)?.value,
-      costo: parseFloat(document.getElementById(`tk-costo-${i}`)?.value) || null,
-      cantidad: parseInt(document.getElementById(`tk-cant-${i}`)?.value) || null,
-      proveedor: document.getElementById(`tk-prov-${i}`)?.value,
-      foto_url: fotoUrl,
-    });
-  }
-  if (items.length > 0) await sbFetch('ticket_items', { method: 'POST', body: JSON.stringify(items) });
-}
-
-function resetFotos(tipo) {
-  state.photos = {};
-  state.rvItemCount = 0;
-  state.tkItemCount = 0;
-}
-
-// ═══════════════════════════════════════
-// SUCCESS SCREEN
-// ═══════════════════════════════════════
-const TIPO_LABELS = {
-  falla_tienda: 'Falla en tienda',
-  edilicio: 'Falla edilicia',
-  rotos_vencidos: 'Rotos / Vencidos',
-  pedido: 'Pedido cancelado',
-  ticket: 'Ticket de sistema',
-};
-
-function showSuccess(tipo) {
-  const now = new Date();
-  const meta = document.getElementById('success-meta');
-  meta.innerHTML = `
-    <div class="success-meta-row"><span>tipo</span><span>${TIPO_LABELS[tipo]}</span></div>
-    <div class="success-meta-row"><span>local</span><span>${LOCALES[state.local]}</span></div>
-    <div class="success-meta-row"><span>empleado</span><span>${state.empleado_nombre}</span></div>
-    <div class="success-meta-row"><span>turno</span><span>${state.turno}</span></div>
-    <div class="success-meta-row"><span>hora</span><span>${now.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})}</span></div>
-  `;
-  if (tipo === 'ticket') {
-    document.getElementById('success-sub').textContent = 'Ticket en cola. El admin lo resolverá y marcará como listo.';
-  } else {
-    document.getElementById('success-sub').textContent = 'Quedó guardado con fecha y hora.\nEl admin puede verlo en el dashboard.';
-  }
-  goTo('success');
-}
 
 // ═══════════════════════════════════════
 // ADMIN PIN
@@ -4056,7 +3322,7 @@ async function loadAdminDashboard() {
   admTab('resumen');
 
   try {
-    const data = await sbFetch('reportes?select=*,cuentas!reportes_empleado_id_fkey(nombre),responsable:cuentas!reportes_responsable_id_fkey(nombre)&order=created_at.desc&limit=500');
+    const data = await sbFetch('reportes?select=*,cuentas!reportes_empleado_id_fkey(nombre),responsable:cuentas!reportes_responsable_id_fkey(nombre),ticket_items(*),reporte_items(*)&order=created_at.desc&limit=500');
     state.reportes = data || [];
     applyAdminFilters();
   } catch(e) {
@@ -4165,10 +3431,36 @@ async function admLoadResumen() {
         </div>`).join('')
       : '<div style="text-align:center;padding:16px;font-family:var(--mono);font-size:11px;color:var(--green)">✓ Sin alertas por ahora</div>';
 
-    // Deudas por local — simplificado (total general)
-    ['palermo','belgrano','barrio_chino','san_telmo'].forEach(loc => {
+    // Deudas por local — mostrar total y desglose por cuenta
+    const LOCALES_KEYS = ['palermo','belgrano','barrio_chino','san_telmo'];
+    const LOCALES_SHORT2 = { palermo:'Thames', belgrano:'Belgrano', barrio_chino:'B. Chino', san_telmo:'San Telmo' };
+    const fmt3 = n => '$' + Math.abs(n).toLocaleString('es-AR');
+    LOCALES_KEYS.forEach(loc => {
       const el = document.getElementById(`admd-${loc}`);
-      if (el) el.textContent = '—'; // requiere campo local en entradas — placeholder
+      if (!el) return;
+      const entradasLoc = (entradas||[]).filter(e => e.store === loc);
+      const saldosLoc = {};
+      entradasLoc.forEach(e => { saldosLoc[e.cid] = (saldosLoc[e.cid]||0) + e.monto; });
+      const cuentasConDeuda = (cuentas||[])
+        .map(c => ({ id: c.id, nombre: c.nombre, saldo: saldosLoc[c.id] || 0 }))
+        .filter(c => c.saldo > 0)
+        .sort((a,b) => b.saldo - a.saldo);
+      const totalLoc = cuentasConDeuda.reduce((a,c) => a + c.saldo, 0);
+      if (totalLoc === 0) {
+        el.innerHTML = `<span style="color:var(--green);font-family:var(--mono);font-size:12px">Sin deudas ✓</span>`;
+        return;
+      }
+      const desglose = cuentasConDeuda.map(c =>
+        `<div style="display:flex;justify-content:space-between;padding:2px 0;font-family:var(--mono);font-size:11px;border-bottom:0.5px solid var(--border)">` +
+        `<span style="color:var(--text2)">${c.nombre}</span>` +
+        `<span style="color:var(--red)">${fmt3(c.saldo)}</span></div>`
+      ).join('');
+      el.innerHTML =
+        `<div style="font-size:20px;font-weight:700;color:var(--red);font-family:var(--mono)">${fmt3(totalLoc)}</div>` +
+        `<details style="margin-top:6px">` +
+        `<summary style="font-family:var(--mono);font-size:10px;color:var(--text3);cursor:pointer;list-style:none">▸ Ver desglose (${cuentasConDeuda.length})</summary>` +
+        `<div style="margin-top:6px">${desglose}</div>` +
+        `</details>`;
     });
 
   } catch(e) {
@@ -4537,6 +3829,12 @@ function liqRender(mes, anio) {
           <div style="font-size:13px;font-weight:500;color:var(--text)">${emp.nombre}</div>
           <div style="font-family:var(--mono);font-size:10px;color:var(--text3)">${LOCALES[emp.local]||emp.local||'—'}</div>
         </div>
+        <button onclick="liqImprimirEmpleado('${emp.id}')" title="Descargar resumen PDF"
+          style="background:var(--bg3);border:0.5px solid var(--border2);border-radius:8px;padding:7px 11px;color:var(--text3);font-size:13px;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:11px;white-space:nowrap"
+          onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
+          onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text3)'">
+          📄 PDF
+        </button>
       </div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
@@ -4547,6 +3845,25 @@ function liqRender(mes, anio) {
         <div style="background:var(--bg3);border:0.5px solid var(--border);border-radius:8px;padding:10px 12px">
           <div style="font-family:var(--mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Deuda total acumulada</div>
           <div style="font-size:16px;font-weight:600;color:${colorTotal};font-family:var(--mono)">${fmt(deudaTotal)}</div>
+          ${(() => {
+            // Desglose por local
+            const LOCALES_LIQ = { palermo:'Thames', belgrano:'Belgrano', barrio_chino:'B. Chino', san_telmo:'San Telmo' };
+            const localesConDeuda = Object.entries(LOCALES_LIQ)
+              .map(([k,v]) => ({
+                local: v,
+                saldo: entradas.filter(e => e.cid === emp.id && e.store === k).reduce((s,e) => s+(e.monto||0), 0)
+              }))
+              .filter(l => l.saldo > 0);
+            if (!localesConDeuda.length) return '';
+            return '<div style="margin-top:6px;border-top:0.5px solid var(--border);padding-top:5px">' +
+              localesConDeuda.map(l =>
+                '<div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;padding:2px 0">' +
+                '<span style="color:var(--text3)">' + l.local + '</span>' +
+                '<span style="color:var(--red)">' + fmt(l.saldo) + '</span>' +
+                '</div>'
+              ).join('') +
+              '</div>';
+          })()}
         </div>
         <div style="background:var(--bg3);border:0.5px solid var(--border);border-radius:8px;padding:10px 12px">
           <div style="font-family:var(--mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Adelantos del mes</div>
@@ -4638,6 +3955,125 @@ async function liqEliminarAdelanto(adelantoId, empId) {
   }
 }
 
+function liqImprimirEmpleado(empId) {
+  const mes  = document.getElementById('liq-mes').value;
+  const anio = document.getElementById('liq-anio').value;
+  const MESES_NOM = { '01':'Enero','02':'Febrero','03':'Marzo','04':'Abril','05':'Mayo','06':'Junio','07':'Julio','08':'Agosto','09':'Septiembre','10':'Octubre','11':'Noviembre','12':'Diciembre' };
+  const LOCALES_P = { palermo:'Thames · Palermo', belgrano:'Roosevelt · Belgrano', barrio_chino:'Juramento · B. Chino', san_telmo:'Independencia · San Telmo' };
+  const fmt = n => '$' + Math.abs(Math.round(n)).toLocaleString('es-AR');
+
+  const emp = liqData.empleados.find(e => e.id === empId);
+  if (!emp) return;
+
+  const aa = anio.slice(2);
+  const entradasMes = liqData.entradas.filter(e => {
+    if (!e.cid || e.cid !== empId) return false;
+    const p = e.fecha?.split('/');
+    return p?.length >= 3 && p[1] === mes && p[2]?.slice(0,2) === aa;
+  });
+
+  const deudaMes   = entradasMes.reduce((s,e) => s + (e.monto||0), 0);
+  const deudaTotal = liqData.entradas.filter(e => e.cid === empId).reduce((s,e) => s + (e.monto||0), 0);
+  const adelantosEmp = liqData.adelantos.filter(a => a.empleado_id === empId);
+  const totalAdelantos = adelantosEmp.reduce((s,a) => s + (a.monto||0), 0);
+  const hielos = liqData.hielosPorEmp[empId] || { ciclos:0, bolsas:0 };
+
+  // Desglose por local de deuda total
+  const LOCALES_LIQ = { palermo:'Thames', belgrano:'Belgrano', barrio_chino:'B. Chino', san_telmo:'San Telmo' };
+  const desgloseLocal = Object.entries(LOCALES_LIQ)
+    .map(([k,v]) => ({ local:v, saldo: liqData.entradas.filter(e => e.cid===empId && e.store===k).reduce((s,e)=>s+(e.monto||0),0) }))
+    .filter(l => l.saldo > 0);
+
+  const colorDeudaHex = deudaMes > 0 ? '#e85d4a' : deudaMes < 0 ? '#4caf82' : '#848180';
+  const colorTotalHex = deudaTotal > 0 ? '#e85d4a' : deudaTotal < 0 ? '#4caf82' : '#848180';
+  const hoy = new Date().toLocaleDateString('es-AR', { day:'2-digit', month:'2-digit', year:'numeric' });
+
+  const adelantosRows = adelantosEmp.length
+    ? adelantosEmp.map(a => `<tr><td>${a.descripcion||'Adelanto'}</td><td>${a.fecha_pago||'—'}</td><td style="text-align:right;color:#f0884a;font-weight:600">${fmt(a.monto)}</td></tr>`).join('')
+    : '<tr><td colspan="3" style="color:#848180;font-style:italic">Sin adelantos registrados</td></tr>';
+
+  const desgloseRows = desgloseLocal.length
+    ? desgloseLocal.map(l => `<tr><td style="color:#848180">${l.local}</td><td></td><td style="text-align:right;color:#e85d4a">${fmt(l.saldo)}</td></tr>`).join('')
+    : '';
+
+  const win = window.open('', '_blank', 'width=600,height=800');
+  win.document.write(`<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Liquidación — ${emp.nombre} — ${MESES_NOM[mes]} ${anio}</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@500;700&display=swap');
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'DM Mono',monospace; background:#fff; color:#111; padding:32px; font-size:13px; }
+  .header { margin-bottom:24px; padding-bottom:16px; border-bottom:2px solid #111; }
+  .logo { font-family:'Syne',sans-serif; font-size:22px; font-weight:700; letter-spacing:-0.02em; }
+  .logo span { color:#b89b2e; }
+  .header-sub { font-size:11px; color:#555; margin-top:4px; }
+  .emp-name { font-family:'Syne',sans-serif; font-size:20px; font-weight:700; margin:16px 0 2px; }
+  .emp-local { font-size:11px; color:#555; }
+  .periodo { display:inline-block; background:#f5f0e0; border:1px solid #d4b94a; border-radius:6px; padding:4px 12px; font-size:12px; color:#7a6010; margin:10px 0 20px; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px; }
+  .card { border:1px solid #ddd; border-radius:8px; padding:12px 14px; }
+  .card-label { font-size:9px; text-transform:uppercase; letter-spacing:0.1em; color:#888; margin-bottom:6px; }
+  .card-val { font-size:20px; font-weight:600; }
+  .section-title { font-size:10px; text-transform:uppercase; letter-spacing:0.1em; color:#888; margin:0 0 8px; }
+  table { width:100%; border-collapse:collapse; margin-bottom:16px; }
+  th { font-size:10px; text-transform:uppercase; letter-spacing:0.06em; color:#888; text-align:left; padding:0 0 6px; border-bottom:1px solid #eee; }
+  td { padding:7px 0; border-bottom:1px solid #f0f0f0; font-size:12px; vertical-align:top; }
+  .footer { margin-top:24px; padding-top:14px; border-top:1px solid #eee; font-size:10px; color:#aaa; display:flex; justify-content:space-between; }
+  @media print {
+    body { padding:20px; }
+    @page { margin:1.5cm; size:A4; }
+  }
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="logo">◈ <span>BREAK</span></div>
+  <div class="header-sub">Sistema de Gestión Interno · Liquidación mensual</div>
+</div>
+<div class="emp-name">${emp.nombre}</div>
+<div class="emp-local">${LOCALES_P[emp.local]||emp.local||'—'}</div>
+<div class="periodo">📅 ${MESES_NOM[mes]} ${anio}</div>
+
+<div class="grid">
+  <div class="card">
+    <div class="card-label">Deuda del mes</div>
+    <div class="card-val" style="color:${colorDeudaHex}">${fmt(deudaMes)}</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Deuda total acumulada</div>
+    <div class="card-val" style="color:${colorTotalHex}">${fmt(deudaTotal)}</div>
+    ${desgloseRows ? `<table style="margin-top:8px;margin-bottom:0">${desgloseRows}</table>` : ''}
+  </div>
+  <div class="card">
+    <div class="card-label">Adelantos del mes</div>
+    <div class="card-val" style="color:#f0884a">${totalAdelantos > 0 ? fmt(totalAdelantos) : '—'}</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Hielos del mes</div>
+    <div class="card-val" style="color:#5b9cf6;font-size:15px">${hielos.ciclos} ciclos · ${hielos.bolsas} bolsas</div>
+  </div>
+</div>
+
+<div class="section-title">Adelantos registrados</div>
+<table>
+  <thead><tr><th>Descripción</th><th>Fecha</th><th style="text-align:right">Monto</th></tr></thead>
+  <tbody>${adelantosRows}</tbody>
+</table>
+
+<div class="footer">
+  <span>Break Sistema · Generado el ${hoy}</span>
+  <span>Confidencial — uso interno</span>
+</div>
+
+<script>window.onload = () => { window.print(); }<\/script>
+</body></html>`);
+  win.document.close();
+}
+
+
 // ── FILTRO LOCAL EN REPORTES ──────────────
 let adminLocalFilter2 = '';
 function adminFilterLocal(local, el) {
@@ -4714,6 +4150,13 @@ const TIPO_COLORS = {
   pedido:         { bg: 'var(--blue-bg)',    color: 'var(--blue)'   },
   ticket:         { bg: 'rgba(232,197,71,0.1)', color: 'var(--accent)' },
 };
+const TIPO_LABELS = {
+  falla_tienda:   'Falla en tienda',
+  edilicio:       'Edilicio',
+  rotos_vencidos: 'Rotos / Vencidos',
+  pedido:         'Pedido delivery',
+  ticket:         'Ticket sistema',
+};
 
 function renderAdminReports(reportes) {
   const list = document.getElementById('admin-report-list');
@@ -4733,6 +4176,98 @@ function renderAdminReports(reportes) {
     const fotoLink = r.foto_url
       ? `<a href="${r.foto_url}" target="_blank" style="display:inline-block;margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--blue);text-decoration:none;border:0.5px solid rgba(91,156,246,0.3);padding:3px 10px;border-radius:5px">ver foto en Drive ↗</a>`
       : '';
+
+    // Bloque de detalle según tipo — datos_json
+    const dj = r.datos_json || {};
+    let detalleBlock = '';
+    if (r.tipo === 'falla_tienda') {
+      const parts = [
+        dj.categoria ? `<span>📂 ${dj.categoria}</span>` : '',
+        dj.subfalla  ? `<span>→ ${dj.subfalla}</span>`   : '',
+      ].filter(Boolean).join('');
+      if (parts) detalleBlock = `<div style="margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--text2);display:flex;flex-wrap:wrap;gap:8px">${parts}</div>`;
+    } else if (r.tipo === 'edilicio') {
+      if (dj.tipo_falla) detalleBlock = `<div style="margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--text2)">🔧 ${dj.tipo_falla}</div>`;
+    } else if (r.tipo === 'pedido') {
+      const parts = [
+        dj.plataforma  ? `<span>📱 ${dj.plataforma}</span>`          : '',
+        dj.id_pedido   ? `<span>🆔 ${dj.id_pedido}</span>`           : '',
+        dj.motivo      ? `<span>⚑ ${dj.motivo}</span>`              : '',
+        dj.fecha       ? `<span>📅 ${dj.fecha}</span>`                : '',
+        dj.hora        ? `<span>🕐 ${dj.hora}</span>`                 : '',
+        dj.monto_total ? `<span>💲 $${dj.monto_total}</span>`        : '',
+        dj.monto_reclamo ? `<span>⚠ Reclamo: $${dj.monto_reclamo}</span>` : '',
+        dj.articulo_reclamo ? `<span>📦 ${dj.articulo_reclamo}</span>` : '',
+        dj.articulos   ? `<span style="color:var(--text3)">${dj.articulos}</span>` : '',
+      ].filter(Boolean).join('');
+      if (parts) detalleBlock = `<div style="margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--text2);display:flex;flex-wrap:wrap;gap:8px">${parts}</div>`;
+    } else if (r.tipo === 'ticket') {
+      if (dj.tipo_ticket === 'ajuste_stock') {
+        const parts = [
+          dj.articulo  ? `<span>📦 ${dj.articulo}</span>`             : '',
+          dj.operacion ? `<span>${dj.operacion === 'sumar' ? '➕' : '➖'} ${dj.operacion}</span>` : '',
+          dj.cantidad  ? `<span>× ${dj.cantidad}</span>`               : '',
+          dj.motivo    ? `<span>📋 ${dj.motivo}</span>`               : '',
+        ].filter(Boolean).join('');
+        if (parts) detalleBlock = `<div style="margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--text2);display:flex;flex-wrap:wrap;gap:8px">${parts}</div>`;
+      } else if (dj.tipo_ticket === 'error_precio') {
+        const parts = [
+          dj.articulo        ? `<span>📦 ${dj.articulo}</span>`              : '',
+          dj.ubicacion       ? `<span>📍 ${dj.ubicacion}</span>`             : '',
+          dj.precio_error    ? `<span style="color:var(--red)">✗ $${dj.precio_error}</span>`    : '',
+          dj.precio_correcto ? `<span style="color:var(--green)">✓ $${dj.precio_correcto}</span>` : '',
+        ].filter(Boolean).join('');
+        if (parts) detalleBlock = `<div style="margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--text2);display:flex;flex-wrap:wrap;gap:8px">${parts}</div>`;
+      } else if (dj.tipo_ticket === 'error_nombre') {
+        const parts = [
+          dj.nombre_error    ? `<span style="color:var(--red)">✗ ${dj.nombre_error}</span>`    : '',
+          dj.nombre_correcto ? `<span style="color:var(--green)">✓ ${dj.nombre_correcto}</span>` : '',
+          dj.ubicacion       ? `<span>📍 ${dj.ubicacion}</span>`             : '',
+        ].filter(Boolean).join('');
+        if (parts) detalleBlock = `<div style="margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--text2);display:flex;flex-wrap:wrap;gap:8px">${parts}</div>`;
+      }
+    }
+
+    // Items de ticket (articulo_nuevo, cambio_cb)
+    const tkItems = r.ticket_items || [];
+    const tkBlock = tkItems.length > 0
+      ? '<div style="margin-top:10px;border-top:0.5px solid var(--border);padding-top:10px">'
+        + tkItems.map(item =>
+            '<div style="font-family:var(--mono);font-size:11px;margin-bottom:8px;padding:8px;background:var(--bg3);border-radius:6px">'
+          + '<div style="font-weight:500;color:var(--text);margin-bottom:4px">' + (item.nombre_articulo || '—') + '</div>'
+          + '<div style="color:var(--text2);display:flex;flex-wrap:wrap;gap:8px">'
+          + (item.presentacion ? '<span>📦 ' + item.presentacion + '</span>' : '')
+          + (item.codigo_barras ? '<span>🔖 CB: ' + item.codigo_barras + '</span>' : '')
+          + (item.costo ? '<span>💲 Costo: $' + item.costo + '</span>' : '')
+          + (item.precio_venta ? '<span>🏷️ Venta: $' + item.precio_venta + '</span>' : '')
+          + (item.cantidad ? '<span>× ' + item.cantidad + '</span>' : '')
+          + (item.proveedor ? '<span>🏭 ' + item.proveedor + '</span>' : '')
+          + '</div>'
+          + (item.foto_url ? '<a href="' + item.foto_url + '" target="_blank" style="display:inline-block;margin-top:6px;font-size:11px;color:var(--blue);text-decoration:none;border:0.5px solid rgba(91,156,246,0.3);padding:2px 8px;border-radius:4px">ver foto ↗</a>' : '')
+          + '</div>'
+        ).join('')
+        + '</div>'
+      : '';
+
+    // Items de rotos/vencidos
+    const rvItems = r.reporte_items || [];
+    const rvBlock = rvItems.length > 0
+      ? '<div style="margin-top:10px;border-top:0.5px solid var(--border);padding-top:10px">'
+        + rvItems.map(item =>
+            '<div style="font-family:var(--mono);font-size:11px;margin-bottom:8px;padding:8px;background:var(--bg3);border-radius:6px">'
+          + '<div style="font-weight:500;color:var(--text);margin-bottom:4px">' + (item.nombre_articulo || '—') + '</div>'
+          + '<div style="color:var(--text2);display:flex;flex-wrap:wrap;gap:8px">'
+          + (item.presentacion ? '<span>📦 ' + item.presentacion + '</span>' : '')
+          + (item.cantidad ? '<span>× ' + item.cantidad + '</span>' : '')
+          + (item.precio_venta ? '<span>💲 $' + item.precio_venta + '</span>' : '')
+          + (item.fecha_vencimiento ? '<span>📅 Vence: ' + item.fecha_vencimiento + '</span>' : '')
+          + '</div>'
+          + (item.foto_url ? '<a href="' + item.foto_url + '" target="_blank" style="display:inline-block;margin-top:6px;font-size:11px;color:var(--blue);text-decoration:none;border:0.5px solid rgba(91,156,246,0.3);padding:2px 8px;border-radius:4px">ver foto ↗</a>' : '')
+          + '</div>'
+        ).join('')
+        + '</div>'
+      : '';
+
     return '<div class="report-item" id="report-' + r.id + '">'
       + '<div class="report-item-top">'
       +   '<div class="report-item-desc">' + desc + '</div>'
@@ -4742,7 +4277,10 @@ function renderAdminReports(reportes) {
       +   '<span>👤 ' + emp + '</span><span>·</span><span>' + local + '</span><span>·</span><span>' + (r.turno||'—') + '</span><span>·</span><span>' + fecha + '</span>'
       + '</div>'
       + (resp ? '<div style="margin-top:6px;font-size:11px;font-family:var(--mono);color:var(--orange)">⚑ resp: ' + resp + '</div>' : '')
+      + detalleBlock
       + fotoLink
+      + tkBlock
+      + rvBlock
       + (isTicket && !r.resuelto ? '<button class="resolve-btn" onclick="resolveTicket(\u0027' + r.id + '\u0027,this)">✓ Marcar como resuelto</button>' : '')
       + (r.resuelto ? '<div class="resolved-tag">✓ resuelto ' + (r.resuelto_at ? new Date(r.resuelto_at).toLocaleString('es-AR',{day:'2-digit',month:'2-digit'}) : '') + '</div>' : '')
       + '</div>';
@@ -4831,10 +4369,10 @@ async function resolveTicket(id, btn) {
 let toastTimer;
 function showToast(msg, type = '') {
   const t = document.getElementById('toast');
-  t.textContent = msg;
+  document.getElementById('toast-msg').textContent = msg;
   t.className = `show ${type}`;
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { t.className = ''; }, 2800);
+  toastTimer = setTimeout(() => { t.className = ''; }, 3000);
 }
 
 // ═══════════════════════════════════════
@@ -4852,8 +4390,7 @@ let lsConfigCache = null;
 function repartidorAbrirReportes() {
   // Si ya eligió tienda en esta sesión, abrir directo
   if (state.local) {
-    goTo('reporte-tipo');
-    updateBadges();
+    reportesOpen();
     return;
   }
   // Mostrar selector de tienda inline con un modal simple
@@ -4892,8 +4429,7 @@ function repartidorSelLocal(local, localName) {
   state.local = local;
   const modal = document.getElementById('rep-local-modal');
   if (modal) modal.remove();
-  goTo('reporte-tipo');
-  updateBadges();
+  reportesOpen();
   // Limpiar local después de terminar el reporte (cuando vuelve al hub)
   // lo dejamos seteado para que pueda hacer varios reportes de la misma tienda
 }
@@ -5147,6 +4683,8 @@ function lsEntrarHub(auth) {
     state.turno           = 'repartidor';
     document.getElementById('hub-emp-name').textContent = 'Logística';
     document.getElementById('hub-meta').textContent     = 'remitos · reportes';
+    // Selector de tienda para logística (para reportes)
+    mostrarSelectorTiendaAdmin('logistica');
     // Ocultar cards que no aplican a logística
     ['card-deudas','card-panel-turno','card-inventario','card-ordenes','card-turno-admin'].forEach(id => {
       const c = document.getElementById(id); if (c) c.style.display = 'none';
@@ -5156,7 +4694,7 @@ function lsEntrarHub(auth) {
     adminPinValue  = lsConfigCache ? lsConfigCache['admin_pin'] : adminPinValue;
     state.adminPin = adminPinValue;
     document.getElementById('hub-emp-name').textContent = 'Administrador';
-    document.getElementById('hub-meta').textContent     = 'seleccioná turno para continuar';
+    document.getElementById('hub-meta').textContent     = 'seleccioná tienda y turno para continuar';
     // Cards de admin
     const cardAdmin   = document.getElementById('card-admin');
     const cardPedidos = document.getElementById('card-pedidos');
@@ -5164,6 +4702,8 @@ function lsEntrarHub(auth) {
     if (cardAdmin)   cardAdmin.style.display   = 'block';
     if (cardPedidos) cardPedidos.style.display = 'block';
     if (cardPagos)   cardPagos.style.display   = 'block';
+    // Mostrar selector de tienda para admin
+    mostrarSelectorTiendaAdmin();
     admActualizarCardTurno();
   } else if (auth.rol === 'supervisor') {
     if (secNombre) secNombre.style.display = 'none';
@@ -5186,6 +4726,43 @@ function lsEntrarHub(auth) {
   // 6. Ir al hub
   goTo('hub');
   checkPedidosPendientes();
+}
+
+
+// ── SELECTOR DE TIENDA ADMIN/LOGÍSTICA ───────────────────────
+function mostrarSelectorTiendaAdmin(modo) {
+  const wrap = document.getElementById('admin-tienda-wrap');
+  if (wrap) wrap.style.display = 'block';
+  // Para logística, ocultar la opción "Todas" y forzar una tienda
+  // Para admin, mostrar todas incluida la opción global
+  const todasChip = document.getElementById('atch-todas');
+  if (modo === 'logistica') {
+    if (todasChip) todasChip.style.display = 'none';
+    // Seleccionar la primera por defecto si no hay ninguna
+    if (!state.local) admSelTienda('palermo', document.getElementById('atch-palermo'));
+  } else {
+    if (todasChip) todasChip.style.display = '';
+    // Por defecto "Todas" para admin
+    admSelTienda('', document.getElementById('atch-todas'));
+  }
+}
+
+function admSelTienda(local, el) {
+  document.querySelectorAll('.admin-tienda-chip').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  state.local = local || '';
+  // Propagar el local a los iframes que ya estén abiertos
+  const lbl = document.getElementById('admin-tienda-label');
+  const TNOMBRES = { palermo:'Thames · Palermo', belgrano:'Roosevelt · Belgrano', barrio_chino:'Juramento · B. Chino', san_telmo:'Independencia · S. Telmo' };
+  if (lbl) lbl.textContent = local ? (TNOMBRES[local] || local) : 'Todas las tiendas';
+  // Actualizar card panel turno admin
+  admActualizarCardTurno();
+  // También aplicar como local fijo para compatibilidad con módulos
+  if (local) {
+    localStorage.setItem('break_local_fijo', local);
+  } else {
+    localStorage.removeItem('break_local_fijo');
+  }
 }
 
 function lsCerrarSesion() {
@@ -5717,22 +5294,8 @@ async function init() {
       sel.appendChild(opt);
     });
 
-    // Responsables en falla tienda
-    const selResp = document.getElementById('ft-responsable');
-    if (selResp) {
-      (cuentas||[]).forEach(e => {
-        const opt = document.createElement('option');
-        opt.value = e.id; opt.textContent = e.nombre;
-        selResp.appendChild(opt);
-      });
-    }
-
     // Precargar config (claves de login + admin_pin)
     await lsPrecargarConfig();
-
-    // Inicializar formularios
-    initRVItems();
-    addTkItem();
 
     // Ocultar loading
     document.getElementById('loading-overlay').classList.add('hidden');
@@ -5780,6 +5343,7 @@ let ptData = {
   turnos: [], locales: [],
   hielosCiclos: [],
   clockInt: null, tiempoInt: null, taskTimers: [],
+  _totalDeudas: 0,
 };
 
 // ── INIT ─────────────────────────────────
@@ -5848,32 +5412,31 @@ function ptInitCore() {
     try {
       const localKey = state.local || '';
       const el = document.getElementById('pt-deudas-local');
-      if (!el || !localKey) return;
+      if (!el) return;
+      if (!localKey) {
+        el.innerHTML = '<span style="color:var(--text3);font-family:var(--mono);font-size:11px">Local no configurado</span>';
+        return;
+      }
       const [entradas, cuentas] = await Promise.all([
         sbFetch(`entradas?store=eq.${localKey}&select=cid,monto`),
-        sbFetch(`cuentas?tipo=eq.empleado&select=id,nombre`)
+        sbFetch(`cuentas?select=id,nombre,tipo`)
       ]);
       const saldos = {};
       (entradas||[]).forEach(e => { saldos[e.cid] = (saldos[e.cid]||0) + e.monto; });
-      const rows = (cuentas||[])
-        .map(c => ({ nombre: c.nombre, saldo: saldos[c.id] || 0 }))
-        .filter(c => c.saldo > 0)
-        .sort((a,b) => b.saldo - a.saldo);
-      const total = rows.reduce((a,r) => a + r.saldo, 0);
-      if (rows.length === 0) {
-        el.innerHTML = '<span style="color:var(--green)">Sin deudas activas en este local ✓</span>';
-        return;
-      }
+      const total = (cuentas||[]).reduce((a,c) => a + (saldos[c.id]||0), 0);
       const fmt2 = n => '$' + Math.abs(n).toLocaleString('es-AR');
-      el.innerHTML =
-        rows.map(r =>
-          `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:0.5px solid var(--border)">` +
-          `<span style="color:var(--text)">${r.nombre}</span>` +
-          `<span style="color:var(--red)">${fmt2(r.saldo)}</span></div>`
-        ).join('') +
-        `<div style="display:flex;justify-content:space-between;padding:6px 0 0;margin-top:4px;font-weight:700">` +
-        `<span style="color:var(--muted)">Total local</span>` +
-        `<span style="color:var(--red)">${fmt2(total)}</span></div>`;
+      if (total <= 0) {
+        el.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center">' +
+          '<span style="color:var(--green);font-weight:600">📋 Deudas del local</span>' +
+          '<span style="color:var(--green);font-family:var(--mono);font-size:16px;font-weight:700">$0</span></div>';
+      } else {
+        el.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center">' +
+          '<span style="font-family:var(--mono);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text2)">📋 Deudas del local</span>' +
+          '<span style="color:var(--red);font-family:var(--mono);font-size:18px;font-weight:700">' + fmt2(total) + '</span></div>';
+      }
+      // Guardar total deudas para cálculo de caja neta
+      ptData._totalDeudas = total;
+      ptRecalcCajaNeta();
     } catch(e) { console.warn('pt-deudas-local error', e); }
   })();
 
@@ -6360,10 +5923,9 @@ function ptRecalcVentas() {
   const total  = ef + mp + debito;
   const totalEl = document.getElementById('ptven-total');
   if (totalEl) totalEl.textContent = `$${total.toLocaleString('es-AR')}`;
-  // Sync hidden field used by ptRecalc for diferencia
   const sis = document.getElementById('ptmed-sistema');
   if (sis) sis.value = total > 0 ? total : '';
-  ptRecalc();
+  ptRecalcCajaNeta();
 }
 
 function ptRecalc() {
@@ -6380,12 +5942,24 @@ function ptRecalc() {
   const efEl = document.getElementById('pt-total-ef');
   if (efEl) efEl.textContent = `$${totalEf.toLocaleString('es-AR')}`;
 
-  // Caja grande (pacas)
+  // Caja grande (pacas) — leer desde pt-total-pacas que ya fue calculado por ptRecalcPacas
+  const pacasEl = document.getElementById('pt-total-pacas');
   let totalPacas = 0;
-  for (let i = 1; i <= 3; i++) {
-    const denom = parseFloat(document.getElementById(`ptpd${i}`)?.value) || 0;
-    const cant  = parseFloat(document.getElementById(`ptpc${i}`)?.value) || 0;
-    totalPacas += denom * cant;
+  if (pacasEl) {
+    const raw = pacasEl.textContent.replace(/[$.]/g, '').replace(',', '.').trim();
+    totalPacas = parseFloat(raw.replace(/\./g, '').replace(',', '.')) || 0;
+    // Recalcular manualmente para mayor precisión
+    totalPacas = 0;
+    const PACAS_FIJAS2 = [{ id:'f1', val:10000 }, { id:'f2', val:50000 }, { id:'f3', val:100000 }];
+    PACAS_FIJAS2.forEach(p => {
+      const cant = parseFloat(document.getElementById(`ptpc-${p.id}`)?.value) || 0;
+      totalPacas += p.val * cant;
+    });
+    for (let i = 1; i <= 3; i++) {
+      const denom = parseFloat(document.getElementById(`ptpd-c${i}`)?.value) || 0;
+      const cant  = parseFloat(document.getElementById(`ptpc-c${i}`)?.value) || 0;
+      totalPacas += denom * cant;
+    }
   }
 
   // Total general
@@ -6393,15 +5967,46 @@ function ptRecalc() {
   const genEl = document.getElementById('pt-total-general');
   if (genEl) genEl.textContent = `$${totalGeneral.toLocaleString('es-AR')}`;
 
-  // Diferencia contra sistema
+  // Actualizar caja neta con deudas
+  ptRecalcCajaNeta();
+}
+
+function ptRecalcCajaNeta() {
+  const genEl = document.getElementById('pt-total-general');
+  const totalGeneral = genEl ? (parseFloat(genEl.textContent.replace(/[$.]/g,'').replace(',','.').replace(/\./g,'')) || 0) : 0;
+  // Recalcular totalGeneral directamente
+  let tEf = 0;
+  if (typeof PT_DENOM !== 'undefined') {
+    PT_DENOM.forEach(d => { tEf += (parseInt(document.getElementById(d.id)?.value)||0)*d.val; });
+  }
+  let tPacas = 0;
+  [{id:'f1',val:10000},{id:'f2',val:50000},{id:'f3',val:100000}].forEach(p => {
+    tPacas += (parseFloat(document.getElementById(`ptpc-${p.id}`)?.value)||0)*p.val;
+  });
+  for(let i=1;i<=3;i++){
+    tPacas += (parseFloat(document.getElementById(`ptpd-c${i}`)?.value)||0)*(parseFloat(document.getElementById(`ptpc-c${i}`)?.value)||0);
+  }
+  const tCaja = tEf + tPacas;
+  const deudas = ptData._totalDeudas || 0;
+  const neta = tCaja - deudas;
+  const netaEl = document.getElementById('pt-caja-neta');
+  if (netaEl) {
+    netaEl.textContent = `$${Math.abs(neta).toLocaleString('es-AR')}`;
+    netaEl.style.color = neta >= 0 ? 'var(--green)' : 'var(--red)';
+    const lbl = netaEl.previousElementSibling;
+    if (lbl) lbl.style.color = neta >= 0 ? 'var(--green)' : 'var(--red)';
+  }
+
+  // Diferencia caja vs sistema
   const sistema = parseFloat(document.getElementById('ptmed-sistema')?.value) || 0;
   const box  = document.getElementById('pt-diferencia');
   const lbl  = document.getElementById('pt-dif-lbl');
   const val  = document.getElementById('pt-dif-val');
   const desc = document.getElementById('pt-dif-desc');
+  if (!box) return;
 
   if (sistema > 0) {
-    const diff = totalGeneral - sistema;
+    const diff = tCaja - sistema;
     box.className = 'pt-diferencia ' + (diff===0 ? 'pt-dif-ok' : diff>0 ? 'pt-dif-sobrante' : 'pt-dif-faltante');
     lbl.textContent  = diff===0 ? 'Cuadra exacto ✓' : diff>0 ? 'Sobrante' : 'Faltante';
     desc.textContent = diff===0 ? 'El total en caja coincide con el sistema'
@@ -6409,8 +6014,8 @@ function ptRecalc() {
     val.textContent  = (diff>=0?'+':'') + `$${diff.toLocaleString('es-AR')}`;
   } else {
     box.className = 'pt-diferencia pt-dif-neutral';
-    lbl.textContent  = 'Diferencia';
-    desc.textContent = 'Ingresá el monto del sistema para calcular';
+    lbl.textContent  = 'Diferencia caja vs sistema';
+    desc.textContent = 'Ingresá el cierre del sistema para ver si falta o sobra';
     val.textContent  = '—';
   }
 }
@@ -6452,23 +6057,23 @@ async function ptCerrar() {
 
   const checksJson = {
     recargas: {
-      ok: ptData.checks.recargas,
+      ok: ptData.checks.recargas === true ? true : ptData.checks.recargas === false ? 'no' : null,
       stock_anterior:  parseFloat(document.getElementById('ptck-rec-ant')?.value)||null,
       stock_actual:    parseFloat(document.getElementById('ptck-rec-act')?.value)||null,
       recargado:       ptData.recargaCalculada,
       ventas_sistema:  parseFloat(document.getElementById('ptck-rec-ventas')?.value)||null,
     },
     hielos: {
-      ok: true,
+      ok: ptData.checks.hielos === true ? true : ptData.checks.hielos === false ? 'no' : null,
       ciclos: ptData.hielosCiclos.length,
       bolsas_total: ptData.hielosCiclos.reduce((a,c) => a+(c.bolsas||1), 0),
       detalle: ptData.hielosCiclos
     },
-    delivery:    { ok: true, sub: ptData.subChecks },
-    rotos:       { ok: true, obs: document.getElementById('ptck-rotos-obs')?.value.trim()||null },
-    transf:      { ok: true },
-    cigarrillos: { ok: true },
-    cerohs:      { ok: true },
+    delivery:    { ok: ptData.checks.delivery === true ? true : ptData.checks.delivery === false ? 'no' : null, sub: ptData.subChecks },
+    rotos:       { ok: ptData.checks.rotos === true ? true : ptData.checks.rotos === false ? 'no' : null, obs: document.getElementById('ptck-rotos-obs')?.value.trim()||null },
+    transf:      { ok: ptData.checks.transf === true ? true : ptData.checks.transf === false ? 'no' : null },
+    cigarrillos: { ok: ptData.checks.cigarrillos === true ? true : ptData.checks.cigarrillos === false ? 'no' : null },
+    cerohs:      { ok: ptData.checks.cerohs === true ? true : ptData.checks.cerohs === false ? 'no' : null },
   };
 
   const payload = {
@@ -6549,7 +6154,7 @@ function ptToggleSection(bodyId, headerEl) {
 // ── CHECKLIST ────────────────────────────
 // Inicializar estado checks en ptData
 function ptInitChecks() {
-  ptData.checks = { recargas:false, hielos:false, delivery:false, rotos:false, transf:false, cigarrillos:false, cerohs:false };
+  ptData.checks = { recargas:null, hielos:null, delivery:null, rotos:null, transf:null, cigarrillos:null, cerohs:null };
   ptData.subChecks = { 'pya-fac':false, 'rappi-fac':false, 'mp-fac':false };
   ptData.hielosCiclos = [];
   ptData.recargaCalculada = null;
@@ -6603,26 +6208,39 @@ function ptInitChecks() {
   ptUpdateChecksProgress();
 }
 
-function ptToggleCheck(key) {
-  // Delivery requiere todos los sub-checks
-  if (key === 'delivery') {
+function ptToggleCheck(key) { ptSetCheck(key, 'ok'); } // legacy compat
+
+function ptSetCheck(key, mode) {
+  // Delivery requiere todos los sub-checks para marcar como OK
+  if (key === 'delivery' && mode === 'ok') {
     const allDone = Object.values(ptData.subChecks).every(v => v);
     if (!allDone) { showToast('Completá todos los sub-checks de delivery', 'error'); return; }
   }
-  // Hielos requiere al menos 1 ciclo
-  if (key === 'hielos' && ptData.hielosCiclos.length === 0) {
+  // Hielos requiere al menos 1 ciclo para OK
+  if (key === 'hielos' && mode === 'ok' && ptData.hielosCiclos.length === 0) {
     showToast('Registrá al menos 1 ciclo de hielo con "+ Ciclo"', 'error'); return;
   }
 
-  ptData.checks[key] = !ptData.checks[key];
   const item = document.getElementById(`ptck-${key}`);
-  const tog  = document.getElementById(`ptck-tog-${key}`);
-  if (ptData.checks[key]) {
-    item.classList.add('done'); item.style.borderColor=''; item.style.background='';
-    tog.style.color = '#0f0f0f';
+  const btnOk = document.getElementById(`ptck-ok-${key}`);
+  const btnNo = document.getElementById(`ptck-no-${key}`);
+  if (!item) return;
+
+  // current state: 'ok', 'no', or null
+  const cur = ptData.checks[key] === true ? 'ok' : ptData.checks[key] === false ? 'no' : null;
+
+  if (cur === mode) {
+    // toggle off → volver a neutro
+    ptData.checks[key] = null;
+    item.classList.remove('done', 'alert');
+  } else if (mode === 'ok') {
+    ptData.checks[key] = true;
+    item.classList.add('done');
+    item.classList.remove('alert');
   } else {
+    ptData.checks[key] = false;
+    item.classList.add('alert');
     item.classList.remove('done');
-    tog.style.color = 'transparent';
   }
   ptUpdateChecksProgress();
 }
@@ -6634,34 +6252,31 @@ function ptSubCheck(subKey, parentKey) {
 
   // Si todos los sub-checks están ok, marcar el padre automáticamente
   const allDone = Object.values(ptData.subChecks).every(v => v);
-  if (allDone && !ptData.checks[parentKey]) {
-    ptData.checks[parentKey] = true;
+  if (allDone && ptData.checks[parentKey] !== true) {
+    ptSetCheck(parentKey, 'ok');
+  } else if (!allDone && ptData.checks[parentKey] === true) {
+    // Si desmarca un sub, volver padre a neutro
+    ptData.checks[parentKey] = null;
     const item = document.getElementById(`ptck-${parentKey}`);
-    const tog  = document.getElementById(`ptck-tog-${parentKey}`);
-    if (item) { item.classList.add('done'); item.style.borderColor=''; item.style.background=''; }
-    if (tog)  tog.style.color = '#0f0f0f';
-    ptUpdateChecksProgress();
-  } else if (!allDone && ptData.checks[parentKey]) {
-    // Si desmarca un sub, desmarcar padre
-    ptData.checks[parentKey] = false;
-    const item = document.getElementById(`ptck-${parentKey}`);
-    const tog  = document.getElementById(`ptck-tog-${parentKey}`);
-    if (item) item.classList.remove('done');
-    if (tog)  tog.style.color = 'transparent';
+    if (item) item.classList.remove('done', 'alert');
     ptUpdateChecksProgress();
   }
 }
 
 function ptUpdateChecksProgress() {
-  const total = Object.keys(ptData.checks).length;
-  const done  = Object.values(ptData.checks).filter(Boolean).length;
-  const pct   = Math.round(done/total*100);
+  const vals = Object.values(ptData.checks);
+  const total = vals.length;
+  const done  = vals.filter(v => v === true).length;
+  const noOk  = vals.filter(v => v === false).length;
+  const pend  = vals.filter(v => v === null || v === undefined).length;
+  const pct   = Math.round((done + noOk) / total * 100);
   document.getElementById('pt-checks-bar').style.width = pct + '%';
-  document.getElementById('pt-checks-count').textContent = `${done} / ${total}`;
-  // Botón de cierre: indicar estado
+  document.getElementById('pt-checks-count').textContent =
+    `${done} ✓ · ${noOk} ✗ · ${pend} pendiente${pend!==1?'s':''}`;
+  // Botón de cierre
   const btn = document.getElementById('pt-btn-cerrar');
   if (btn && !ptData.cierreGuardado) {
-    btn.textContent = done === total ? '🔒 Cerrar turno' : `🔒 Cerrar turno (${total-done} checks pendientes)`;
+    btn.textContent = pend === 0 ? '🔒 Cerrar turno' : `🔒 Cerrar turno (${pend} sin completar)`;
   }
 }
 
@@ -6936,6 +6551,37 @@ function ordenesOpen() {
     };
   }, 0);
 }
+
+// === MODULO REPORTES ===
+function reportesOpen() {
+  goTo('reportes');
+  const iframe = document.getElementById('reportes-iframe');
+  const ctx = {
+    type:             'break-context-reportes',
+    local:            state.local,
+    localName:        LOCALES[state.local] || state.localName || '',
+    turno:            state.turno,
+    empleado_id:      state.empleado_id,
+    empleado_nombre:  state.empleado_nombre,
+    rol:              state.rol,
+  };
+  iframe.src = '';
+  setTimeout(() => {
+    iframe.src = 'reportes.html';
+    iframe.onload = function() {
+      setTimeout(() => {
+        try { iframe.contentWindow.postMessage(ctx, '*'); } catch(e) {}
+      }, 100);
+    };
+  }, 0);
+}
+
+// Escuchar mensaje de vuelta del iframe de reportes
+window.addEventListener('message', e => {
+  if (e.data?.type === 'reportes-back') {
+    goTo('hub');
+  }
+});
 
 // === MODULO CUENTAS POR PAGAR ===
 function pagosOpen() {
