@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Orden de Trabajo · Break</title>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<script src="https://apis.google.com/js/api.js" async defer></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -850,6 +849,31 @@
 
 </div>
 
+<!-- MODAL: PREVIEW FOTO FACTURA -->
+<div id="modal-preview-foto" style="display:none;position:fixed;inset:0;z-index:2000;background:#000;flex-direction:column">
+  <!-- Guía superior -->
+  <div style="position:absolute;top:0;left:0;right:0;z-index:10;padding:16px;background:linear-gradient(to bottom,rgba(0,0,0,0.75),transparent)">
+    <div style="font-family:'DM Mono',monospace;font-size:12px;color:#fff;text-align:center;line-height:1.6">
+      📄 Revisá que la factura sea legible · Sin ángulo · Buena luz
+    </div>
+  </div>
+  <!-- Preview imagen -->
+  <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:60px 16px">
+    <img id="preview-foto-img" src="" style="max-width:100%;max-height:100%;border-radius:8px;object-fit:contain;box-shadow:0 0 40px rgba(0,0,0,0.5)">
+  </div>
+  <!-- Marco guía superpuesto sobre imagen -->
+  <div style="position:absolute;inset:60px 24px 130px;border:2px dashed rgba(255,255,255,0.35);border-radius:8px;pointer-events:none"></div>
+  <!-- Botones inferiores -->
+  <div style="position:absolute;bottom:0;left:0;right:0;padding:20px 20px 32px;background:linear-gradient(to top,rgba(0,0,0,0.85),transparent);display:flex;gap:12px;justify-content:center">
+    <button onclick="retomar()" style="flex:1;max-width:160px;padding:14px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:10px;color:#fff;font-family:'DM Mono',monospace;font-size:13px;cursor:pointer;min-height:48px">
+      🔄 Retomar
+    </button>
+    <button onclick="confirmarFoto()" style="flex:1;max-width:160px;padding:14px;background:#e8c547;border:none;border-radius:10px;color:#111;font-family:'DM Mono',monospace;font-size:13px;font-weight:700;cursor:pointer;min-height:48px">
+      ✓ Usar esta
+    </button>
+  </div>
+</div>
+
 <!-- MODAL: DETALLE OT -->
 <div class="modal-overlay" id="modal-detalle">
   <div class="modal">
@@ -877,14 +901,13 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 let _sbSecret = null;
 (async () => {
   try {
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/config?clave=in.(app_secret,drive_picker_api_key)&select=clave,valor`, {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/config?clave=eq.app_secret&select=clave,valor`, {
       headers: {'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json'}
     });
     const d = await r.json();
     if (Array.isArray(d)) {
       d.forEach(row => {
         if (row.clave === 'app_secret') _sbSecret = row.valor;
-        if (row.clave === 'drive_picker_api_key') _pickerApiKey = row.valor;
       });
     }
   } catch(e) { console.warn('[ordenes] config no disponible', e); }
@@ -1161,9 +1184,11 @@ function openDetalle(id) {
           : '<span style="font-family:var(--mono);font-size:11px;color:var(--text3)">Sin fotos adjuntas</span>'}
       </div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <button onclick="abrirDrivePicker()" style="font-size:12px;padding:7px 14px;background:transparent;border:1px solid var(--border2);color:var(--text2);border-radius:6px;cursor:pointer">📷 Adjuntar desde Drive</button>
+        <button onclick="abrirCamaraFactura()" style="font-size:13px;padding:10px 18px;background:var(--accent);border:none;color:#111;border-radius:8px;cursor:pointer;font-weight:600;min-height:44px">📷 Fotografiar factura</button>
         <span id="modal-foto-status" style="font-family:var(--mono);font-size:11px;color:var(--text3)"></span>
       </div>
+      <!-- Input cámara oculto -->
+      <input type="file" id="input-camara-factura" accept="image/*" style="display:none" onchange="onFotoCapturada(event)">
     </div>
   `;
 
@@ -1812,9 +1837,9 @@ const LOCAL_FOLDER_NAMES = {
 };
 let _otTokenClient = null;
 let _otAccessToken = null;
-let _pendingPickerOpen = false;
-let _pickerApiKey = null;
+let _fotoCapturadaFile = null;   // File capturado, pendiente de confirmación
 
+// ── OAuth GIS — obtener token Drive ──────────────────────────
 function getOTTokenClient() {
   if (_otTokenClient) return _otTokenClient;
   if (!window.google) { showToast('GIS no disponible', 'error'); return null; }
@@ -1826,75 +1851,131 @@ function getOTTokenClient() {
         const statusEl = document.getElementById('modal-foto-status');
         if (statusEl) statusEl.textContent = '';
         showToast('Error de autorización Drive: ' + tokenResponse.error, 'error');
-        _pendingPickerOpen = false;
         return;
       }
       _otAccessToken = tokenResponse.access_token;
-      if (_pendingPickerOpen) { _pendingPickerOpen = false; _abrirPickerConToken(); }
+      // Una vez autenticado, subir la foto que estaba pendiente
+      if (_fotoCapturadaFile) _subirFotoADrive(_fotoCapturadaFile);
     },
   });
   return _otTokenClient;
 }
 
-// ── Punto de entrada: botón "Adjuntar desde Drive" ────────────
-function abrirDrivePicker() {
-  const statusEl = document.getElementById('modal-foto-status');
+// ── Paso 1: abrir cámara ──────────────────────────────────────
+function abrirCamaraFactura() {
+  const input = document.getElementById('input-camara-factura');
+  if (input) input.click();
+}
+
+// ── Paso 2: foto capturada → mostrar preview ──────────────────
+function onFotoCapturada(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  _fotoCapturadaFile = file;
+  const url = URL.createObjectURL(file);
+  const img = document.getElementById('preview-foto-img');
+  if (img) img.src = url;
+  document.getElementById('modal-preview-foto').style.display = 'flex';
+  // Reset input para permitir tomar otra foto si retoma
+  event.target.value = '';
+}
+
+// ── Paso 3a: retomar foto ─────────────────────────────────────
+function retomar() {
+  document.getElementById('modal-preview-foto').style.display = 'none';
+  _fotoCapturadaFile = null;
+  const img = document.getElementById('preview-foto-img');
+  if (img) { URL.revokeObjectURL(img.src); img.src = ''; }
+  // Volver a abrir cámara
+  setTimeout(() => abrirCamaraFactura(), 100);
+}
+
+// ── Paso 3b: confirmar → autenticar si hace falta → subir ─────
+function confirmarFoto() {
+  document.getElementById('modal-preview-foto').style.display = 'none';
+  if (!_fotoCapturadaFile) return;
   if (_otAccessToken) {
-    _abrirPickerConToken();
-    return;
+    _subirFotoADrive(_fotoCapturadaFile);
+  } else {
+    const statusEl = document.getElementById('modal-foto-status');
+    if (statusEl) statusEl.textContent = 'Conectando con Drive...';
+    const tc = getOTTokenClient();
+    if (!tc) return;
+    tc.requestAccessToken({ prompt: '' });
   }
-  _pendingPickerOpen = true;
-  if (statusEl) statusEl.textContent = 'Conectando con Drive...';
-  const tc = getOTTokenClient();
-  if (!tc) return;
-  // Arrancamos directo con select_account para que el popup abra en el mismo gesto
-  tc.requestAccessToken({ prompt: 'select_account' });
 }
 
-// ── Carga gapi.client + Picker, luego lo muestra ─────────────
-function _abrirPickerConToken() {
+// ── Paso 4: subir foto a Drive via multipart upload ───────────
+async function _subirFotoADrive(file) {
   const statusEl = document.getElementById('modal-foto-status');
-  if (!window.gapi) {
-    if (statusEl) statusEl.textContent = 'Error: gapi no cargado';
-    showToast('Google API no disponible. Recargá la página.', 'error');
-    return;
-  }
-  gapi.load('picker', () => {
-    const APP_ID = '780824362766';
-    const view = new google.picker.DocsView(google.picker.ViewId.DOCS)
-      .setIncludeFolders(false)
-      .setSelectFolderEnabled(false)
-      .setMimeTypes('image/jpeg,image/png,image/webp,image/heic,application/pdf');
-
-    const builder = new google.picker.PickerBuilder()
-      .setAppId(APP_ID)
-      .setOAuthToken(_otAccessToken)
-      .addView(view)
-      .addView(new google.picker.DocsUploadView().setMimeTypes('image/jpeg,image/png,image/webp,image/heic,application/pdf'))
-      .setTitle('Seleccioná o escaneá la factura')
-      .setCallback(_pickerCallback);
-
-    if (_pickerApiKey) builder.setDeveloperKey(_pickerApiKey);
-
-    const picker = builder.build();
-    picker.setVisible(true);
-    if (statusEl) statusEl.textContent = '';
-  });
-}
-
-// ── Callback cuando el usuario elige un archivo en el Picker ──
-async function _pickerCallback(data) {
-  if (data[google.picker.Response.ACTION] !== google.picker.Action.PICKED) return;
-  const doc = data[google.picker.Response.DOCUMENTS][0];
-  const fileId = doc[google.picker.Document.ID];
-  const fileName = doc[google.picker.Document.NAME];
-  const statusEl = document.getElementById('modal-foto-status');
-  if (statusEl) statusEl.textContent = 'Procesando...';
+  if (statusEl) statusEl.textContent = 'Subiendo...';
   try {
-    await _moverYGuardarArchivo(fileId, fileName);
+    const orden = ordenes.find(o => o.id === modalOrdenId);
+    const localNombre = LOCAL_FOLDER_NAMES[orden?.local || localKey] || orden?.local || 'Sin local';
+    const provNombre  = (orden?.proveedor || 'Sin proveedor').replace(/[\/\\:*?"<>|]/g, '-').substring(0, 80);
+
+    // Obtener/crear carpetas destino
+    if (statusEl) statusEl.textContent = 'Organizando en Drive...';
+    const localFolderId = await _driveGetOrCreateFolder(localNombre, DRIVE_FOLDER_OT_ROOT_ID);
+    const provFolderId  = await _driveGetOrCreateFolder(provNombre, localFolderId);
+
+    // Nombre estándar
+    const fecha = new Date().toISOString().split('T')[0];
+    const ext   = file.name.includes('.') ? file.name.split('.').pop() : 'jpg';
+    const nuevoNombre = `${fecha}_ot${modalOrdenId || 'x'}.${ext}`;
+
+    // Multipart upload
+    if (statusEl) statusEl.textContent = 'Subiendo foto...';
+    const metadata = { name: nuevoNombre, parents: [provFolderId] };
+    const form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+    form.append('file', file);
+
+    const uploadRes = await fetch(
+      'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',
+      { method: 'POST', headers: { Authorization: 'Bearer ' + _otAccessToken }, body: form }
+    );
+    if (!uploadRes.ok) {
+      const err = await uploadRes.json();
+      if (uploadRes.status === 401) { _otAccessToken = null; }
+      throw new Error('Upload fallido: ' + JSON.stringify(err));
+    }
+    const uploaded = await uploadRes.json();
+    const fileId = uploaded.id;
+
+    // Hacer público para mostrar como imagen
+    await fetch('https://www.googleapis.com/drive/v3/files/' + fileId + '/permissions', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + _otAccessToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role: 'reader', type: 'anyone' })
+    });
+
+    const url = 'https://drive.google.com/uc?export=view&id=' + fileId;
+
+    // Persistir en Supabase
+    if (statusEl) statusEl.textContent = 'Guardando...';
+    const existing = orden?.foto_factura_urls || [];
+    const newUrls = [...existing, url];
+    await sbFetch('ordenes_trabajo?id=eq.' + modalOrdenId, {
+      method: 'PATCH',
+      headers: { 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ foto_factura_urls: newUrls })
+    });
+
+    if (orden) orden.foto_factura_urls = newUrls;
+    const wrap = document.getElementById('modal-fotos-wrap');
+    if (wrap) {
+      wrap.innerHTML = newUrls.map(u =>
+        '<a href="' + u + '" target="_blank"><img src="' + u + '" style="width:80px;height:80px;object-fit:cover;border-radius:6px;border:1px solid var(--border2)"></a>'
+      ).join('');
+    }
+    if (statusEl) statusEl.textContent = '✓ Adjuntado';
+    _fotoCapturadaFile = null;
+    showToast('Factura adjuntada ✓', 'success');
+
   } catch(e) {
-    console.error('[otPicker] error', e);
-    if (statusEl) statusEl.textContent = 'Error al procesar';
+    console.error('[otFoto] error', e);
+    if (statusEl) statusEl.textContent = 'Error al subir';
     if (e.message?.includes('401')) {
       _otAccessToken = null;
       showToast('Sesión Drive expirada, intentá nuevamente', 'error');
@@ -1904,71 +1985,7 @@ async function _pickerCallback(data) {
   }
 }
 
-// ── Mueve el fileId a carpeta OT correcta y persiste en Supabase
-async function _moverYGuardarArchivo(fileId, originalName) {
-  const statusEl = document.getElementById('modal-foto-status');
-  const orden = ordenes.find(o => o.id === modalOrdenId);
-  const localNombre = LOCAL_FOLDER_NAMES[orden?.local || localKey] || orden?.local || 'Sin local';
-  const provNombre  = (orden?.proveedor || 'Sin proveedor').replace(/[/\\:*?"<>|]/g, '-').substring(0, 80);
 
-  // 1. Obtener o crear carpetas destino
-  if (statusEl) statusEl.textContent = 'Organizando en Drive...';
-  const localFolderId = await _driveGetOrCreateFolder(localNombre, DRIVE_FOLDER_OT_ROOT_ID);
-  const provFolderId  = await _driveGetOrCreateFolder(provNombre, localFolderId);
-
-  // 2. Renombrar archivo con nomenclatura estándar
-  const fecha = new Date().toISOString().split('T')[0];
-  const ext   = originalName.includes('.') ? originalName.split('.').pop() : 'jpg';
-  const nuevoNombre = `${fecha}_ot${modalOrdenId || 'x'}.${ext}`;
-
-  // 3. Mover archivo a carpeta destino (patch parents) + renombrar
-  if (statusEl) statusEl.textContent = 'Moviendo archivo...';
-  const moveRes = await fetch(
-    `https://www.googleapis.com/drive/v3/files/${fileId}?addParents=${provFolderId}&fields=id,parents`,
-    {
-      method: 'PATCH',
-      headers: {
-        Authorization: `Bearer ${_otAccessToken}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ name: nuevoNombre })
-    }
-  );
-  if (!moveRes.ok) {
-    const err = await moveRes.json();
-    throw new Error('No se pudo mover el archivo: ' + JSON.stringify(err));
-  }
-
-  // 4. Hacer público para poder mostrar como imagen en la UI
-  await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/permissions`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${_otAccessToken}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ role: 'reader', type: 'anyone' })
-  });
-
-  const url = `https://drive.google.com/uc?export=view&id=${fileId}`;
-
-  // 5. Persistir en Supabase
-  if (statusEl) statusEl.textContent = 'Guardando...';
-  const existing = orden?.foto_factura_urls || [];
-  const newUrls = [...existing, url];
-  await sbFetch(`ordenes_trabajo?id=eq.${modalOrdenId}`, {
-    method: 'PATCH',
-    headers: { 'Prefer': 'return=minimal' },
-    body: JSON.stringify({ foto_factura_urls: newUrls })
-  });
-
-  // 6. Actualizar estado local y UI
-  if (orden) orden.foto_factura_urls = newUrls;
-  const wrap = document.getElementById('modal-fotos-wrap');
-  if (wrap) {
-    wrap.innerHTML = newUrls.map(u =>
-      `<a href="${u}" target="_blank"><img src="${u}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;border:1px solid var(--border2)"></a>`
-    ).join('');
-  }
-  if (statusEl) statusEl.textContent = '✓ Adjuntado';
-  showToast('Factura adjuntada ✓', 'success');
-}
 
 
 async function _driveGetOrCreateFolder(name, parentId) {
