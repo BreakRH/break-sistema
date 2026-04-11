@@ -1813,7 +1813,6 @@ const LOCAL_FOLDER_NAMES = {
 let _otTokenClient = null;
 let _otAccessToken = null;
 let _pendingPickerOpen = false;
-let _otNeedsConsent = false;
 let _pickerApiKey = null;
 
 function getOTTokenClient() {
@@ -1824,16 +1823,12 @@ function getOTTokenClient() {
     scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive',
     callback: async (tokenResponse) => {
       if (tokenResponse.error) {
-        // prompt:'none' falló — necesita interacción directa del usuario
-        _pendingPickerOpen = true;
         const statusEl = document.getElementById('modal-foto-status');
-        if (statusEl) statusEl.textContent = 'Tocá el botón nuevamente para autorizar';
-        showToast('Autorizá el acceso a Drive tocando el botón nuevamente', 'info');
-        // En el próximo click se llamará con prompt:'select_account'
-        _otNeedsConsent = true;
+        if (statusEl) statusEl.textContent = '';
+        showToast('Error de autorización Drive: ' + tokenResponse.error, 'error');
+        _pendingPickerOpen = false;
         return;
       }
-      _otNeedsConsent = false;
       _otAccessToken = tokenResponse.access_token;
       if (_pendingPickerOpen) { _pendingPickerOpen = false; _abrirPickerConToken(); }
     },
@@ -1852,9 +1847,8 @@ function abrirDrivePicker() {
   if (statusEl) statusEl.textContent = 'Conectando con Drive...';
   const tc = getOTTokenClient();
   if (!tc) return;
-  // Primera vez: prompt none (silencioso). Si falla el callback pide tocar de nuevo.
-  // Segunda vez (_otNeedsConsent=true): prompt select_account abre popup de Google.
-  tc.requestAccessToken({ prompt: _otNeedsConsent ? 'select_account' : 'none' });
+  // Arrancamos directo con select_account para que el popup abra en el mismo gesto
+  tc.requestAccessToken({ prompt: 'select_account' });
 }
 
 // ── Carga gapi.client + Picker, luego lo muestra ─────────────

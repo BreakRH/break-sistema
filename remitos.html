@@ -477,27 +477,24 @@ function progreso(r){return ETAPAS.filter(e=>r.etapas_completadas[e.id]).length;
 function stockConfirmado(r){return !!(r.etapas_completadas && r.etapas_completadas['stock']);}
 
 function canComplete(r){
-  if (currentRol==='admin') return true;
+  if (currentRol==='admin' || currentRol==='repartidor') return true;
   const idx=currentEtapaIdx(r); if(idx===-1) return false;
   const e=ETAPAS[idx];
-  // Cuando viene del hub, usar hubLocal para determinar si puede actuar como origen/destino
   const rolEfectivo = hubLocal || currentRol;
   if(e.resp==='origen')     return rolEfectivo===r.origen;
   if(e.resp==='destino')    return rolEfectivo===r.destino;
-  if(e.resp==='repartidor') return currentRol==='repartidor';
   return false;
 }
 function canEditProductos(r){
   // Solo antes de confirmar stock, solo tienda origen o admin
   if (stockConfirmado(r)) return false;
   const rolEfectivo = hubLocal || currentRol;
-  return currentRol==='admin' || rolEfectivo===r.origen;
+  return currentRol==='admin' || currentRol==='repartidor' || rolEfectivo===r.origen;
 }
 function canConfirmarCantidad(r){
-  // Solo la tienda origen puede editar cantidad confirmada, antes de "facturado"
   if (r.etapas_completadas['facturado']) return false;
   const rolEfectivo = hubLocal || currentRol;
-  return rolEfectivo===r.origen || currentRol==='admin';
+  return rolEfectivo===r.origen || currentRol==='admin' || currentRol==='repartidor';
 }
 
 function updateSplashStats(){
@@ -529,20 +526,15 @@ function enterApp(){
   const color = currentRol==='admin'?'var(--accent)':(currentRol==='repartidor'?'var(--green)':colorTienda(currentRol));
   document.getElementById('topbar-user').innerHTML=
     `<span class="role-badge" style="background:rgba(255,255,255,0.06);color:${color};border:0.5px solid ${color};">${currentUser}</span>`;
-  if(currentRol==='admin'){
+  if(currentRol==='admin' || currentRol==='repartidor'){
     document.getElementById('view-admin').style.display='block';
     document.getElementById('view-rol').style.display='none';
     renderAdmin();
   } else {
     document.getElementById('view-rol').style.display='block';
     document.getElementById('view-admin').style.display='none';
-    // tiendas origen pueden crear órdenes; repartidor ve tab Ruta
-    if(currentRol!=='repartidor'){
-      document.getElementById('tab-btn-nueva-rol').style.display='';
-      renderFormNueva('form-nueva-rol');
-    } else {
-      document.getElementById('tab-btn-ruta-rol').style.display='';
-    }
+    document.getElementById('tab-btn-nueva-rol').style.display='';
+    renderFormNueva('form-nueva-rol');
     renderRol();
   }
 }
@@ -598,6 +590,7 @@ function remitoCardHTML(r, showActions){
       <div class="progress-label">${comp?'Todas las etapas completadas':(nextEtapa?`Pendiente: ${nextEtapa.label}`:'')}</div>
     </div>
     ${puedo&&!comp?`<div onclick="event.stopPropagation()"><button class="btn-step" onclick="completarEtapa(event,'${r.id}')">Completar: ${nextEtapa.label} →</button></div>`:''}
+    ${currentRol==='admin'?`<div onclick="event.stopPropagation()" style="margin-top:6px"><button class="btn btn-danger btn-sm" style="width:100%;font-size:12px;padding:6px 10px;min-height:36px" onclick="eliminarRemito(event,'${r.id}','${r.codigo}')">🗑 Eliminar remito</button></div>`:''}
   </div>`;
 }
 
@@ -677,7 +670,7 @@ function agregarLineaNueva(containerId){
 function eliminarLineaNueva(idx){
   lineasNueva.splice(idx,1);
   if(!lineasNueva.length) lineasNueva=[{nombre:'',qty_solicitada:1}];
-  const cid=currentRol==='admin'?'form-nueva-admin':'form-nueva-rol';
+  const cid=(currentRol==='admin'||currentRol==='repartidor')?'form-nueva-admin':'form-nueva-rol';
   renderFormNueva(cid);
 }
 
@@ -715,7 +708,7 @@ async function crearOrden(containerId){
   if(res&&res[0]){
     remitos.unshift(res[0]);
     lineasNueva=[{nombre:'',qty_solicitada:1}];
-    if(currentRol==='admin'){renderAdmin();document.querySelectorAll('#view-admin .tab-btn')[0].click();}
+    if(currentRol==='admin'||currentRol==='repartidor'){renderAdmin();document.querySelectorAll('#view-admin .tab-btn')[0].click();}
     else{renderRol();renderFormNueva(containerId);document.querySelectorAll('#view-rol .tab-btn')[0].click();}
     showToast('Orden creada correctamente.');
   } else {showToast('Error al crear la orden.',true);}
@@ -749,7 +742,7 @@ async function completarEtapa(event,remitoId){
   if(res&&res[0]){
     const i=remitos.findIndex(x=>x.id===remitoId);
     remitos[i]=res[0];
-    if(currentRol==='admin') renderAdmin(); else renderRol();
+    if(currentRol==='admin'||currentRol==='repartidor') renderAdmin(); else renderRol();
     if(modalRemitoId===remitoId) renderModalBody();
     showToast(todasListas?'¡Orden completada!':`"${etapa.label}" completada.`);
   } else {showToast('Error al guardar.',true);}
@@ -773,7 +766,7 @@ async function guardarCantidadesConfirmadas(remitoId){
     const i=remitos.findIndex(x=>x.id===remitoId);
     remitos[i]=res[0];
     renderModalBody();
-    if(currentRol==='admin') renderAdmin(); else renderRol();
+    if(currentRol==='admin'||currentRol==='repartidor') renderAdmin(); else renderRol();
     showToast('Cantidades guardadas.');
   } else {showToast('Error al guardar.',true);}
   hideLoading();
@@ -792,7 +785,7 @@ async function agregarProductoExistente(remitoId){
     const i=remitos.findIndex(x=>x.id===remitoId);
     remitos[i]=res[0];
     renderModalBody();
-    if(currentRol==='admin') renderAdmin(); else renderRol();
+    if(currentRol==='admin'||currentRol==='repartidor') renderAdmin(); else renderRol();
     showToast('Producto agregado.');
   } else {showToast('Error.',true);}
   hideLoading();
@@ -807,7 +800,7 @@ async function eliminarProductoExistente(remitoId,idx){
     const i=remitos.findIndex(x=>x.id===remitoId);
     remitos[i]=res[0];
     renderModalBody();
-    if(currentRol==='admin') renderAdmin(); else renderRol();
+    if(currentRol==='admin'||currentRol==='repartidor') renderAdmin(); else renderRol();
     showToast('Producto eliminado.');
   } else {showToast('Error.',true);}
   hideLoading();
@@ -963,6 +956,21 @@ async function agregarTienda(){
     renderAdmin();
     showToast('Tienda agregada.');
   } else {showToast('Error al guardar.',true);}
+  hideLoading();
+}
+
+async function eliminarRemito(event, id, codigo){
+  event.stopPropagation();
+  if(!confirm(`¿Eliminar el remito #${codigo}? Esta acción no se puede deshacer.`)) return;
+  showLoading('Eliminando remito...');
+  try {
+    await sbDelete('remitos', `id=eq.${id}`);
+    remitos = remitos.filter(r => r.id !== id);
+    renderAdmin();
+    showToast('Remito eliminado.');
+  } catch(e) {
+    showToast('Error al eliminar el remito.', true);
+  }
   hideLoading();
 }
 

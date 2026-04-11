@@ -1730,7 +1730,7 @@
          onclick="openModule('panel-turno')">
       <div class="module-badge badge-new">nuevo</div>
       <div class="module-icon">🎛</div>
-      <div class="module-name">Panel de turno</div>
+      <div class="module-name">Control/Cierre de Turno</div>
       <div class="module-desc">tareas · cierre · caja</div>
     </div>
 
@@ -1785,8 +1785,8 @@
          onclick="admAbrirPanelTurno()">
       <div class="module-badge badge-new">admin</div>
       <div class="module-icon">🎛</div>
-      <div class="module-name">Panel de turno (Admin)</div>
-      <div class="module-desc">accedé al panel de turno con tu PIN de administrador</div>
+      <div class="module-name">Control/Cierre de Turno (Admin)</div>
+      <div class="module-desc">accedé al cierre de turno con tu PIN de administrador</div>
     </div>
 
   </div>
@@ -1954,6 +1954,11 @@
       <div class="filter-chip" onclick="adminFilterTipo('pedido',this)">Pedidos</div>
       <div class="filter-chip" onclick="adminFilterTipo('ticket',this)">Tickets</div>
     </div>
+    <div class="adm-filter-bar" id="admin-filters-just" style="margin-bottom:12px">
+      <div class="filter-chip active" onclick="adminFilterJust('',this)">Todos</div>
+      <div class="filter-chip" onclick="adminFilterJust('no',this)">⚠ No justificados</div>
+      <div class="filter-chip" onclick="adminFilterJust('si',this)">✓ Justificados</div>
+    </div>
     <div style="display:flex;gap:8px;border-bottom:0.5px solid var(--border);margin-bottom:14px">
       <div id="tab-reportes" onclick="switchTab('reportes')" style="padding:8px 16px;font-size:13px;cursor:pointer;border-bottom:2px solid var(--accent);color:var(--accent);font-weight:500">Reportes</div>
       <div id="tab-resumen" onclick="switchTab('resumen')" style="padding:8px 16px;font-size:13px;cursor:pointer;border-bottom:2px solid transparent;color:var(--text3)">Por empleado</div>
@@ -1971,6 +1976,22 @@
 
   <!-- ── TAB 6: LIQUIDACIÓN ── -->
   <div class="adm-panel" id="adm-panel-liquidacion">
+
+    <!-- Tabla de penalidades por tipo de reporte -->
+    <div style="background:var(--bg3);border:0.5px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:18px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em">Penalidades por tipo de reporte</div>
+        <button onclick="liqGuardarPenalidades()" id="btn-guardar-pen" style="background:rgba(232,197,71,0.1);border:0.5px solid var(--accent);border-radius:6px;padding:4px 12px;color:var(--accent);font-family:var(--mono);font-size:11px;cursor:pointer">Guardar</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px" id="pen-grid">
+        <div><div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:3px">Falla en tienda</div><input type="number" min="0" id="pen-falla_tienda" placeholder="$0" style="width:100%;background:var(--bg2);border:0.5px solid var(--border2);border-radius:6px;padding:6px 9px;font-family:var(--mono);font-size:12px;color:var(--text);outline:none"></div>
+        <div><div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:3px">Edilicio</div><input type="number" min="0" id="pen-edilicio" placeholder="$0" style="width:100%;background:var(--bg2);border:0.5px solid var(--border2);border-radius:6px;padding:6px 9px;font-family:var(--mono);font-size:12px;color:var(--text);outline:none"></div>
+        <div><div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:3px">Rotos / Vencidos</div><input type="number" min="0" id="pen-rotos_vencidos" placeholder="$0" style="width:100%;background:var(--bg2);border:0.5px solid var(--border2);border-radius:6px;padding:6px 9px;font-family:var(--mono);font-size:12px;color:var(--text);outline:none"></div>
+        <div><div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:3px">Pedido delivery</div><input type="number" min="0" id="pen-pedido" placeholder="$0" style="width:100%;background:var(--bg2);border:0.5px solid var(--border2);border-radius:6px;padding:6px 9px;font-family:var(--mono);font-size:12px;color:var(--text);outline:none"></div>
+        <div style="grid-column:1/-1"><div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:3px">Ticket sistema</div><input type="number" min="0" id="pen-ticket" placeholder="$0" style="width:100%;background:var(--bg2);border:0.5px solid var(--border2);border-radius:6px;padding:6px 9px;font-family:var(--mono);font-size:12px;color:var(--text);outline:none"></div>
+      </div>
+    </div>
+
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
       <select id="liq-mes" style="font-size:13px;padding:8px 12px;flex:1;min-width:120px" onchange="admLoadLiquidacion()">
         <option value="01">Enero</option><option value="02">Febrero</option>
@@ -1986,6 +2007,18 @@
     </div>
     <div id="adm-liq-list">
       <div style="text-align:center;padding:30px;font-family:var(--mono);font-size:11px;color:var(--text3)">Seleccioná mes y año</div>
+    </div>
+
+    <!-- Modal reportes justificados -->
+    <div id="liq-rep-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1100;align-items:center;justify-content:center;padding:16px">
+      <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:20px;width:100%;max-width:480px;max-height:85vh;overflow-y:auto">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <div style="font-family:var(--syne);font-size:14px;font-weight:700" id="liq-rep-modal-title">Reportes justificados</div>
+          <button onclick="document.getElementById('liq-rep-modal').style.display='none'"
+            style="background:none;border:none;font-size:18px;color:var(--text3);cursor:pointer;line-height:1">✕</button>
+        </div>
+        <div id="liq-rep-modal-body"></div>
+      </div>
     </div>
 
     <!-- Modal agregar adelanto -->
@@ -2149,7 +2182,7 @@
 <div class="screen" id="screen-panel-turno">
   <div class="topbar">
     <div class="topbar-back" onclick="ptCancelarAlarmas();goTo('hub')">←</div>
-    <span class="topbar-title" id="pt-topbar-title">Panel de turno</span>
+    <span class="topbar-title" id="pt-topbar-title">Control/Cierre de Turno</span>
     <span class="topbar-badge" id="pt-topbar-badge">—</span>
   </div>
 
@@ -2391,7 +2424,26 @@
           <!-- ══════════════════════════════
                CONTEO DE CAJA
           ══════════════════════════════ -->
-          <div class="form-section-title" style="margin-bottom:10px;margin-top:24px">💵 Caja chica — billetes</div>
+          <!-- Mini resumen sticky visible mientras se cuentan billetes -->
+          <div id="pt-sticky-totales" style="position:sticky;top:0;z-index:10;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius);padding:8px 12px;margin-bottom:12px;margin-top:24px;display:flex;gap:12px;justify-content:space-between;font-family:var(--mono);font-size:12px">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+              <span style="color:var(--text3);font-size:10px">CAJA CHICA</span>
+              <span id="pt-sticky-chica" style="color:var(--text1);font-weight:600">$0</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+              <span style="color:var(--blue);font-size:10px">CAJA GRANDE</span>
+              <span id="pt-sticky-grande" style="color:var(--blue);font-weight:600">$0</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+              <span style="color:var(--accent);font-size:10px">TOTAL EN CAJA</span>
+              <span id="pt-sticky-total" style="color:var(--accent);font-weight:600">$0</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+              <span style="color:var(--green);font-size:10px">CAJA NETA</span>
+              <span id="pt-sticky-neta" style="color:var(--green);font-weight:600">$0</span>
+            </div>
+          </div>
+          <div class="form-section-title" style="margin-bottom:10px">💵 Caja chica — billetes</div>
           <table class="pt-caja-table" style="margin-bottom:10px">
             <thead><tr>
               <th>Billete</th>
@@ -2463,13 +2515,13 @@
           </table>
 
           <!-- Subtotales caja -->
-          <div class="pt-total-ef" style="margin-bottom:8px;border-color:var(--blue)">
-            <div class="pt-total-ef-lbl" style="color:var(--blue)">📦 Total caja grande</div>
-            <div class="pt-total-ef-val" id="pt-total-pacas" style="color:var(--blue)">$0</div>
-          </div>
           <div class="pt-total-ef" style="margin-bottom:8px">
             <div class="pt-total-ef-lbl">💵 Total caja chica</div>
             <div class="pt-total-ef-val" id="pt-total-ef">$0</div>
+          </div>
+          <div class="pt-total-ef" style="margin-bottom:8px;border-color:var(--blue)">
+            <div class="pt-total-ef-lbl" style="color:var(--blue)">📦 Total caja grande</div>
+            <div class="pt-total-ef-val" id="pt-total-pacas" style="color:var(--blue)">$0</div>
           </div>
           <div class="pt-total-ef" style="margin-bottom:16px;border-color:var(--accent)">
             <div class="pt-total-ef-lbl">💰 Total en caja</div>
@@ -2483,17 +2535,34 @@
             Cargando...
           </div>
 
-          <!-- Caja neta = total caja − deudas -->
+          <!-- Caja neta = total caja + deudas -->
           <div class="pt-total-ef" style="margin-bottom:20px;border-color:var(--green)">
-            <div class="pt-total-ef-lbl" style="color:var(--green)">✅ Caja neta (después de deudas)</div>
+            <div class="pt-total-ef-lbl" style="color:var(--green)">✅ Caja neta</div>
             <div class="pt-total-ef-val" id="pt-caja-neta" style="color:var(--green)">$0</div>
           </div>
 
+          <!-- Movimientos de Caja FacilVirtual -->
+          <div class="form-section-title" style="margin-bottom:10px">💳 Movimientos de Caja FacilVirtual</div>
+          <div style="font-family:var(--mono);font-size:11px;color:var(--text2);margin-bottom:10px">Ingresá el monto de movimientos de caja que indica FacilVirtual</div>
+          <div class="pt-medio-item" style="margin-bottom:12px">
+            <div class="pt-medio-lbl">Movimientos de caja</div>
+            <input type="number" min="0" class="pt-medio-inp" id="ptmed-sistema" placeholder="$0" oninput="ptRecalcCajaNeta()">
+          </div>
+
+          <!-- Diferencia caja vs sistema -->
+          <div class="pt-diferencia pt-dif-neutral" id="pt-diferencia" style="margin-bottom:20px">
+            <div>
+              <div class="pt-dif-lbl" id="pt-dif-lbl">Diferencia</div>
+              <div class="pt-dif-desc" id="pt-dif-desc">Ingresá el monto del sistema para calcular</div>
+            </div>
+            <div class="pt-dif-val" id="pt-dif-val">—</div>
+          </div>
+
           <!-- ══════════════════════════════
-               CIERRE DE CAJA vs SISTEMA
+               VENTAS FACILVIRTUAL
           ══════════════════════════════ -->
-          <div class="form-section-title" style="margin-bottom:10px">🖥️ Cierre del sistema</div>
-          <div style="font-family:var(--mono);font-size:11px;color:var(--text2);margin-bottom:10px">Ingresá el monto de cierre que indica el sistema de ventas</div>
+          <div class="form-section-title" style="margin-bottom:10px">🖥️ Ventas FacilVirtual</div>
+          <div style="font-family:var(--mono);font-size:11px;color:var(--text2);margin-bottom:10px">Ingresá el monto de ventas que indica FacilVirtual</div>
           <div class="pt-medio-item" style="margin-bottom:8px">
             <div class="pt-medio-lbl">Efectivo</div>
             <input type="number" min="0" class="pt-medio-inp" id="ptven-efectivo" placeholder="$0" oninput="ptRecalcVentas()">
@@ -2506,19 +2575,9 @@
             <div class="pt-medio-lbl">Débito / Crédito</div>
             <input type="number" min="0" class="pt-medio-inp" id="ptven-debito" placeholder="$0" oninput="ptRecalcVentas()">
           </div>
-          <div class="pt-total-ef" style="margin-bottom:12px;border-color:var(--purple)">
-            <div class="pt-total-ef-lbl" style="color:var(--purple)">🖥️ Total sistema</div>
+          <div class="pt-total-ef" style="margin-bottom:16px;border-color:var(--purple)">
+            <div class="pt-total-ef-lbl" style="color:var(--purple)">🖥️ Total ventas sistema</div>
             <div class="pt-total-ef-val" id="ptven-total" style="color:var(--purple)">$0</div>
-          </div>
-          <input type="hidden" id="ptmed-sistema">
-
-          <!-- Diferencia caja vs sistema -->
-          <div class="pt-diferencia pt-dif-neutral" id="pt-diferencia" style="margin-bottom:20px">
-            <div>
-              <div class="pt-dif-lbl" id="pt-dif-lbl">Diferencia</div>
-              <div class="pt-dif-desc" id="pt-dif-desc">Ingresá el monto del sistema para calcular</div>
-            </div>
-            <div class="pt-dif-val" id="pt-dif-val">—</div>
           </div>
 
           <!-- Observaciones -->
@@ -3001,7 +3060,7 @@ function selTurno(turno, el) {
   admActualizarCardTurno();
 }
 
-// Muestra el card "Panel de turno (Admin)" solo cuando admin tiene nombre+local+turno
+// Muestra el card "Control/Cierre de Turno (Admin)" solo cuando admin tiene nombre+local+turno
 function admActualizarCardTurno() {
   const card = document.getElementById('card-turno-admin');
   if (!card) return;
@@ -3296,6 +3355,7 @@ async function checkPin() {
 let adminCurrentTab = 'reportes';
 let adminTipoFilter = '';
 let adminLocalFilter = '';
+let adminJustFilter = '';
 
 // ── NUEVO PANEL ADMIN ────────────────────
 let admData = {
@@ -3348,7 +3408,7 @@ async function admTab(tab) {
   if (tab === 'tareas')      admLoadTareas();
   if (tab === 'reportes')    applyAdminFilters();
   if (tab === 'empleados')   admLoadEmpleados();
-  if (tab === 'liquidacion') admLoadLiquidacion();
+  if (tab === 'liquidacion') { admLoadLiquidacion(); liqCargarPenalidades(); }
   if (tab === 'accesos')     { accesosCargar(); deCargarDispositivos(); logCargar(); }
 }
 
@@ -3721,7 +3781,7 @@ async function admCambiarRol(id, nuevoRol) {
 
 // ── TAB 6: LIQUIDACIÓN ───────────────────
 // ── LIQUIDACIÓN — estado en memoria ──────
-let liqData = { empleados:[], adelantos:[], entradas:[], hielosPorEmp:{} };
+let liqData = { empleados:[], adelantos:[], entradas:[], hielosPorEmp:{}, reportesJust:{}, penalidades:{} };
 let liqModalEmpId = null;
 
 async function admLoadLiquidacion() {
@@ -3741,17 +3801,34 @@ async function admLoadLiquidacion() {
   listEl.innerHTML = '<div style="text-align:center;padding:20px;font-family:var(--mono);font-size:11px;color:var(--text3)">Cargando...</div>';
 
   try {
-    const [cuentas, entradas, adelantos, cierresMes, hielosTodos] = await Promise.all([
+    const [cuentas, entradas, adelantos, cierresMes, hielosTodos, reportesMes, penalidadesCfg] = await Promise.all([
       sbFetch('cuentas?tipo=eq.empleado&order=nombre.asc&select=id,nombre,local'),
       sbFetch('entradas?order=created_at.asc&select=id,cid,monto,fecha,store'),
       sbFetch(`adelantos_sueldo?mes=eq.${mes}&anio=eq.${anio}&order=created_at.asc`),
       sbFetch(`cierres_turno?select=id,empleado_id&fecha=gte.${anio}-${mes}-01&fecha=lte.${anio}-${mes}-${lastDay}`),
       sbFetch('hielos_ciclos?select=id,cierre_id,bolsas'),
+      sbFetch(`reportes?justificado=eq.true&created_at=gte.${anio}-${mes}-01T00:00:00&created_at=lte.${anio}-${mes}-${lastDay}T23:59:59&select=id,tipo,subtipo,descripcion,empleado_id,foto_url,created_at&order=created_at.asc`),
+      sbFetch('config?clave=eq.penalidades_presentismo&select=valor'),
     ]);
 
     liqData.empleados = cuentas || [];
     liqData.adelantos = adelantos || [];
     liqData.entradas  = entradas  || [];
+
+    // Penalidades por tipo desde config
+    try {
+      const praw = (penalidadesCfg||[])[0]?.valor;
+      liqData.penalidades = praw ? JSON.parse(praw) : {};
+    } catch(e) { liqData.penalidades = {}; }
+
+    // Reportes justificados del mes agrupados por empleado_id
+    liqData.reportesJust = {};
+    (reportesMes||[]).forEach(r => {
+      const eid = r.empleado_id;
+      if (!eid) return;
+      if (!liqData.reportesJust[eid]) liqData.reportesJust[eid] = [];
+      liqData.reportesJust[eid].push(r);
+    });
 
     // Hielos del mes por empleado
     const cierreIdsMes = new Set((cierresMes||[]).map(c => c.id));
@@ -3875,6 +3952,70 @@ function liqRender(mes, anio) {
         </div>
       </div>
 
+      <!-- Reportes justificados del mes -->
+      ${(() => {
+        const reps = liqData.reportesJust[emp.id] || [];
+        if (!reps.length) return '';
+        const total = reps.reduce((s,r) => s + (liqData.penalidades[r.tipo] || 0), 0);
+        return '<div style="border-top:0.5px solid var(--border);padding-top:10px;margin-bottom:10px">' +
+          '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">' +
+            '<div style="font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em">Reportes justificados</div>' +
+            '<div style="display:flex;gap:6px;align-items:center">' +
+              '<span style="background:rgba(232,93,74,0.15);color:var(--red);border-radius:10px;padding:2px 8px;font-family:var(--mono);font-size:10px;font-weight:600">' + reps.length + ' reporte' + (reps.length !== 1 ? 's' : '') + '</span>' +
+              '<button onclick="liqVerReportes(\'' + emp.id + '\')" style="background:var(--bg3);border:0.5px solid var(--border2);border-radius:6px;padding:3px 9px;font-family:var(--mono);font-size:10px;color:var(--text2);cursor:pointer">Ver detalle</button>' +
+            '</div>' +
+          '</div>' +
+          (total > 0
+            ? '<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:rgba(232,93,74,0.07);border:0.5px solid rgba(232,93,74,0.25);border-radius:6px;margin-bottom:8px">' +
+                '<div style="font-family:var(--mono);font-size:11px;color:var(--text2)">Descuento sugerido por penalidades</div>' +
+                '<div style="display:flex;align-items:center;gap:8px">' +
+                  '<span style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--red)">-$' + Math.round(total).toLocaleString("es-AR") + '</span>' +
+                  '<button onclick="liqAplicarPenalidades(\'' + emp.id + '\')" style="background:var(--red);border:none;border-radius:6px;padding:4px 10px;font-family:var(--mono);font-size:10px;color:#fff;cursor:pointer;font-weight:600">Aplicar</button>' +
+                '</div>' +
+              '</div>'
+            : '<div style="font-family:var(--mono);font-size:10px;color:var(--text3);padding:6px 0;margin-bottom:8px">Sin penalidades configuradas para estos tipos — configurar en tabla de penalidades</div>'
+          ) +
+        '</div>';
+      })()}
+
+      <!-- Sueldo base, bonificaciones, presentismo -->
+      <div style="border-top:0.5px solid var(--border);padding-top:10px;margin-bottom:10px">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">Liquidación</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+          <div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:3px">Sueldo base</div>
+            <input type="number" min="0" id="liq-sueldo-${emp.id}" placeholder="$0"
+              style="width:100%;background:var(--bg3);border:0.5px solid var(--border2);border-radius:6px;padding:7px 10px;font-family:var(--mono);font-size:13px;color:var(--text);outline:none"
+              value="${liqGetLocal('sueldo','${emp.id}',mes,anio)}"
+              oninput="liqSaveLocal('sueldo','${emp.id}',this.value,'${mes}','${anio}');liqRecalcNeto('${emp.id}')">
+          </div>
+          <div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:3px">Bonificaciones</div>
+            <input type="number" min="0" id="liq-bonif-${emp.id}" placeholder="$0"
+              style="width:100%;background:var(--bg3);border:0.5px solid var(--border2);border-radius:6px;padding:7px 10px;font-family:var(--mono);font-size:13px;color:var(--text);outline:none"
+              value="${liqGetLocal('bonif','${emp.id}',mes,anio)}"
+              oninput="liqSaveLocal('bonif','${emp.id}',this.value,'${mes}','${anio}');liqRecalcNeto('${emp.id}')">
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--bg3);border:0.5px solid var(--border);border-radius:6px;margin-bottom:8px">
+          <label style="display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;color:var(--text3);cursor:pointer">
+            <input type="checkbox" id="liq-pres-check-${emp.id}"
+              ${liqGetLocal('pres_check','${emp.id}',mes,anio)==='true'?'checked':''}
+              onchange="liqSaveLocal('pres_check','${emp.id}',this.checked.toString(),'${mes}','${anio}');liqRecalcNeto('${emp.id}')">
+            Descuento presentismo
+          </label>
+          <input type="number" min="0" id="liq-pres-${emp.id}" placeholder="$0"
+            style="flex:1;background:var(--bg2);border:0.5px solid var(--border2);border-radius:6px;padding:5px 8px;font-family:var(--mono);font-size:12px;color:var(--text);outline:none"
+            value="${liqGetLocal('pres','${emp.id}',mes,anio)}"
+            oninput="liqSaveLocal('pres','${emp.id}',this.value,'${mes}','${anio}');liqRecalcNeto('${emp.id}')">
+        </div>
+        <!-- Neto calculado -->
+        <div style="background:var(--bg4);border:0.5px solid var(--border2);border-radius:8px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center">
+          <div style="font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em">Neto a cobrar</div>
+          <div id="liq-neto-${emp.id}" style="font-family:var(--mono);font-size:18px;font-weight:600;color:var(--green)">—</div>
+        </div>
+      </div>
+
       <div style="border-top:0.5px solid var(--border);padding-top:10px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
           <div style="font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em">Adelantos registrados</div>
@@ -3891,6 +4032,144 @@ function liqRender(mes, anio) {
   }
 
   listEl.innerHTML = html;
+  // Recalcular neto para todos al renderizar
+  empleados.forEach(emp => liqRecalcNeto(emp.id));
+}
+
+// ── LIQUIDACION: localStorage helpers ──
+function liqKey(campo, empId, mes, anio) {
+  return 'liq_' + campo + '_' + empId + '_' + mes + '_' + anio;
+}
+function liqGetLocal(campo, empId, mes, anio) {
+  return localStorage.getItem(liqKey(campo, empId, mes, anio)) || '';
+}
+function liqSaveLocal(campo, empId, val, mes, anio) {
+  localStorage.setItem(liqKey(campo, empId, mes, anio), val);
+}
+function liqRecalcNeto(empId) {
+  const mes  = document.getElementById('liq-mes')?.value  || '';
+  const anio = document.getElementById('liq-anio')?.value || '';
+  const sueldo = parseFloat(document.getElementById('liq-sueldo-' + empId)?.value) || 0;
+  const bonif  = parseFloat(document.getElementById('liq-bonif-'  + empId)?.value) || 0;
+  const presCheck = document.getElementById('liq-pres-check-' + empId)?.checked || false;
+  const pres   = presCheck ? (parseFloat(document.getElementById('liq-pres-' + empId)?.value) || 0) : 0;
+  // Deuda mes del empleado
+  const aa = anio.slice(2);
+  const deudaMes = liqData.entradas.filter(e => {
+    if (!e.cid || e.cid !== empId) return false;
+    const p = e.fecha?.split('/');
+    return p?.length >= 3 && p[1] === mes && p[2]?.slice(0,2) === aa;
+  }).reduce((s,e) => s + (e.monto||0), 0);
+  const adelantos = liqData.adelantos.filter(a => a.empleado_id === empId).reduce((s,a) => s + (a.monto||0), 0);
+  const neto = sueldo - deudaMes - adelantos - pres + bonif;
+  const netoEl = document.getElementById('liq-neto-' + empId);
+  if (netoEl) {
+    const fmt = n => '$' + Math.abs(Math.round(n)).toLocaleString('es-AR');
+    netoEl.textContent = (neto < 0 ? '-' : '') + fmt(neto);
+    netoEl.style.color = neto >= 0 ? 'var(--green)' : 'var(--red)';
+  }
+}
+
+// ── LIQ: VER REPORTES JUSTIFICADOS ──────────────────────────────
+function liqVerReportes(empId) {
+  const reps = liqData.reportesJust[empId] || [];
+  const emp  = liqData.empleados.find(e => e.id === empId);
+  const TIPO_LBL = { falla_tienda:'Falla en tienda', edilicio:'Edilicio', rotos_vencidos:'Rotos/Vencidos', pedido:'Pedido delivery', ticket:'Ticket sistema' };
+  const TIPO_CLR = { falla_tienda:'var(--red)', edilicio:'var(--orange)', rotos_vencidos:'#c084fc', pedido:'var(--blue)', ticket:'var(--green)' };
+
+  document.getElementById('liq-rep-modal-title').textContent =
+    (emp ? emp.nombre : '') + ' — Reportes justificados';
+
+  const body = document.getElementById('liq-rep-modal-body');
+  if (!reps.length) {
+    body.innerHTML = '<div style="font-family:var(--mono);font-size:12px;color:var(--text3);text-align:center;padding:20px">Sin reportes justificados este mes</div>';
+  } else {
+    body.innerHTML = reps.map(r => {
+      const fecha = r.created_at ? new Date(r.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'}) : '—';
+      const tipo  = TIPO_LBL[r.tipo] || r.tipo;
+      const clr   = TIPO_CLR[r.tipo] || 'var(--text2)';
+      const pen   = liqData.penalidades[r.tipo] || 0;
+      const fotoHtml = r.foto_url
+        ? '<a href="' + r.foto_url + '" target="_blank" style="display:block;margin-top:8px"><img src="' + r.foto_url + '" style="width:100%;max-height:180px;object-fit:cover;border-radius:6px;border:0.5px solid var(--border)"></a>'
+        : '';
+      return '<div style="border:0.5px solid var(--border);border-radius:8px;padding:11px 13px;margin-bottom:10px">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">' +
+          '<span style="font-family:var(--mono);font-size:10px;font-weight:600;color:' + clr + ';text-transform:uppercase;letter-spacing:0.06em">' + tipo + '</span>' +
+          '<div style="display:flex;align-items:center;gap:8px">' +
+            (pen > 0 ? '<span style="font-family:var(--mono);font-size:11px;color:var(--red);font-weight:600">-$' + Math.round(pen).toLocaleString('es-AR') + '</span>' : '<span style="font-family:var(--mono);font-size:10px;color:var(--text3)">sin penalidad</span>') +
+            '<span style="font-family:var(--mono);font-size:10px;color:var(--text3)">' + fecha + '</span>' +
+          '</div>' +
+        '</div>' +
+        (r.descripcion ? '<div style="font-family:var(--mono);font-size:11px;color:var(--text2);line-height:1.5">' + r.descripcion + '</div>' : '') +
+        fotoHtml +
+      '</div>';
+    }).join('');
+  }
+
+  const total = reps.reduce((s,r) => s + (liqData.penalidades[r.tipo] || 0), 0);
+  if (total > 0) {
+    body.innerHTML += '<div style="background:rgba(232,93,74,0.1);border:0.5px solid rgba(232,93,74,0.3);border-radius:8px;padding:10px 13px;display:flex;justify-content:space-between;align-items:center;margin-top:4px">' +
+      '<span style="font-family:var(--mono);font-size:11px;color:var(--text2)">Total descuento</span>' +
+      '<span style="font-family:var(--mono);font-size:15px;font-weight:700;color:var(--red)">-$' + Math.round(total).toLocaleString('es-AR') + '</span>' +
+    '</div>';
+  }
+
+  document.getElementById('liq-rep-modal').style.display = 'flex';
+}
+
+// ── LIQ: APLICAR PENALIDADES AL INPUT PRESENTISMO ────────────────
+function liqAplicarPenalidades(empId) {
+  const mes  = document.getElementById('liq-mes')?.value  || '';
+  const anio = document.getElementById('liq-anio')?.value || '';
+  const reps  = liqData.reportesJust[empId] || [];
+  const total = reps.reduce((s,r) => s + (liqData.penalidades[r.tipo] || 0), 0);
+  if (!total) { showToast('No hay penalidades configuradas para estos tipos', ''); return; }
+
+  const inputPres  = document.getElementById('liq-pres-' + empId);
+  const checkPres  = document.getElementById('liq-pres-check-' + empId);
+  if (inputPres)  { inputPres.value = total; liqSaveLocal('pres', empId, total, mes, anio); }
+  if (checkPres)  { checkPres.checked = true; liqSaveLocal('pres_check', empId, 'true', mes, anio); }
+  liqRecalcNeto(empId);
+  showToast('Descuento de $' + Math.round(total).toLocaleString('es-AR') + ' aplicado ✓', 'success');
+}
+
+// ── LIQ: CARGAR Y GUARDAR PENALIDADES ────────────────────────────
+async function liqCargarPenalidades() {
+  try {
+    const res = await sbFetch('config?clave=eq.penalidades_presentismo&select=valor');
+    const raw = (res||[])[0]?.valor;
+    const pen = raw ? JSON.parse(raw) : {};
+    const tipos = ['falla_tienda','edilicio','rotos_vencidos','pedido','ticket'];
+    tipos.forEach(t => {
+      const el = document.getElementById('pen-' + t);
+      if (el && pen[t]) el.value = pen[t];
+    });
+    liqData.penalidades = pen;
+  } catch(e) { console.warn('liqCargarPenalidades', e); }
+}
+
+async function liqGuardarPenalidades() {
+  const tipos = ['falla_tienda','edilicio','rotos_vencidos','pedido','ticket'];
+  const pen = {};
+  tipos.forEach(t => {
+    const v = parseFloat(document.getElementById('pen-' + t)?.value) || 0;
+    if (v > 0) pen[t] = v;
+  });
+  const btn = document.getElementById('btn-guardar-pen');
+  if (btn) { btn.textContent = 'Guardando...'; btn.disabled = true; }
+  try {
+    await fetch(_sbUrl + 'config?clave=eq.penalidades_presentismo', {
+      method: 'PATCH',
+      headers: { 'Content-Type':'application/json', 'apikey':_sbKey, 'Authorization':'Bearer ' + _sbKey, 'x-app-secret':_sbSecret, 'Prefer':'return=minimal' },
+      body: JSON.stringify({ valor: JSON.stringify(pen) })
+    });
+    liqData.penalidades = pen;
+    showToast('Penalidades guardadas ✓', 'success');
+  } catch(e) {
+    showToast('Error al guardar', 'error');
+  } finally {
+    if (btn) { btn.textContent = 'Guardar'; btn.disabled = false; }
+  }
 }
 
 function liqAbrirModalAdelanto(empId) {
@@ -3978,6 +4257,14 @@ function liqImprimirEmpleado(empId) {
   const totalAdelantos = adelantosEmp.reduce((s,a) => s + (a.monto||0), 0);
   const hielos = liqData.hielosPorEmp[empId] || { ciclos:0, bolsas:0 };
 
+  // Sueldo / bonif / presentismo desde localStorage
+  const sueldo     = parseFloat(liqGetLocal('sueldo', empId, mes, anio)) || 0;
+  const bonif      = parseFloat(liqGetLocal('bonif',  empId, mes, anio)) || 0;
+  const presCheck  = liqGetLocal('pres_check', empId, mes, anio) === 'true';
+  const presDesc   = presCheck ? (parseFloat(liqGetLocal('pres', empId, mes, anio)) || 0) : 0;
+  const neto       = sueldo - deudaMes - totalAdelantos - presDesc + bonif;
+  const netoHex    = neto >= 0 ? '#4caf82' : '#e85d4a';
+
   // Desglose por local de deuda total
   const LOCALES_LIQ = { palermo:'Thames', belgrano:'Belgrano', barrio_chino:'B. Chino', san_telmo:'San Telmo' };
   const desgloseLocal = Object.entries(LOCALES_LIQ)
@@ -3995,6 +4282,11 @@ function liqImprimirEmpleado(empId) {
   const desgloseRows = desgloseLocal.length
     ? desgloseLocal.map(l => `<tr><td style="color:#848180">${l.local}</td><td></td><td style="text-align:right;color:#e85d4a">${fmt(l.saldo)}</td></tr>`).join('')
     : '';
+
+  // Reportes justificados del mes para PDF
+  const repsJustPdf = liqData.reportesJust[empId] || [];
+  const TIPO_LBL_PDF = { falla_tienda:'Falla en tienda', edilicio:'Edilicio', rotos_vencidos:'Rotos/Vencidos', pedido:'Pedido delivery', ticket:'Ticket sistema' };
+  const totalPen = repsJustPdf.reduce((s,r) => s + (liqData.penalidades[r.tipo] || 0), 0);
 
   const win = window.open('', '_blank', 'width=600,height=800');
   win.document.write(`<!DOCTYPE html>
@@ -4039,21 +4331,38 @@ function liqImprimirEmpleado(empId) {
 
 <div class="grid">
   <div class="card">
+    <div class="card-label">Sueldo base</div>
+    <div class="card-val" style="color:#111">${sueldo > 0 ? fmt(sueldo) : "—"}</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Bonificaciones</div>
+    <div class="card-val" style="color:#4caf82">${bonif > 0 ? "+" + fmt(bonif) : "—"}</div>
+  </div>
+  <div class="card">
     <div class="card-label">Deuda del mes</div>
     <div class="card-val" style="color:${colorDeudaHex}">${fmt(deudaMes)}</div>
   </div>
   <div class="card">
     <div class="card-label">Deuda total acumulada</div>
     <div class="card-val" style="color:${colorTotalHex}">${fmt(deudaTotal)}</div>
-    ${desgloseRows ? `<table style="margin-top:8px;margin-bottom:0">${desgloseRows}</table>` : ''}
+    ${desgloseRows ? "<table style=\"margin-top:8px;margin-bottom:0\">" + desgloseRows + "</table>" : ""}
   </div>
   <div class="card">
     <div class="card-label">Adelantos del mes</div>
-    <div class="card-val" style="color:#f0884a">${totalAdelantos > 0 ? fmt(totalAdelantos) : '—'}</div>
+    <div class="card-val" style="color:#f0884a">${totalAdelantos > 0 ? "-" + fmt(totalAdelantos) : "—"}</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Desc. presentismo</div>
+    <div class="card-val" style="color:${presDesc > 0 ? "#e85d4a" : "#848180"}">${presDesc > 0 ? "-" + fmt(presDesc) : "—"}</div>
   </div>
   <div class="card">
     <div class="card-label">Hielos del mes</div>
     <div class="card-val" style="color:#5b9cf6;font-size:15px">${hielos.ciclos} ciclos · ${hielos.bolsas} bolsas</div>
+  </div>
+  <div class="card" style="grid-column:1/-1;background:#f5fff9;border-color:#4caf82;border-width:2px">
+    <div class="card-label" style="color:#2d7a50;font-size:11px">NETO A COBRAR</div>
+    <div class="card-val" style="color:${netoHex};font-size:26px">${(neto < 0 ? "-" : "") + fmt(neto)}</div>
+    <div style="font-size:10px;color:#888;margin-top:5px">Sueldo base − deuda mes − adelantos − desc. presentismo + bonificaciones</div>
   </div>
 </div>
 
@@ -4062,6 +4371,21 @@ function liqImprimirEmpleado(empId) {
   <thead><tr><th>Descripción</th><th>Fecha</th><th style="text-align:right">Monto</th></tr></thead>
   <tbody>${adelantosRows}</tbody>
 </table>
+
+${repsJustPdf.length ? `
+<div class="section-title" style="margin-top:16px">Reportes justificados — descuento presentismo</div>
+<table>
+  <thead><tr><th>Tipo</th><th>Fecha</th><th style="text-align:right">Penalidad</th></tr></thead>
+  <tbody>
+    ${repsJustPdf.map(r => {
+      const tipo  = TIPO_LBL_PDF[r.tipo] || r.tipo;
+      const fecha = r.created_at ? new Date(r.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'}) : '—';
+      const pen   = liqData.penalidades[r.tipo] || 0;
+      return '<tr><td>' + tipo + (r.descripcion ? '<div style="font-size:10px;color:#888;margin-top:2px">' + r.descripcion.slice(0,60) + '</div>' : '') + '</td><td>' + fecha + '</td><td style="text-align:right;color:' + (pen > 0 ? '#e85d4a' : '#848180') + ';font-weight:600">' + (pen > 0 ? '-$' + Math.round(pen).toLocaleString('es-AR') : '—') + '</td></tr>';
+    }).join('')}
+    ${totalPen > 0 ? '<tr style="border-top:2px solid #eee"><td colspan="2" style="font-weight:600">Total descuento aplicado</td><td style="text-align:right;color:#e85d4a;font-weight:700">-$' + Math.round(totalPen).toLocaleString('es-AR') + '</td></tr>' : ''}
+  </tbody>
+</table>` : ''}
 
 <div class="footer">
   <span>Break Sistema · Generado el ${hoy}</span>
@@ -4086,6 +4410,13 @@ function adminFilterLocal(local, el) {
 // ── FUNCIONES ORIGINALES PRESERVADAS ─────
 async function loadAdminDashboardOld() { loadAdminDashboard(); }
 
+function adminFilterJust(val, el) {
+  el.closest('.adm-filter-bar').querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  adminJustFilter = val;
+  applyAdminFilters();
+}
+
 function getFilteredReportes() {
   const mes  = document.getElementById('filter-mes')?.value  || '';
   const anio = document.getElementById('filter-anio')?.value || '';
@@ -4095,6 +4426,8 @@ function getFilteredReportes() {
     if (anio && d.slice(0,4) !== anio) return false;
     if (adminTipoFilter  && r.tipo  !== adminTipoFilter)  return false;
     if (adminLocalFilter2 && r.local !== adminLocalFilter2) return false;
+    if (adminJustFilter === 'si'  && !r.justificado) return false;
+    if (adminJustFilter === 'no'  &&  r.justificado) return false;
     return true;
   });
 }
@@ -4157,6 +4490,14 @@ const TIPO_LABELS = {
   pedido:         'Pedido delivery',
   ticket:         'Ticket sistema',
 };
+const SUBTIPO_LABELS = {
+  cambio_cb:      'Cambio de CB',
+  articulo_nuevo: 'Artículo nuevo',
+  ajuste_stock:   'Ajuste de stock',
+  error_precio:   'Error de precio',
+  error_nombre:   'Error de nombre',
+  otro:           'Otro',
+};
 
 function renderAdminReports(reportes) {
   const list = document.getElementById('admin-report-list');
@@ -4171,7 +4512,7 @@ function renderAdminReports(reportes) {
     const emp   = r.cuentas?.nombre || '—';
     const resp  = r.responsable?.nombre;
     const local = LOCALES[r.local] || r.local;
-    const desc  = r.subtipo || r.descripcion || '—';
+    const desc  = (r.subtipo ? (SUBTIPO_LABELS[r.subtipo] || r.subtipo) : null) || r.descripcion || '—';
     const isTicket = r.tipo === 'ticket';
     const fotoLink = r.foto_url
       ? `<a href="${r.foto_url}" target="_blank" style="display:inline-block;margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--blue);text-decoration:none;border:0.5px solid rgba(91,156,246,0.3);padding:3px 10px;border-radius:5px">ver foto en Drive ↗</a>`
@@ -4230,18 +4571,25 @@ function renderAdminReports(reportes) {
 
     // Items de ticket (articulo_nuevo, cambio_cb)
     const tkItems = r.ticket_items || [];
+    const tkSubtipo = r.subtipo || '';
+    const tkBadgeColor = tkSubtipo === 'articulo_nuevo' ? 'var(--green)' : 'var(--blue)';
+    const tkBadgeBg    = tkSubtipo === 'articulo_nuevo' ? 'rgba(74,222,128,0.1)' : 'rgba(91,156,246,0.1)';
+    const tkBadgeLabel = SUBTIPO_LABELS[tkSubtipo] || tkSubtipo;
     const tkBlock = tkItems.length > 0
       ? '<div style="margin-top:10px;border-top:0.5px solid var(--border);padding-top:10px">'
+        + '<div style="font-family:var(--mono);font-size:10px;font-weight:600;color:' + tkBadgeColor + ';background:' + tkBadgeBg + ';border:0.5px solid ' + tkBadgeColor + ';border-radius:4px;padding:2px 8px;display:inline-block;margin-bottom:8px;letter-spacing:0.04em">'
+        + tkBadgeLabel.toUpperCase()
+        + '</div>'
         + tkItems.map(item =>
             '<div style="font-family:var(--mono);font-size:11px;margin-bottom:8px;padding:8px;background:var(--bg3);border-radius:6px">'
           + '<div style="font-weight:500;color:var(--text);margin-bottom:4px">' + (item.nombre_articulo || '—') + '</div>'
           + '<div style="color:var(--text2);display:flex;flex-wrap:wrap;gap:8px">'
-          + (item.presentacion ? '<span>📦 ' + item.presentacion + '</span>' : '')
+          + (item.presentacion  ? '<span>📦 ' + item.presentacion + '</span>' : '')
           + (item.codigo_barras ? '<span>🔖 CB: ' + item.codigo_barras + '</span>' : '')
-          + (item.costo ? '<span>💲 Costo: $' + item.costo + '</span>' : '')
-          + (item.precio_venta ? '<span>🏷️ Venta: $' + item.precio_venta + '</span>' : '')
-          + (item.cantidad ? '<span>× ' + item.cantidad + '</span>' : '')
-          + (item.proveedor ? '<span>🏭 ' + item.proveedor + '</span>' : '')
+          + (item.costo         ? '<span>💲 Costo: $' + item.costo + '</span>' : '')
+          + (item.precio_venta  ? '<span>🏷️ Venta: $' + item.precio_venta + '</span>' : '')
+          + (item.cantidad      ? '<span>× ' + item.cantidad + '</span>' : '')
+          + (item.proveedor     ? '<span>🏭 ' + item.proveedor + '</span>' : '')
           + '</div>'
           + (item.foto_url ? '<a href="' + item.foto_url + '" target="_blank" style="display:inline-block;margin-top:6px;font-size:11px;color:var(--blue);text-decoration:none;border:0.5px solid rgba(91,156,246,0.3);padding:2px 8px;border-radius:4px">ver foto ↗</a>' : '')
           + '</div>'
@@ -5443,7 +5791,7 @@ function ptInitCore() {
   // Header
   const LOCALES_SHORT = { palermo:'Thames · Palermo', belgrano:'Roosevelt · Belgrano', barrio_chino:'Juramento · B. Chino', san_telmo:'Independencia · S. Telmo' };
   const TURNO_NOM = { manana:'Mañana', tarde:'Tarde', noche:'Noche' };
-  document.getElementById('pt-topbar-title').textContent = state.empleado_nombre || 'Panel de turno';
+  document.getElementById('pt-topbar-title').textContent = state.empleado_nombre || 'Control/Cierre de Turno';
   document.getElementById('pt-topbar-badge').textContent = LOCALES_SHORT[state.local] || state.local;
 
   const pill = document.getElementById('pt-turno-pill');
@@ -5913,6 +6261,8 @@ function ptRecalcPacas() {
   }
   const totalPacasEl = document.getElementById('pt-total-pacas');
   if (totalPacasEl) totalPacasEl.textContent = `$${totalPacas.toLocaleString('es-AR')}`;
+  const stickyGrande = document.getElementById('pt-sticky-grande');
+  if (stickyGrande) stickyGrande.textContent = `$${totalPacas.toLocaleString('es-AR')}`;
   ptRecalc();
 }
 
@@ -5923,8 +6273,6 @@ function ptRecalcVentas() {
   const total  = ef + mp + debito;
   const totalEl = document.getElementById('ptven-total');
   if (totalEl) totalEl.textContent = `$${total.toLocaleString('es-AR')}`;
-  const sis = document.getElementById('ptmed-sistema');
-  if (sis) sis.value = total > 0 ? total : '';
   ptRecalcCajaNeta();
 }
 
@@ -5941,6 +6289,9 @@ function ptRecalc() {
   });
   const efEl = document.getElementById('pt-total-ef');
   if (efEl) efEl.textContent = `$${totalEf.toLocaleString('es-AR')}`;
+  // Sync sticky chica
+  const stickyChica = document.getElementById('pt-sticky-chica');
+  if (stickyChica) stickyChica.textContent = `$${totalEf.toLocaleString('es-AR')}`;
 
   // Caja grande (pacas) — leer desde pt-total-pacas que ya fue calculado por ptRecalcPacas
   const pacasEl = document.getElementById('pt-total-pacas');
@@ -5966,6 +6317,11 @@ function ptRecalc() {
   const totalGeneral = totalEf + totalPacas;
   const genEl = document.getElementById('pt-total-general');
   if (genEl) genEl.textContent = `$${totalGeneral.toLocaleString('es-AR')}`;
+  // Sync sticky grande + total
+  const stickyGrande = document.getElementById('pt-sticky-grande');
+  if (stickyGrande) stickyGrande.textContent = `$${totalPacas.toLocaleString('es-AR')}`;
+  const stickyTotal = document.getElementById('pt-sticky-total');
+  if (stickyTotal) stickyTotal.textContent = `$${totalGeneral.toLocaleString('es-AR')}`;
 
   // Actualizar caja neta con deudas
   ptRecalcCajaNeta();
@@ -5988,16 +6344,19 @@ function ptRecalcCajaNeta() {
   }
   const tCaja = tEf + tPacas;
   const deudas = ptData._totalDeudas || 0;
-  const neta = tCaja - deudas;
+  const neta = tCaja + deudas;
   const netaEl = document.getElementById('pt-caja-neta');
   if (netaEl) {
-    netaEl.textContent = `$${Math.abs(neta).toLocaleString('es-AR')}`;
-    netaEl.style.color = neta >= 0 ? 'var(--green)' : 'var(--red)';
+    netaEl.textContent = `$${neta.toLocaleString('es-AR')}`;
+    netaEl.style.color = 'var(--green)';
     const lbl = netaEl.previousElementSibling;
-    if (lbl) lbl.style.color = neta >= 0 ? 'var(--green)' : 'var(--red)';
+    if (lbl) lbl.style.color = 'var(--green)';
   }
+  // Sync sticky neta
+  const stickyNeta = document.getElementById('pt-sticky-neta');
+  if (stickyNeta) stickyNeta.textContent = `$${neta.toLocaleString('es-AR')}`;
 
-  // Diferencia caja vs sistema
+  // Diferencia caja neta vs movimientos de caja FacilVirtual
   const sistema = parseFloat(document.getElementById('ptmed-sistema')?.value) || 0;
   const box  = document.getElementById('pt-diferencia');
   const lbl  = document.getElementById('pt-dif-lbl');
@@ -6006,16 +6365,17 @@ function ptRecalcCajaNeta() {
   if (!box) return;
 
   if (sistema > 0) {
-    const diff = tCaja - sistema;
+    const diff = neta - sistema;
     box.className = 'pt-diferencia ' + (diff===0 ? 'pt-dif-ok' : diff>0 ? 'pt-dif-sobrante' : 'pt-dif-faltante');
     lbl.textContent  = diff===0 ? 'Cuadra exacto ✓' : diff>0 ? 'Sobrante' : 'Faltante';
-    desc.textContent = diff===0 ? 'El total en caja coincide con el sistema'
-      : `${diff>0?'Hay':'Faltan'} $${Math.abs(diff).toLocaleString('es-AR')} ${diff>0?'de más':'en caja'}`;
+    desc.textContent = diff===0
+      ? 'La caja neta coincide con los movimientos de FacilVirtual'
+      : `Caja neta $${neta.toLocaleString('es-AR')} vs FacilVirtual $${sistema.toLocaleString('es-AR')} → ${diff>0?'sobran':'faltan'} $${Math.abs(diff).toLocaleString('es-AR')}`;
     val.textContent  = (diff>=0?'+':'') + `$${diff.toLocaleString('es-AR')}`;
   } else {
     box.className = 'pt-diferencia pt-dif-neutral';
     lbl.textContent  = 'Diferencia caja vs sistema';
-    desc.textContent = 'Ingresá el cierre del sistema para ver si falta o sobra';
+    desc.textContent = 'Ingresá los movimientos de caja de FacilVirtual para ver si falta o sobra';
     val.textContent  = '—';
   }
 }
@@ -6096,7 +6456,7 @@ async function ptCerrar() {
     ventas_efectivo: parseFloat(document.getElementById('ptven-efectivo')?.value)||0,
     total_efectivo:  totalGeneral,
     total_sistema:   totalSis,
-    diferencia:      totalSis ? totalGeneral - totalSis : null,
+    diferencia:      totalSis ? (totalGeneral + (ptData._totalDeudas||0)) - totalSis : null,
     observaciones:    document.getElementById('pt-obs-cierre')?.value.trim()||null,
     checks_json:      JSON.stringify(checksJson),
   };
