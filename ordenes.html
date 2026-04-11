@@ -635,8 +635,12 @@
 
         <div class="form-group span-2">
           <label class="form-label">Proveedor</label>
-          <input class="form-input" type="text" id="f-proveedor" placeholder="Nombre del proveedor" list="proveedores-list">
-          <datalist id="proveedores-list"></datalist>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <select class="form-select" id="f-proveedor" style="flex:1;">
+              <option value="">Seleccionar proveedor...</option>
+            </select>
+            <button type="button" class="btn btn-ghost" onclick="abrirModalNuevoProveedor('f-proveedor')" style="white-space:nowrap;min-height:44px;padding:0 14px;font-size:13px;">+ Nuevo</button>
+          </div>
         </div>
 
         <!-- Montos -->
@@ -1417,7 +1421,7 @@ function resetForm() {
   document.getElementById('f-hora').value = nowTime();
   document.getElementById('f-nro').value = '';
   document.getElementById('f-tipo').value = '';
-  document.getElementById('f-proveedor').value = '';
+  const selProv = document.getElementById('f-proveedor'); if (selProv) selProv.value = '';
   document.getElementById('f-subtotal').value = '';
   document.getElementById('f-impuestos').value = '';
   document.getElementById('f-descuentos').value = '';
@@ -1459,7 +1463,14 @@ function editOT(id) {
   document.getElementById('f-hora').value = o.hora || '';
   document.getElementById('f-nro').value = o.nro_factura || '';
   document.getElementById('f-tipo').value = o.tipo_comprobante || '';
-  document.getElementById('f-proveedor').value = o.proveedor || '';
+  // Si el proveedor no está en el select (OT vieja), lo agrega como opción
+  const fProv = document.getElementById('f-proveedor');
+  if (o.proveedor && fProv && !Array.from(fProv.options).some(op => op.value === o.proveedor)) {
+    const opt = document.createElement('option');
+    opt.value = o.proveedor; opt.textContent = o.proveedor;
+    fProv.appendChild(opt);
+  }
+  if (fProv) fProv.value = o.proveedor || '';
   document.getElementById('f-subtotal').value = o.subtotal || '';
   document.getElementById('f-impuestos').value = o.impuestos || '';
   document.getElementById('f-descuentos').value = o.descuentos || '';
@@ -1607,32 +1618,78 @@ function setFilter(f, el) {
   renderTabla();
 }
 
-// ─── DATALIST PROVEEDORES ────────────────────────────────────
-// Fuente principal: proveedores_pago. Fallback: nombres ya usados en órdenes.
+// ─── PROVEEDORES ─────────────────────────────────────────────
+// Fuente: proveedores_pago. Se usa en formulario principal y supervisor.
 let proveedoresPago = [];
 
-async function cargarProveedoresDatalist() {
+async function cargarProveedores() {
   try {
     const data = await sbFetch('proveedores_pago?activo=eq.true&order=nombre.asc');
     proveedoresPago = data || [];
   } catch(e) {
     proveedoresPago = [];
   }
-  const desdeTabla   = proveedoresPago.map(p => p.nombre);
-  const desdeOrdenes = ordenes.map(o => o.proveedor).filter(Boolean);
-  const todos = [...new Set([...desdeTabla, ...desdeOrdenes])].sort();
-  const dl = document.getElementById('proveedores-list');
-  dl.innerHTML = todos.map(n => `<option value="${n}">`).join('');
+  _llenarSelectProv('f-proveedor');
+  _llenarSelectProv('sv-proveedor');
+}
+
+// Alias para llamadas existentes
+async function cargarProveedoresDatalist() { await cargarProveedores(); }
+
+function _llenarSelectProv(selectId, valorActual) {
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  const esSv = selectId === 'sv-proveedor';
+  const opts = proveedoresPago.map(p =>
+    `<option value="${p.nombre}" ${valorActual === p.nombre ? 'selected' : ''}>${p.nombre}</option>`
+  ).join('');
+  sel.innerHTML = `<option value="">Seleccionar proveedor...</option>${opts}`;
 }
 
 function poblarSelectProveedores() {
-  const sel = document.getElementById('sv-proveedor');
-  if (!sel) return;
-  const desdeTabla   = proveedoresPago.map(p => p.nombre);
-  const desdeOrdenes = ordenes.map(o => o.proveedor).filter(Boolean);
-  const todos = [...new Set([...desdeTabla, ...desdeOrdenes])].sort();
-  sel.innerHTML = '<option value="">Seleccionar proveedor...</option>' +
-    todos.map(n => `<option value="${n}">${n}</option>`).join('');
+  _llenarSelectProv('sv-proveedor');
+  _llenarSelectProv('f-proveedor');
+}
+
+// ─── MODAL NUEVO PROVEEDOR ───────────────────────────────────
+let _npTargetSelect = 'f-proveedor'; // qué select llenar al guardar
+
+function abrirModalNuevoProveedor(targetSelectId) {
+  _npTargetSelect = targetSelectId || 'f-proveedor';
+  document.getElementById('np-nombre').value = '';
+  document.getElementById('np-plazo').value = '0';
+  document.getElementById('modal-nuevo-prov').style.display = 'flex';
+  setTimeout(() => document.getElementById('np-nombre').focus(), 80);
+}
+
+function cerrarModalNuevoProveedor() {
+  document.getElementById('modal-nuevo-prov').style.display = 'none';
+}
+
+async function guardarNuevoProveedor() {
+  const nombre = document.getElementById('np-nombre').value.trim();
+  if (!nombre) { showToast('Ingresá el nombre del proveedor', 'error'); return; }
+  const plazo = parseInt(document.getElementById('np-plazo').value) || 0;
+  const btn = document.getElementById('np-btn-guardar');
+  btn.disabled = true;
+  btn.textContent = 'Guardando...';
+  try {
+    await sbFetch('proveedores_pago', {
+      method: 'POST',
+      body: JSON.stringify({ nombre, plazo_dias: plazo, activo: true })
+    });
+    showToast('Proveedor agregado', 'success');
+    cerrarModalNuevoProveedor();
+    await cargarProveedores();
+    // Seleccionar el nuevo en el select destino
+    const sel = document.getElementById(_npTargetSelect);
+    if (sel) sel.value = nombre;
+  } catch(e) {
+    showToast('Error al guardar: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Guardar';
+  }
 }
 
 async function submitSupervisorOT() {
@@ -1911,8 +1968,10 @@ async function _subirFotoADrive(file) {
   if (statusEl) statusEl.textContent = 'Subiendo...';
   try {
     const orden = ordenes.find(o => o.id === modalOrdenId);
-    const localNombre = LOCAL_FOLDER_NAMES[orden?.local || localKey] || orden?.local || 'Sin local';
-    const provNombre  = (orden?.proveedor || 'Sin proveedor').replace(/[\/\\:*?"<>|]/g, '-').substring(0, 80);
+    const resolvedLocal = orden?.local || localKey || '';
+    const localNombre = LOCAL_FOLDER_NAMES[resolvedLocal] || resolvedLocal || 'Sin local';
+    const resolvedProv = orden?.proveedor || document.getElementById('f-proveedor')?.value || 'Sin proveedor';
+    const provNombre  = resolvedProv.replace(/[\/\\:*?"<>|]/g, '-').substring(0, 80);
 
     // Obtener/crear carpetas destino
     if (statusEl) statusEl.textContent = 'Organizando en Drive...';
@@ -2007,5 +2066,23 @@ async function _driveGetOrCreateFolder(name, parentId) {
 
 
 </script>
+<!-- ── Modal Nuevo Proveedor ─────────────────────────────── -->
+<div class="modal-overlay" id="modal-nuevo-prov" style="display:none;align-items:center;justify-content:center;">
+  <div class="modal-card" style="max-width:380px;width:90%;padding:24px;border-radius:12px;">
+    <div style="font-size:15px;font-weight:600;margin-bottom:16px;color:var(--text);">Nuevo proveedor</div>
+    <div class="form-group" style="margin-bottom:12px;">
+      <label class="form-label">Nombre</label>
+      <input class="form-input" type="text" id="np-nombre" placeholder="Nombre del proveedor" style="min-height:44px;">
+    </div>
+    <div class="form-group" style="margin-bottom:20px;">
+      <label class="form-label">Plazo de pago (días)</label>
+      <input class="form-input" type="number" id="np-plazo" placeholder="0" min="0" style="min-height:44px;">
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button class="btn btn-ghost" onclick="cerrarModalNuevoProveedor()" style="min-height:44px;">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarNuevoProveedor()" style="min-height:44px;" id="np-btn-guardar">Guardar</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
