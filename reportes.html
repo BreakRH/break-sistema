@@ -554,8 +554,10 @@ const TIPO_LABELS = {
 // ═══════════════════════════════════════
 // STATE — recibido por postMessage
 // ═══════════════════════════════════════
+// Intentar leer local desde localStorage (fallback cuando no hay hub, ej. localhost)
+const _storedLocal = localStorage.getItem('break_local_fijo') || localStorage.getItem('break_local') || null;
 let ctx = {
-  local: null, localName: '', empleado_id: null,
+  local: _storedLocal, localName: '', empleado_id: null,
   empleado_nombre: '', turno: null, rol: 'empleado',
 };
 let photos = {};
@@ -959,6 +961,10 @@ function updatePedResp(resp) {
 // SUBMIT
 // ═══════════════════════════════════════
 async function submitForm(tipo) {
+  if (!ctx.local) {
+    showToast('No se detectó el local. Ingresá desde el hub principal.', 'error');
+    return;
+  }
   const btnId = { falla_tienda:'btn-ft', edilicio:'btn-ed', rotos_vencidos:'btn-rv', pedido:'btn-ped', ticket:'btn-tk' }[tipo];
   const btn = document.getElementById(btnId);
   btn.classList.add('loading'); btn.disabled = true;

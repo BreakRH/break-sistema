@@ -1406,6 +1406,54 @@
     font-family: var(--mono); font-size: 10px;
     color: var(--text3); margin-top: 8px;
   }
+  /* Reporte detail modal */
+  .rep-modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+    z-index: 500; display: flex; align-items: flex-end; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .rep-modal-overlay.open { opacity: 1; pointer-events: all; }
+  .rep-modal {
+    background: var(--bg2); border: 0.5px solid var(--border2);
+    border-radius: 16px 16px 0 0;
+    width: 100%; max-width: 620px;
+    transform: translateY(20px); transition: transform 0.2s;
+    max-height: 85vh; overflow-y: auto; padding: 20px 20px 32px;
+  }
+  .rep-modal-overlay.open .rep-modal { transform: translateY(0); }
+  .rep-modal-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px; position: sticky; top: 0;
+    background: var(--bg2); padding-bottom: 12px;
+    border-bottom: 0.5px solid var(--border);
+  }
+  .rep-modal-tipo {
+    font-family: var(--mono); font-size: 10px; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 3px 10px; border-radius: 5px;
+  }
+  .rep-modal-close {
+    background: var(--bg3); border: 0.5px solid var(--border);
+    border-radius: 6px; color: var(--text2); font-size: 16px;
+    cursor: pointer; width: 30px; height: 30px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .rep-det-row {
+    display: flex; flex-direction: column; gap: 3px;
+    padding: 10px 0; border-bottom: 0.5px solid var(--border);
+  }
+  .rep-det-row:last-child { border-bottom: none; }
+  .rep-det-label {
+    font-family: var(--mono); font-size: 10px; color: var(--text3);
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .rep-det-value { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .rep-item-card {
+    background: var(--bg3); border-radius: 8px;
+    padding: 10px 12px; margin-bottom: 8px;
+  }
+  .rep-item-name { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 6px; }
+  .rep-item-tags { display: flex; flex-wrap: wrap; gap: 8px; font-family: var(--mono); font-size: 11px; color: var(--text2); }
 
   /* Animations */
   @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
@@ -4393,6 +4441,17 @@ ${repsJustPdf.length ? `
 </div>
 
 <script>window.onload = () => { window.print(); }<\/script>
+
+<!-- ── Modal detalle reporte ──────────────────────────────── -->
+<div class="rep-modal-overlay" id="rep-modal-overlay" onclick="closeRepModal(event)">
+  <div class="rep-modal" id="rep-modal-body">
+    <div class="rep-modal-head">
+      <span class="rep-modal-tipo" id="rep-modal-tipo-badge">—</span>
+      <button class="rep-modal-close" onclick="closeRepModal()">✕</button>
+    </div>
+    <div id="rep-modal-content"></div>
+  </div>
+</div>
 </body></html>`);
   win.document.close();
 }
@@ -4500,6 +4559,7 @@ const SUBTIPO_LABELS = {
 };
 
 function renderAdminReports(reportes) {
+  _repModalData = reportes; // guardar para modal de detalle
   const list = document.getElementById('admin-report-list');
   if (!reportes.length) {
     list.innerHTML = '<div style="text-align:center;padding:40px 0;font-family:var(--mono);font-size:12px;color:var(--text3)">sin reportes en este período</div>';
@@ -4616,23 +4676,179 @@ function renderAdminReports(reportes) {
         + '</div>'
       : '';
 
-    return '<div class="report-item" id="report-' + r.id + '">'
+    // Indicador click
+    const clickHint = '<div style="margin-top:8px;font-family:var(--mono);font-size:10px;color:var(--text3)">ver detalle →</div>';
+
+    return '<div class="report-item" id="report-' + r.id + '" onclick="openRepModal(\'' + r.id + '\')">'
       + '<div class="report-item-top">'
       +   '<div class="report-item-desc">' + desc + '</div>'
       +   '<div class="report-type-badge" style="background:' + c.bg + ';color:' + c.color + '">' + label + '</div>'
       + '</div>'
       + '<div class="report-item-meta">'
-      +   '<span>👤 ' + emp + '</span><span>·</span><span>' + local + '</span><span>·</span><span>' + (r.turno||'—') + '</span><span>·</span><span>' + fecha + '</span>'
+      +   '<span>\u{1F464} ' + emp + '</span><span>\u00B7</span><span>' + local + '</span><span>\u00B7</span><span>' + (r.turno||'\u2014') + '</span><span>\u00B7</span><span>' + fecha + '</span>'
       + '</div>'
-      + (resp ? '<div style="margin-top:6px;font-size:11px;font-family:var(--mono);color:var(--orange)">⚑ resp: ' + resp + '</div>' : '')
-      + detalleBlock
-      + fotoLink
-      + tkBlock
-      + rvBlock
-      + (isTicket && !r.resuelto ? '<button class="resolve-btn" onclick="resolveTicket(\u0027' + r.id + '\u0027,this)">✓ Marcar como resuelto</button>' : '')
-      + (r.resuelto ? '<div class="resolved-tag">✓ resuelto ' + (r.resuelto_at ? new Date(r.resuelto_at).toLocaleString('es-AR',{day:'2-digit',month:'2-digit'}) : '') + '</div>' : '')
+      + (resp ? '<div style="margin-top:6px;font-size:11px;font-family:var(--mono);color:var(--orange)">' + '\u2691 resp: ' + resp + '</div>' : '')
+      + clickHint
       + '</div>';
   }).join('');
+}
+
+// ── Modal detalle reporte ────────────────────────────────────
+let _repModalData = [];
+
+function openRepModal(id) {
+  const r = _repModalData.find(x => x.id === id);
+  if (!r) return;
+  const c     = TIPO_COLORS[r.tipo] || TIPO_COLORS.edilicio;
+  const label = TIPO_LABELS[r.tipo] || r.tipo;
+  const emp   = r.cuentas?.nombre || '—';
+  const resp  = r.responsable?.nombre;
+  const local = LOCALES[r.local] || r.local;
+  const fecha = r.created_at ? new Date(r.created_at).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
+  const dj    = r.datos_json || {};
+
+  // Badge tipo — protegido contra null (ej. localhost sin hub)
+  const badge = document.getElementById('rep-modal-tipo-badge');
+  if (badge) { badge.textContent = label; badge.style.background = c.bg; badge.style.color = c.color; }
+
+  // Construir filas de detalle
+  const rows = [];
+
+  const addRow = (label, value) => {
+    if (!value && value !== 0) return;
+    rows.push(`<div class="rep-det-row"><div class="rep-det-label">${label}</div><div class="rep-det-value">${value}</div></div>`);
+  };
+
+  // Meta siempre presente
+  addRow('Empleado', emp);
+  addRow('Local', local);
+  addRow('Turno', r.turno || '—');
+  addRow('Fecha', fecha);
+  if (resp) addRow('Responsable', `<span style="color:var(--orange)">${resp}</span>`);
+  if (r.descripcion) addRow('Descripción', r.descripcion);
+
+  // Detalle por tipo
+  if (r.tipo === 'falla_tienda') {
+    addRow('Categoría', dj.categoria);
+    addRow('Subfalla', dj.subfalla);
+  } else if (r.tipo === 'edilicio') {
+    addRow('Tipo de falla', dj.tipo_falla);
+  } else if (r.tipo === 'pedido') {
+    const tipoPedidoLabels = { cancelado: 'Cancelado', deduccion: 'Deducción', reintegro: 'Reintegro' };
+    addRow('Tipo', tipoPedidoLabels[dj.tipo_pedido] || dj.tipo_pedido);
+    addRow('Plataforma', dj.plataforma);
+    addRow('ID Pedido', dj.id_pedido);
+    addRow('ID FacilVirtual', dj.id_facilvirtual);
+    // Cancelado
+    addRow('Fecha del pedido', dj.fecha);
+    addRow('Hora del pedido', dj.hora);
+    addRow('Monto total', dj.monto_total ? '$' + dj.monto_total : null);
+    addRow('Artículos', dj.articulos);
+    // Deducción
+    addRow('Monto deducción', dj.monto_deduccion ? '$' + dj.monto_deduccion : null);
+    addRow('Artículo reclamo', dj.articulo_reclamo);
+    addRow('Explicación', dj.explicacion);
+    // Reintegro
+    addRow('Monto reintegro', dj.monto_reintegro ? '$' + dj.monto_reintegro : null);
+    addRow('Motivo reintegro', dj.motivo_reintegro);
+    // Responsable
+    const respTipoLabels = { empleado: 'Empleado', plataforma: 'Plataforma' };
+    addRow('Responsable tipo', respTipoLabels[dj.responsable_tipo] || dj.responsable_tipo);
+    addRow('Plataforma responsable', dj.responsable_plataforma);
+    if (dj.reclamo_justificado !== undefined) addRow('Reclamo justificado', dj.reclamo_justificado ? '✓ Sí' : '✗ No');
+  } else if (r.tipo === 'ticket') {
+    // tipo_ticket puede estar en dj o inferirse del subtipo (reportes viejos)
+    const tkTipoEff = dj.tipo_ticket || r.subtipo;
+    addRow('Subtipo', SUBTIPO_LABELS[r.subtipo] || r.subtipo);
+    if (tkTipoEff === 'ajuste_stock') {
+      addRow('Artículo', dj.articulo);
+      const opLabel = dj.operacion === 'sumar' ? '➕ Sumar' : dj.operacion === 'restar' ? '➖ Restar' : dj.operacion;
+      addRow('Operación', opLabel);
+      addRow('Cantidad', dj.cantidad);
+      addRow('Motivo', dj.motivo);
+    } else if (tkTipoEff === 'error_precio') {
+      addRow('Artículo', dj.articulo);
+      addRow('Ubicación', dj.ubicacion);
+      addRow('Precio erróneo', dj.precio_error ? `<span style="color:var(--red)">$${dj.precio_error}</span>` : null);
+      addRow('Precio correcto', dj.precio_correcto ? `<span style="color:var(--green)">$${dj.precio_correcto}</span>` : null);
+    } else if (tkTipoEff === 'error_nombre') {
+      addRow('Nombre erróneo', dj.nombre_error ? `<span style="color:var(--red)">${dj.nombre_error}</span>` : null);
+      addRow('Nombre correcto', dj.nombre_correcto ? `<span style="color:var(--green)">${dj.nombre_correcto}</span>` : null);
+      addRow('Ubicación', dj.ubicacion);
+    }
+  }
+
+  if (r.justificado) {
+    rows.push('<div class="rep-det-row"><div class="rep-det-label">Justificado</div><div class="rep-det-value" style="color:var(--green)">✓ Sí</div></div>');
+  }
+
+  // Foto principal
+  if (r.foto_url) {
+    rows.push(`<div class="rep-det-row"><div class="rep-det-label">Foto</div><div class="rep-det-value"><a href="${r.foto_url}" target="_blank" style="color:var(--blue);font-family:var(--mono);font-size:11px;border:0.5px solid rgba(91,156,246,0.3);padding:3px 10px;border-radius:5px;text-decoration:none">ver foto en Drive ↗</a></div></div>`);
+  }
+
+  // Items de rotos/vencidos
+  const rvItems = r.reporte_items || [];
+  let rvSection = '';
+  if (rvItems.length > 0) {
+    rvSection = '<div style="margin-top:16px"><div style="font-family:var(--mono);font-size:10px;font-weight:600;color:var(--red);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">Artículos reportados</div>'
+      + rvItems.map(item =>
+          '<div class="rep-item-card">'
+        + '<div class="rep-item-name">' + (item.nombre_articulo || '—') + '</div>'
+        + '<div class="rep-item-tags">'
+        + (item.presentacion ? '<span>📦 ' + item.presentacion + '</span>' : '')
+        + (item.cantidad ? '<span>× ' + item.cantidad + '</span>' : '')
+        + (item.precio_venta ? '<span>💲 $' + item.precio_venta + '</span>' : '')
+        + (item.fecha_vencimiento ? '<span>📅 Vence: ' + item.fecha_vencimiento + '</span>' : '')
+        + (item.responsable ? '<span style="color:var(--orange)">⚑ ' + item.responsable + '</span>' : '')
+        + (item.responsable_proveedor ? '<span style="color:var(--blue)">🏭 ' + item.responsable_proveedor + '</span>' : '')
+        + '</div>'
+        + (item.foto_url ? '<a href="' + item.foto_url + '" target="_blank" style="display:inline-block;margin-top:8px;font-size:11px;font-family:var(--mono);color:var(--blue);border:0.5px solid rgba(91,156,246,0.3);padding:2px 8px;border-radius:4px;text-decoration:none">ver foto ↗</a>' : '')
+        + '</div>'
+      ).join('') + '</div>';
+  }
+
+  // Items de ticket
+  const tkItems = r.ticket_items || [];
+  let tkSection = '';
+  if (tkItems.length > 0) {
+    const tkSubtipo = r.subtipo || '';
+    const tkColor = tkSubtipo === 'articulo_nuevo' ? 'var(--green)' : 'var(--blue)';
+    tkSection = '<div style="margin-top:16px"><div style="font-family:var(--mono);font-size:10px;font-weight:600;color:' + tkColor + ';text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">' + (SUBTIPO_LABELS[tkSubtipo] || tkSubtipo) + '</div>'
+      + tkItems.map(item =>
+          '<div class="rep-item-card">'
+        + '<div class="rep-item-name">' + (item.nombre_articulo || '—') + '</div>'
+        + '<div class="rep-item-tags">'
+        + (item.presentacion  ? '<span>📦 ' + item.presentacion + '</span>' : '')
+        + (item.codigo_barras ? '<span>🔖 CB: ' + item.codigo_barras + '</span>' : '')
+        + (item.costo         ? '<span>💲 Costo: $' + item.costo + '</span>' : '')
+        + (item.precio_venta  ? '<span>🏷️ Venta: $' + item.precio_venta + '</span>' : '')
+        + (item.cantidad      ? '<span>× ' + item.cantidad + '</span>' : '')
+        + (item.proveedor     ? '<span>🏭 ' + item.proveedor + '</span>' : '')
+        + '</div>'
+        + (item.foto_url ? '<a href="' + item.foto_url + '" target="_blank" style="display:inline-block;margin-top:8px;font-size:11px;font-family:var(--mono);color:var(--blue);border:0.5px solid rgba(91,156,246,0.3);padding:2px 8px;border-radius:4px;text-decoration:none">ver foto ↗</a>' : '')
+        + '</div>'
+      ).join('') + '</div>';
+  }
+
+  // Botón resolver (tickets)
+  let resolveBtn = '';
+  if (r.tipo === 'ticket' && !r.resuelto) {
+    resolveBtn = '<button class="resolve-btn" style="margin-top:16px;width:100%" onclick="resolveTicket(\'' + r.id + '\',this);closeRepModal()">✓ Marcar como resuelto</button>';
+  } else if (r.resuelto) {
+    resolveBtn = '<div class="resolved-tag" style="margin-top:12px">✓ resuelto ' + (r.resuelto_at ? new Date(r.resuelto_at).toLocaleString('es-AR',{day:'2-digit',month:'2-digit'}) : '') + '</div>';
+  }
+
+  const modalContent = document.getElementById('rep-modal-content');
+  const modalOverlay = document.getElementById('rep-modal-overlay');
+  if (!modalContent || !modalOverlay) return; // guard: modal no disponible
+  modalContent.innerHTML = rows.join('') + rvSection + tkSection + resolveBtn;
+  modalOverlay.classList.add('open');
+}
+
+function closeRepModal(e) {
+  if (e && e.target !== document.getElementById('rep-modal-overlay')) return;
+  document.getElementById('rep-modal-overlay').classList.remove('open');
 }
 
 function renderAdminResumen(reportes) {
