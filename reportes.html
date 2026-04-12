@@ -676,12 +676,22 @@ async function uploadToDrive(file, formType, localKey) {
     const form = new FormData();
     form.append('metadata', new Blob([metadata], { type: 'application/json' }));
     form.append('file', file);
-    const uploadRes = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink', {
+    const uploadRes = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', {
       method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: form
     });
     const uploadData = await uploadRes.json();
     if (!uploadRes.ok) throw new Error(`Drive upload ${uploadRes.status}: ${uploadData?.error?.message}`);
-    return uploadData.webViewLink || `https://drive.google.com/file/d/${uploadData.id}/view`;
+    const fileId = uploadData.id;
+
+    // Hacer el archivo público (viewer) para que el admin pueda verlo
+    await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/permissions`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role: 'reader', type: 'anyone' })
+    });
+
+    // URL directa de imagen (no requiere login de Drive)
+    return `https://drive.google.com/uc?export=view&id=${fileId}`;
   } catch(e) { console.error('Drive upload error:', e); return null; }
 }
 
