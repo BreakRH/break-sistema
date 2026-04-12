@@ -590,7 +590,7 @@ function remitoCardHTML(r, showActions){
       <div class="progress-label">${comp?'Todas las etapas completadas':(nextEtapa?`Pendiente: ${nextEtapa.label}`:'')}</div>
     </div>
     ${puedo&&!comp?`<div onclick="event.stopPropagation()"><button class="btn-step" onclick="completarEtapa(event,'${r.id}')">Completar: ${nextEtapa.label} →</button></div>`:''}
-    ${currentRol==='admin'?`<div onclick="event.stopPropagation()" style="margin-top:6px"><button class="btn btn-danger btn-sm" style="width:100%;font-size:12px;padding:6px 10px;min-height:36px" onclick="eliminarRemito(event,'${r.id}','${r.codigo}')">🗑 Eliminar remito</button></div>`:''}
+    ${currentRol==='admin'&&!comp?`<div onclick="event.stopPropagation()" style="margin-top:6px"><button class="btn btn-danger btn-sm" style="width:100%;font-size:12px;padding:6px 10px;min-height:36px" onclick="eliminarRemito(event,'${r.id}','${r.codigo}')">🗑 Eliminar remito</button></div>`:''}
   </div>`;
 }
 

@@ -1,0 +1,1551 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LP Break — Lista de Precios</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0f;
+  --bg2: #111118;
+  --bg3: #1a1a24;
+  --border: #2a2a3a;
+  --border2: #3a3a50;
+  --text: #e8e8f0;
+  --text2: #9090a8;
+  --text3: #5a5a70;
+  --accent: #7c6aff;
+  --accent2: #5548cc;
+  --green: #2ecc71;
+  --yellow: #f1c40f;
+  --red: #e74c3c;
+  --orange: #e67e22;
+  --cyan: #00d4ff;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'DM Mono', monospace;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 13px;
+}
+
+/* ── LAYOUT ── */
+#app { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+/* ── HEADER ── */
+.header {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 0 20px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+}
+.header-logo {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 16px;
+  color: var(--accent);
+  letter-spacing: -0.5px;
+}
+.header-sep { color: var(--border2); }
+.header-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text2);
+}
+.header-right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+
+/* ── TABS ── */
+.tabs {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 0 20px;
+  display: flex;
+  gap: 0;
+  flex-shrink: 0;
+}
+.tab {
+  padding: 10px 18px;
+  font-family: 'Syne', sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  color: var(--text3);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+  text-transform: uppercase;
+}
+.tab:hover { color: var(--text2); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* ── MAIN CONTENT ── */
+.main { flex: 1; overflow-y: auto; padding: 20px; }
+
+/* ── DASHBOARD ── */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.stat-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  position: relative;
+  overflow: hidden;
+}
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+}
+.stat-card.green::before { background: var(--green); }
+.stat-card.yellow::before { background: var(--yellow); }
+.stat-card.red::before { background: var(--red); }
+.stat-card.cyan::before { background: var(--cyan); }
+.stat-card.purple::before { background: var(--accent); }
+.stat-card.orange::before { background: var(--orange); }
+
+.stat-label {
+  font-size: 10px;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+.stat-value {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 28px;
+  color: var(--text);
+  line-height: 1;
+}
+.stat-sub {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 6px;
+}
+.stat-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 500;
+  margin-top: 4px;
+}
+.badge-green { background: rgba(46,204,113,0.15); color: var(--green); }
+.badge-yellow { background: rgba(241,196,15,0.15); color: var(--yellow); }
+.badge-red { background: rgba(231,76,60,0.15); color: var(--red); }
+.badge-orange { background: rgba(230,126,34,0.15); color: var(--orange); }
+.badge-gray { background: rgba(144,144,168,0.15); color: var(--text2); }
+
+/* ── SECTION ROWS ── */
+.section-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.section-row.full { grid-template-columns: 1fr; }
+.section-row.three { grid-template-columns: 1fr 1fr 1fr; }
+
+.panel {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.panel-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.panel-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text2);
+}
+.panel-count {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--text3);
+}
+.panel-body { padding: 12px 16px; }
+
+/* ── IMPORT PANEL ── */
+.import-panel {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+.import-header {
+  padding: 14px 16px;
+  background: linear-gradient(90deg, rgba(124,106,255,0.08), transparent);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.import-steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+}
+.import-step {
+  padding: 14px 16px;
+  border-right: 1px solid var(--border);
+  position: relative;
+}
+.import-step:last-child { border-right: none; }
+.step-num {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 20px;
+  color: var(--border2);
+  margin-bottom: 4px;
+}
+.step-num.done { color: var(--green); }
+.step-num.active { color: var(--accent); }
+.step-label {
+  font-size: 11px;
+  color: var(--text2);
+  margin-bottom: 4px;
+}
+.step-desc { font-size: 10px; color: var(--text3); }
+
+/* ── BUTTONS ── */
+.btn {
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: none;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn-primary {
+  background: var(--accent);
+  color: white;
+}
+.btn-primary:hover { background: var(--accent2); }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-ghost {
+  background: transparent;
+  color: var(--text2);
+  border: 1px solid var(--border);
+}
+.btn-ghost:hover { border-color: var(--border2); color: var(--text); }
+.btn-danger {
+  background: rgba(231,76,60,0.15);
+  color: var(--red);
+  border: 1px solid rgba(231,76,60,0.3);
+}
+.btn-sm { padding: 5px 10px; font-size: 11px; }
+
+/* ── PROGRESS BAR ── */
+.progress-wrap {
+  background: var(--bg3);
+  border-radius: 4px;
+  height: 6px;
+  overflow: hidden;
+  margin: 8px 0;
+}
+.progress-bar {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 4px;
+  transition: width 0.3s;
+}
+.progress-bar.green { background: var(--green); }
+
+/* ── TABLE ── */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.data-table th {
+  text-align: left;
+  padding: 8px 10px;
+  font-family: 'Syne', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text3);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.data-table td {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text2);
+  vertical-align: middle;
+}
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: rgba(255,255,255,0.02); }
+.td-desc { color: var(--text); max-width: 280px; }
+.td-cb { color: var(--text3); font-size: 11px; }
+.td-price { color: var(--green); text-align: right; }
+.td-price.na { color: var(--text3); text-align: right; }
+.td-rubro {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: rgba(255,255,255,0.05);
+  color: var(--text3);
+  white-space: nowrap;
+}
+
+/* ── SEARCH & FILTERS ── */
+.toolbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  align-items: center;
+}
+.search-input {
+  flex: 1;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.search-input:focus { border-color: var(--accent); }
+.search-input::placeholder { color: var(--text3); }
+.filter-select {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  color: var(--text2);
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  outline: none;
+  cursor: pointer;
+}
+
+/* ── LOG ── */
+.log-area {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  max-height: 140px;
+  overflow-y: auto;
+  font-size: 11px;
+  line-height: 1.8;
+}
+.log-line { display: flex; gap: 8px; }
+.log-time { color: var(--text3); flex-shrink: 0; }
+.log-ok { color: var(--green); }
+.log-warn { color: var(--yellow); }
+.log-err { color: var(--red); }
+.log-info { color: var(--text2); }
+
+/* ── RUBRO BARS ── */
+.rubro-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border);
+}
+.rubro-row:last-child { border-bottom: none; }
+.rubro-name { font-size: 11px; color: var(--text2); width: 160px; flex-shrink: 0; }
+.rubro-bar-wrap {
+  flex: 1;
+  background: var(--bg3);
+  border-radius: 2px;
+  height: 4px;
+  overflow: hidden;
+}
+.rubro-bar { height: 100%; background: var(--accent); border-radius: 2px; }
+.rubro-count { font-size: 11px; color: var(--text3); width: 32px; text-align: right; }
+
+/* ── DELIVERY MATCH ITEMS ── */
+.match-item {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.match-item:last-child { border-bottom: none; }
+.match-score {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  width: 40px;
+  flex-shrink: 0;
+}
+.match-names { flex: 1; }
+.match-py { font-size: 11px; color: var(--text); }
+.match-lp { font-size: 10px; color: var(--text3); margin-top: 2px; }
+.match-status { flex-shrink: 0; }
+
+/* ── PRICING DIFF ── */
+.price-diff {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+.price-diff:last-child { border-bottom: none; }
+.pd-name { flex: 1; font-size: 11px; color: var(--text2); }
+.pd-lp { font-size: 11px; color: var(--text3); width: 70px; text-align: right; }
+.pd-canal { font-size: 11px; width: 70px; text-align: right; }
+.pd-diff { font-size: 11px; width: 60px; text-align: right; }
+.diff-pos { color: var(--green); }
+.diff-neg { color: var(--red); }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 12px;
+  z-index: 9999;
+  max-width: 320px;
+  display: none;
+  animation: slideIn 0.2s ease;
+}
+@keyframes slideIn {
+  from { transform: translateY(10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* ── LOADING ── */
+.loading-dots::after {
+  content: '';
+  animation: dots 1.2s steps(3, end) infinite;
+}
+@keyframes dots {
+  0%   { content: ''; }
+  33%  { content: '.'; }
+  66%  { content: '..'; }
+  100% { content: '...'; }
+}
+
+/* ── TABS CONTENT ── */
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* ── EMPTY STATE ── */
+.empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text3);
+}
+.empty-icon { font-size: 32px; margin-bottom: 10px; }
+.empty-text { font-size: 13px; }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- HEADER -->
+  <div class="header">
+    <span class="header-logo">◈ BREAK</span>
+    <span class="header-sep">/</span>
+    <span class="header-title">Lista de Precios</span>
+    <div class="header-right">
+      <span id="header-status" style="font-size:11px; color:var(--text3)">Cargando<span class="loading-dots"></span></span>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('dashboard')">Dashboard</div>
+    <div class="tab" onclick="switchTab('productos')">Productos</div>
+    <div class="tab" onclick="switchTab('delivery')">Delivery</div>
+    <div class="tab" onclick="switchTab('importar')">Importar</div>
+    <div class="tab" onclick="switchTab('config')">Configuración</div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- ══ DASHBOARD ══ -->
+    <div id="tab-dashboard" class="tab-content active">
+
+      <!-- KPI Cards -->
+      <div class="dashboard-grid">
+        <div class="stat-card green">
+          <div class="stat-label">Productos en tienda</div>
+          <div class="stat-value" id="kpi-total">—</div>
+          <div class="stat-sub">en LP Break general</div>
+        </div>
+        <div class="stat-card cyan">
+          <div class="stat-label">Con precio PYA</div>
+          <div class="stat-value" id="kpi-pya">—</div>
+          <div class="stat-sub" id="kpi-pya-pct">de los productos</div>
+        </div>
+        <div class="stat-card yellow">
+          <div class="stat-label">Sin precio PYA</div>
+          <div class="stat-value" id="kpi-sin-pya">—</div>
+          <div class="stat-sub">requieren atención</div>
+        </div>
+        <div class="stat-card purple">
+          <div class="stat-label">Rubros activos</div>
+          <div class="stat-value" id="kpi-rubros">—</div>
+          <div class="stat-sub">categorías</div>
+        </div>
+        <div class="stat-card orange">
+          <div class="stat-label">Matches delivery PY</div>
+          <div class="stat-value" id="kpi-matches">—</div>
+          <div class="stat-sub" id="kpi-matches-sub">confirmados</div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-label">Pendientes revisión</div>
+          <div class="stat-value" id="kpi-pendientes">—</div>
+          <div class="stat-sub">matches por confirmar</div>
+        </div>
+        <div class="stat-card yellow">
+          <div class="stat-label">Sin match en LP</div>
+          <div class="stat-value" id="kpi-sin-match">—</div>
+          <div class="stat-sub">productos PY sin vínculo</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-label">Última importación</div>
+          <div class="stat-value" style="font-size:14px" id="kpi-ultima-import">—</div>
+          <div class="stat-sub" id="kpi-ultima-import-sub">—</div>
+        </div>
+      </div>
+
+      <!-- Panels row 1 -->
+      <div class="section-row">
+
+        <!-- Rubros breakdown -->
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">Productos por rubro</span>
+            <span class="panel-count" id="rubros-count"></span>
+          </div>
+          <div class="panel-body" id="rubros-bars">
+            <div class="empty"><div class="empty-icon">📊</div><div class="empty-text">Sin datos</div></div>
+          </div>
+        </div>
+
+        <!-- Precios sin completar -->
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">Productos sin precio por canal</span>
+          </div>
+          <div class="panel-body" id="sin-precio-panel">
+            <div class="empty"><div class="empty-icon">💰</div><div class="empty-text">Sin datos</div></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Panels row 2 -->
+      <div class="section-row">
+
+        <!-- Matches delivery top -->
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">Matches delivery — pendientes</span>
+            <span class="panel-count" id="matches-pendientes-count"></span>
+          </div>
+          <div class="panel-body" id="matches-pendientes-list">
+            <div class="empty"><div class="empty-icon">🔗</div><div class="empty-text">Sin datos</div></div>
+          </div>
+        </div>
+
+        <!-- Diferencias de precio -->
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">Diferencias precio PY vs LP</span>
+          </div>
+          <div class="panel-body" id="diffs-panel">
+            <div class="empty"><div class="empty-icon">📉</div><div class="empty-text">Sin datos</div></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ══ PRODUCTOS ══ -->
+    <div id="tab-productos" class="tab-content">
+      <div class="toolbar">
+        <input class="search-input" type="text" id="search-productos" placeholder="Buscar por descripción o código de barras..." oninput="filtrarProductos()">
+        <select class="filter-select" id="filter-rubro" onchange="filtrarProductos()">
+          <option value="">Todos los rubros</option>
+        </select>
+        <select class="filter-select" id="filter-canal" onchange="filtrarProductos()">
+          <option value="">Todos los canales</option>
+          <option value="minorista">Minorista</option>
+          <option value="pya">PYA</option>
+          <option value="rappi">Rappi</option>
+          <option value="mp">MP</option>
+        </select>
+        <select class="filter-select" id="filter-tipo" onchange="filtrarProductos()">
+          <option value="">Tienda + Delivery</option>
+          <option value="tienda">Solo tienda</option>
+          <option value="delivery">Solo delivery</option>
+          <option value="promo">Promos</option>
+        </select>
+        <span id="productos-count" style="color:var(--text3);font-size:11px;white-space:nowrap"></span>
+      </div>
+      <div class="panel">
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Descripción</th>
+                <th>Rubro</th>
+                <th style="text-align:right">Costo</th>
+                <th style="text-align:right">Minorista</th>
+                <th style="text-align:right">PYA</th>
+                <th style="text-align:right">Rappi</th>
+                <th style="text-align:right">MP</th>
+                <th>IVA</th>
+                <th>Canal</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-productos">
+              <tr><td colspan="10" class="empty" style="padding:40px;text-align:center;color:var(--text3)">Cargando productos...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="padding:10px 16px; border-top:1px solid var(--border); display:flex; gap:10px; align-items:center;">
+          <span id="pag-info" style="color:var(--text3);font-size:11px"></span>
+          <div style="margin-left:auto;display:flex;gap:6px">
+            <button class="btn btn-ghost btn-sm" onclick="pagAnterior()">← Anterior</button>
+            <button class="btn btn-ghost btn-sm" onclick="pagSiguiente()">Siguiente →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ DELIVERY ══ -->
+    <div id="tab-delivery" class="tab-content">
+      <div class="section-row three">
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">✅ Confirmados</span>
+            <span class="panel-count" id="del-conf-count"></span>
+          </div>
+          <div class="panel-body" style="max-height:400px;overflow-y:auto" id="del-conf-list">
+            <div class="empty"><div class="empty-icon">✅</div><div class="empty-text">Sin datos</div></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">⚠️ Requieren revisión</span>
+            <span class="panel-count" id="del-rev-count"></span>
+          </div>
+          <div class="panel-body" style="max-height:400px;overflow-y:auto" id="del-rev-list">
+            <div class="empty"><div class="empty-icon">⚠️</div><div class="empty-text">Sin datos</div></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">❌ Sin match LP</span>
+            <span class="panel-count" id="del-sin-count"></span>
+          </div>
+          <div class="panel-body" style="max-height:400px;overflow-y:auto" id="del-sin-list">
+            <div class="empty"><div class="empty-icon">❌</div><div class="empty-text">Sin datos</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ IMPORTAR ══ -->
+    <div id="tab-importar" class="tab-content">
+
+      <!-- Steps indicator -->
+      <div class="import-panel">
+        <div class="import-header">
+          <span style="font-family:Syne,sans-serif;font-weight:700;color:var(--accent)">Importación inicial — LP Break Excel</span>
+          <span style="margin-left:auto;font-size:11px;color:var(--text3)">Solo se ejecuta una vez</span>
+        </div>
+        <div class="import-steps">
+          <div class="import-step">
+            <div class="step-num" id="step1-num">1</div>
+            <div class="step-label">Cargar archivo JSON</div>
+            <div class="step-desc">El archivo lp_import_data.json generado en sesión anterior</div>
+          </div>
+          <div class="import-step">
+            <div class="step-num" id="step2-num">2</div>
+            <div class="step-label">Preview datos</div>
+            <div class="step-desc">Verificar productos, rubros y precios antes de importar</div>
+          </div>
+          <div class="import-step">
+            <div class="step-num" id="step3-num">3</div>
+            <div class="step-label">Importar</div>
+            <div class="step-desc">Insertar en Supabase por bloques</div>
+          </div>
+          <div class="import-step">
+            <div class="step-num" id="step4-num">4</div>
+            <div class="step-label">Verificar</div>
+            <div class="step-desc">Confirmación de totales y errores</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 1: File upload -->
+      <div class="panel" id="import-step1" style="margin-bottom:12px">
+        <div class="panel-header">
+          <span class="panel-title">Paso 1 — Cargar lp_import_data.json</span>
+        </div>
+        <div class="panel-body">
+          <div style="display:flex;gap:12px;align-items:center">
+            <label class="btn btn-ghost" style="cursor:pointer">
+              📂 Seleccionar archivo
+              <input type="file" accept=".json" id="import-file-input" style="display:none" onchange="cargarJSON(this)">
+            </label>
+            <span id="import-file-name" style="color:var(--text3);font-size:12px">Sin archivo seleccionado</span>
+          </div>
+          <div id="import-preview-summary" style="display:none;margin-top:12px">
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px" id="preview-stats"></div>
+            <button class="btn btn-primary" id="btn-import" onclick="ejecutarImportacion()" disabled>
+              🚀 Ejecutar importación
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Preview table -->
+      <div class="panel" id="import-preview-panel" style="margin-bottom:12px;display:none">
+        <div class="panel-header">
+          <span class="panel-title">Preview — primeros 20 productos</span>
+          <span class="panel-count" id="preview-count"></span>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Descripción</th>
+                <th>Rubro</th>
+                <th>Proveedor</th>
+                <th style="text-align:right">Costo</th>
+                <th style="text-align:right">Minorista</th>
+                <th style="text-align:right">PYA</th>
+                <th>IVA</th>
+              </tr>
+            </thead>
+            <tbody id="preview-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Progress + log -->
+      <div class="panel" id="import-progress-panel" style="display:none">
+        <div class="panel-header">
+          <span class="panel-title">Progreso de importación</span>
+          <span id="import-progress-pct" style="margin-left:auto;font-size:12px;color:var(--accent)">0%</span>
+        </div>
+        <div class="panel-body">
+          <div class="progress-wrap">
+            <div class="progress-bar" id="import-progress-bar" style="width:0%"></div>
+          </div>
+          <div style="display:flex;gap:16px;margin:8px 0;font-size:11px">
+            <span style="color:var(--text3)">Insertados: <span id="imp-insertados" style="color:var(--green)">0</span></span>
+            <span style="color:var(--text3)">Errores: <span id="imp-errores" style="color:var(--red)">0</span></span>
+            <span style="color:var(--text3)">Restantes: <span id="imp-restantes">—</span></span>
+          </div>
+          <div class="log-area" id="import-log"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ CONFIG ══ -->
+    <div id="tab-config" class="tab-content">
+      <div class="section-row">
+        <!-- Comisiones -->
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">Comisiones por plataforma</span>
+            <button class="btn btn-ghost btn-sm" onclick="guardarComisiones()" style="margin-left:auto">Guardar</button>
+          </div>
+          <div class="panel-body" id="comisiones-panel">
+            <div class="empty"><div class="empty-icon">⚙️</div><div class="empty-text">Cargando...</div></div>
+          </div>
+        </div>
+        <!-- Rubros -->
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">Rubros activos</span>
+          </div>
+          <div class="panel-body" id="rubros-config-panel">
+            <div class="empty"><div class="empty-icon">🏷️</div><div class="empty-text">Cargando...</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG SUPABASE ────────────────────────────────────────────────
+let _sbSecret = null;
+let _sbUrl = null;
+
+async function sbFetch(path, opts = {}) {
+  if (!_sbSecret || !_sbUrl) await initSecret();
+  const url = _sbUrl + path;
+  const headers = {
+    'apikey': window._ANON_KEY || '',
+    'Authorization': 'Bearer ' + (window._ANON_KEY || ''),
+    'x-app-secret': _sbSecret,
+    'Content-Type': 'application/json',
+    ...(opts.headers || {})
+  };
+  const res = await fetch(url, { ...opts, headers });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`${res.status}: ${err}`);
+  }
+  const ct = res.headers.get('content-type') || '';
+  return ct.includes('json') ? res.json() : res.text();
+}
+
+async function initSecret() {
+  // Leer desde config (igual que resto del sistema)
+  const CONFIG_URL = window._CONFIG_URL;
+  if (!CONFIG_URL) {
+    // Modo standalone — leer desde localStorage (set por hub)
+    _sbSecret = localStorage.getItem('break_app_secret') || '';
+    _sbUrl = localStorage.getItem('break_sb_url') || '';
+    window._ANON_KEY = localStorage.getItem('break_anon_key') || '';
+    return;
+  }
+  const r = await fetch(CONFIG_URL);
+  const d = await r.json();
+  _sbSecret = d.app_secret;
+  _sbUrl = d.sb_url;
+  window._ANON_KEY = d.anon_key;
+}
+
+// ── STATE ──────────────────────────────────────────────────────────
+let state = {
+  productos: [],
+  costos: {},      // desc_key → costo
+  precios: {},     // id → { canal → precio }
+  rubros: [],
+  comisiones: [],
+  importData: null,
+  filtrados: [],
+  pagina: 0,
+  porPagina: 50,
+  importStats: { insertados: 0, errores: 0 }
+};
+
+// ── INIT ───────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  // Context desde hub via postMessage o localStorage
+  window.addEventListener('message', (e) => {
+    if (e.data?.type === 'break-context') {
+      const ctx = e.data.ctx || {};
+      if (ctx.sbSecret) _sbSecret = ctx.sbSecret;
+      if (ctx.sbUrl) _sbUrl = ctx.sbUrl;
+      if (ctx.anonKey) window._ANON_KEY = ctx.anonKey;
+    }
+  });
+  // Fallback localStorage
+  _sbSecret = localStorage.getItem('break_app_secret') || _sbSecret;
+  _sbUrl = localStorage.getItem('break_sb_url') || _sbUrl;
+  window._ANON_KEY = localStorage.getItem('break_anon_key') || window._ANON_KEY;
+
+  cargarDatos();
+});
+
+// ── CARGAR DATOS ───────────────────────────────────────────────────
+async function cargarDatos() {
+  try {
+    document.getElementById('header-status').innerHTML =
+      'Sincronizando<span class="loading-dots"></span>';
+
+    // Parallel fetch
+    const [productos, precios, rubros, comisiones, deliveryMapping] = await Promise.all([
+      sbFetch('/rest/v1/lp_productos?select=id,codigo_barras,descripcion,rubro_id,iva_pct,en_tienda,es_promo,activo,lp_rubros(nombre),lp_proveedores(nombre)&activo=eq.true&order=descripcion.asc'),
+      sbFetch('/rest/v1/lp_precios?select=producto_id,canal,precio&activo=eq.true'),
+      sbFetch('/rest/v1/lp_rubros?order=nombre.asc'),
+      sbFetch('/rest/v1/lp_comisiones?order=canal.asc,nombre.asc'),
+      sbFetch('/rest/v1/lp_delivery_mapping?select=estado&limit=1000'),
+    ]);
+
+    state.rubros = rubros || [];
+    state.comisiones = comisiones || [];
+
+    // Indexar precios por producto_id
+    const preciosMap = {};
+    (precios || []).forEach(p => {
+      if (!preciosMap[p.producto_id]) preciosMap[p.producto_id] = {};
+      preciosMap[p.producto_id][p.canal] = p.precio;
+    });
+    state.precios = preciosMap;
+
+    // Enrichir productos
+    state.productos = (productos || []).map(p => ({
+      ...p,
+      rubro_nombre: p.lp_rubros?.nombre || '—',
+      proveedor_nombre: p.lp_proveedores?.nombre || '—',
+      precios: preciosMap[p.id] || {}
+    }));
+
+    // Delivery stats
+    const dmStats = { confirmado: 0, pendiente: 0, sin_match: 0, conflicto: 0 };
+    (deliveryMapping || []).forEach(m => {
+      dmStats[m.estado] = (dmStats[m.estado] || 0) + 1;
+    });
+    state.deliveryStats = dmStats;
+
+    document.getElementById('header-status').textContent =
+      `${state.productos.length} productos · actualizado`;
+
+    renderDashboard();
+    renderProductos();
+    renderComisionesConfig();
+    renderRubrosConfig();
+    renderDelivery();
+
+  } catch (err) {
+    console.error(err);
+    document.getElementById('header-status').innerHTML =
+      '<span style="color:var(--red)">Error de conexión</span>';
+
+    // Si no hay datos, mostrar modo demo
+    if (state.productos.length === 0) {
+      mostrarModoSinDatos();
+    }
+  }
+}
+
+function mostrarModoSinDatos() {
+  document.getElementById('kpi-total').textContent = '0';
+  document.getElementById('kpi-pya').textContent = '0';
+  document.getElementById('kpi-sin-pya').textContent = '0';
+  document.getElementById('kpi-rubros').textContent = '0';
+  document.getElementById('kpi-matches').textContent = '—';
+  document.getElementById('kpi-pendientes').textContent = '—';
+  document.getElementById('kpi-sin-match').textContent = '—';
+  document.getElementById('kpi-ultima-import').textContent = 'Sin datos';
+  document.getElementById('kpi-ultima-import-sub').textContent = 'Usar pestaña Importar';
+}
+
+// ── DASHBOARD ──────────────────────────────────────────────────────
+function renderDashboard() {
+  const prods = state.productos;
+  const total = prods.length;
+  const conPya = prods.filter(p => p.precios.pya).length;
+  const sinPya = total - conPya;
+  const rubrosActivos = new Set(prods.map(p => p.rubro_nombre)).size;
+
+  document.getElementById('kpi-total').textContent = total.toLocaleString('es');
+  document.getElementById('kpi-pya').textContent = conPya.toLocaleString('es');
+  document.getElementById('kpi-pya-pct').textContent =
+    total ? Math.round(conPya/total*100) + '% de los productos' : '—';
+  document.getElementById('kpi-sin-pya').textContent = sinPya.toLocaleString('es');
+  document.getElementById('kpi-rubros').textContent = rubrosActivos;
+
+  const ds = state.deliveryStats || {};
+  document.getElementById('kpi-matches').textContent =
+    (ds.confirmado || 0).toLocaleString('es');
+  document.getElementById('kpi-pendientes').textContent =
+    ((ds.pendiente || 0) + (ds.conflicto || 0)).toLocaleString('es');
+  document.getElementById('kpi-sin-match').textContent =
+    (ds.sin_match || 0).toLocaleString('es');
+  document.getElementById('kpi-ultima-import').textContent =
+    total > 0 ? '✓ OK' : 'Pendiente';
+  document.getElementById('kpi-ultima-import-sub').textContent =
+    total > 0 ? `${total} productos cargados` : 'Ir a pestaña Importar';
+
+  renderRubrosBars(prods);
+  renderSinPrecio(prods);
+  renderMatchesPendientes();
+  renderDiffs(prods);
+}
+
+function renderRubrosBars(prods) {
+  const counts = {};
+  prods.forEach(p => {
+    counts[p.rubro_nombre] = (counts[p.rubro_nombre] || 0) + 1;
+  });
+  const sorted = Object.entries(counts).sort((a,b) => b[1]-a[1]).slice(0, 15);
+  const max = sorted[0]?.[1] || 1;
+  document.getElementById('rubros-count').textContent = `${sorted.length} rubros`;
+  document.getElementById('rubros-bars').innerHTML = sorted.map(([rubro, cnt]) => `
+    <div class="rubro-row">
+      <div class="rubro-name">${rubro}</div>
+      <div class="rubro-bar-wrap">
+        <div class="rubro-bar" style="width:${Math.round(cnt/max*100)}%"></div>
+      </div>
+      <div class="rubro-count">${cnt}</div>
+    </div>
+  `).join('');
+}
+
+function renderSinPrecio(prods) {
+  const canales = ['minorista','pya','rappi','mp'];
+  const rows = canales.map(c => {
+    const sin = prods.filter(p => !p.precios[c] && p.en_tienda && !p.es_promo).length;
+    const pct = prods.length ? Math.round(sin/prods.length*100) : 0;
+    const cls = sin === 0 ? 'badge-green' : sin < 50 ? 'badge-yellow' : 'badge-red';
+    return `
+      <div class="price-diff">
+        <div class="pd-name">${c.toUpperCase()}</div>
+        <div class="pd-canal">
+          <span class="stat-badge ${cls}">${sin} sin precio</span>
+        </div>
+        <div class="pd-diff" style="color:var(--text3)">${pct}%</div>
+      </div>
+    `;
+  }).join('');
+  document.getElementById('sin-precio-panel').innerHTML = rows || '<div class="empty">Sin datos</div>';
+}
+
+function renderMatchesPendientes() {
+  // Mostrar info estática de los archivos de verificación hasta que haya datos en DB
+  const ds = state.deliveryStats || {};
+  const pendientes = (ds.pendiente || 0) + (ds.conflicto || 0);
+  const el = document.getElementById('matches-pendientes-list');
+  document.getElementById('matches-pendientes-count').textContent = pendientes + ' items';
+
+  if (pendientes === 0 && Object.keys(ds).length === 0) {
+    el.innerHTML = `
+      <div style="font-size:11px;color:var(--text3);line-height:2">
+        <div>📋 946 matches confirmados automáticamente</div>
+        <div>⚠️ 207 requieren revisión manual</div>
+        <div>❌ 144 productos PY sin vínculo en LP</div>
+        <div style="margin-top:8px;color:var(--text2)">→ Importar datos en pestaña <strong>Importar</strong></div>
+      </div>
+    `;
+  } else {
+    el.innerHTML = `
+      <div style="font-size:11px;color:var(--text3);line-height:2">
+        <div>✅ Confirmados: <span style="color:var(--green)">${ds.confirmado || 0}</span></div>
+        <div>⚠️ Conflictos: <span style="color:var(--yellow)">${ds.conflicto || 0}</span></div>
+        <div>⏳ Pendientes: <span style="color:var(--text2)">${ds.pendiente || 0}</span></div>
+        <div>❌ Sin match: <span style="color:var(--red)">${ds.sin_match || 0}</span></div>
+      </div>
+    `;
+  }
+}
+
+function renderDiffs(prods) {
+  // Top 8 productos con mayor diferencia entre precio minorista y PYA
+  const diffs = prods
+    .filter(p => p.precios.minorista && p.precios.pya)
+    .map(p => ({
+      desc: p.descripcion.substring(0, 40),
+      min: p.precios.minorista,
+      pya: p.precios.pya,
+      diff: p.precios.pya - p.precios.minorista
+    }))
+    .sort((a,b) => Math.abs(b.diff) - Math.abs(a.diff))
+    .slice(0, 8);
+
+  if (!diffs.length) {
+    document.getElementById('diffs-panel').innerHTML =
+      '<div class="empty"><div class="empty-icon">📊</div><div class="empty-text">Sin datos de precios</div></div>';
+    return;
+  }
+
+  document.getElementById('diffs-panel').innerHTML = diffs.map(d => {
+    const pct = Math.round(d.diff/d.min*100);
+    const cls = d.diff > 0 ? 'diff-pos' : 'diff-neg';
+    return `
+      <div class="price-diff">
+        <div class="pd-name">${d.desc}</div>
+        <div class="pd-lp">$${d.min.toLocaleString('es')}</div>
+        <div class="pd-canal">PYA $${d.pya.toLocaleString('es')}</div>
+        <div class="pd-diff ${cls}">${d.diff > 0 ? '+' : ''}${pct}%</div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ── PRODUCTOS TABLE ────────────────────────────────────────────────
+function filtrarProductos() {
+  const q = document.getElementById('search-productos').value.toLowerCase();
+  const rubro = document.getElementById('filter-rubro').value;
+  const canal = document.getElementById('filter-canal').value;
+  const tipo = document.getElementById('filter-tipo').value;
+
+  state.filtrados = state.productos.filter(p => {
+    if (q && !p.descripcion.toLowerCase().includes(q) &&
+        !(p.codigo_barras || '').includes(q)) return false;
+    if (rubro && p.rubro_nombre !== rubro) return false;
+    if (canal && !p.precios[canal]) return false;
+    if (tipo === 'tienda' && !p.en_tienda) return false;
+    if (tipo === 'delivery' && p.en_tienda) return false;
+    if (tipo === 'promo' && !p.es_promo) return false;
+    return true;
+  });
+
+  state.pagina = 0;
+  renderTablaProductos();
+  populateRubroFilter();
+}
+
+function renderTablaProductos() {
+  const inicio = state.pagina * state.porPagina;
+  const fin = inicio + state.porPagina;
+  const pagina = state.filtrados.slice(inicio, fin);
+  const total = state.filtrados.length;
+
+  document.getElementById('productos-count').textContent =
+    `${total.toLocaleString('es')} productos`;
+  document.getElementById('pag-info').textContent =
+    `${inicio+1}–${Math.min(fin,total)} de ${total}`;
+
+  if (!pagina.length) {
+    document.getElementById('tabla-productos').innerHTML =
+      '<tr><td colspan="10" style="padding:40px;text-align:center;color:var(--text3)">Sin resultados</td></tr>';
+    return;
+  }
+
+  document.getElementById('tabla-productos').innerHTML = pagina.map(p => {
+    const min = p.precios.minorista;
+    const pya = p.precios.pya;
+    const rappi = p.precios.rappi;
+    const mp = p.precios.mp;
+    const canal = p.en_tienda
+      ? (p.es_promo ? '<span class="stat-badge badge-orange">PROMO</span>' : '<span class="stat-badge badge-green">TIENDA</span>')
+      : '<span class="stat-badge badge-gray">DELIVERY</span>';
+
+    return `<tr>
+      <td class="td-cb">${p.codigo_barras || '—'}</td>
+      <td class="td-desc" title="${p.descripcion}">${p.descripcion.substring(0,50)}${p.descripcion.length>50?'…':''}</td>
+      <td><span class="td-rubro">${p.rubro_nombre}</span></td>
+      <td class="td-price na">—</td>
+      <td class="${min ? 'td-price' : 'td-price na'}">${min ? '$'+min.toLocaleString('es') : '—'}</td>
+      <td class="${pya ? 'td-price' : 'td-price na'}">${pya ? '$'+pya.toLocaleString('es') : '—'}</td>
+      <td class="${rappi ? 'td-price' : 'td-price na'}">${rappi ? '$'+rappi.toLocaleString('es') : '—'}</td>
+      <td class="${mp ? 'td-price' : 'td-price na'}">${mp ? '$'+mp.toLocaleString('es') : '—'}</td>
+      <td style="color:var(--text3)">${p.iva_pct || 0}%</td>
+      <td>${canal}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderProductos() {
+  state.filtrados = [...state.productos];
+  populateRubroFilter();
+  renderTablaProductos();
+}
+
+function populateRubroFilter() {
+  if (document.getElementById('filter-rubro').options.length > 1) return;
+  const rubros = [...new Set(state.productos.map(p => p.rubro_nombre))].sort();
+  const sel = document.getElementById('filter-rubro');
+  rubros.forEach(r => {
+    const o = document.createElement('option');
+    o.value = r; o.textContent = r;
+    sel.appendChild(o);
+  });
+}
+
+function pagAnterior() {
+  if (state.pagina > 0) { state.pagina--; renderTablaProductos(); }
+}
+function pagSiguiente() {
+  const max = Math.ceil(state.filtrados.length / state.porPagina) - 1;
+  if (state.pagina < max) { state.pagina++; renderTablaProductos(); }
+}
+
+// ── DELIVERY ───────────────────────────────────────────────────────
+function renderDelivery() {
+  // Datos estáticos del JSON de verificación mientras no haya DB poblada
+  // Cuando haya datos en lp_delivery_mapping, se consultan de DB
+  document.getElementById('del-conf-count').textContent = '946';
+  document.getElementById('del-rev-count').textContent = '207';
+  document.getElementById('del-sin-count').textContent = '144';
+
+  const confMsg = `<div style="font-size:11px;color:var(--text3);padding:8px 0">
+    Datos listos para importar desde archivo de verificación.<br>
+    Ejecutar importación en pestaña <strong style="color:var(--accent)">Importar</strong>.
+  </div>`;
+  document.getElementById('del-conf-list').innerHTML = confMsg;
+  document.getElementById('del-rev-list').innerHTML = confMsg;
+  document.getElementById('del-sin-list').innerHTML = confMsg;
+}
+
+// ── IMPORTACIÓN ────────────────────────────────────────────────────
+function cargarJSON(input) {
+  const file = input.files[0];
+  if (!file) return;
+  document.getElementById('import-file-name').textContent = file.name;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      state.importData = data;
+      mostrarPreviewImport(data);
+      marcarStep(1, 'done');
+      marcarStep(2, 'active');
+    } catch (err) {
+      showToast('❌ Error al leer el JSON: ' + err.message, 'error');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function mostrarPreviewImport(data) {
+  const stats = [
+    { label: 'Rubros', val: data.lp_rubros?.length || 0, color: 'var(--cyan)' },
+    { label: 'Proveedores', val: data.lp_proveedores?.length || 0, color: 'var(--accent)' },
+    { label: 'Productos', val: data.lp_productos?.length || 0, color: 'var(--green)' },
+    { label: 'Precios', val: data.lp_precios_inicial?.length || 0, color: 'var(--yellow)' },
+    { label: 'Costos', val: data.lp_costos_inicial?.length || 0, color: 'var(--orange)' },
+    { label: 'Matches PY conf.', val: data.delivery_confirmados_py?.length || 0, color: 'var(--green)' },
+    { label: 'Matches revisión', val: data.delivery_revision_py?.length || 0, color: 'var(--yellow)' },
+    { label: 'PY sin match', val: data.delivery_sin_match_py?.length || 0, color: 'var(--red)' },
+  ];
+
+  document.getElementById('preview-stats').innerHTML = stats.map(s => `
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px">
+      <div style="font-size:10px;color:var(--text3);margin-bottom:4px">${s.label}</div>
+      <div style="font-family:Syne,sans-serif;font-weight:700;font-size:18px;color:${s.color}">${s.val.toLocaleString('es')}</div>
+    </div>
+  `).join('');
+
+  document.getElementById('import-preview-summary').style.display = 'block';
+  document.getElementById('btn-import').disabled = false;
+
+  // Preview table
+  const prods = data.lp_productos?.slice(0, 20) || [];
+  const costos = {};
+  (data.lp_costos_inicial || []).forEach(c => { costos[c.desc_key] = c; });
+  const precios = {};
+  (data.lp_precios_inicial || []).forEach(p => {
+    if (!precios[p.desc_key]) precios[p.desc_key] = {};
+    precios[p.desc_key][p.canal] = p.precio;
+  });
+
+  document.getElementById('preview-tbody').innerHTML = prods.map(p => {
+    const c = costos[p.descripcion] || {};
+    const pr = precios[p.descripcion] || {};
+    return `<tr>
+      <td class="td-cb">${p.codigo_barras || '—'}</td>
+      <td class="td-desc">${p.descripcion.substring(0,45)}${p.descripcion.length>45?'…':''}</td>
+      <td><span class="td-rubro">${p.rubro_nombre}</span></td>
+      <td style="color:var(--text3);font-size:11px">${p.proveedor_nombre?.substring(0,20) || '—'}</td>
+      <td class="td-price na">${c.precio_costo ? '$'+c.precio_costo.toLocaleString('es') : '—'}</td>
+      <td class="${pr.minorista ? 'td-price' : 'td-price na'}">${pr.minorista ? '$'+pr.minorista.toLocaleString('es') : '—'}</td>
+      <td class="${pr.pya ? 'td-price' : 'td-price na'}">${pr.pya ? '$'+pr.pya.toLocaleString('es') : '—'}</td>
+      <td style="color:var(--text3)">${p.iva_pct || 0}%</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('preview-count').textContent = `primeros 20 de ${data.lp_productos?.length}`;
+  document.getElementById('import-preview-panel').style.display = 'block';
+}
+
+function marcarStep(n, estado) {
+  const el = document.getElementById(`step${n}-num`);
+  if (!el) return;
+  el.className = 'step-num ' + estado;
+}
+
+async function ejecutarImportacion() {
+  const data = state.importData;
+  if (!data) return;
+
+  document.getElementById('btn-import').disabled = true;
+  document.getElementById('import-progress-panel').style.display = 'block';
+  marcarStep(2, 'done');
+  marcarStep(3, 'active');
+
+  const log = document.getElementById('import-log');
+  const addLog = (msg, tipo = 'info') => {
+    const t = new Date().toLocaleTimeString('es', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    log.innerHTML += `<div class="log-line"><span class="log-time">${t}</span><span class="log-${tipo}">${msg}</span></div>`;
+    log.scrollTop = log.scrollHeight;
+  };
+
+  let insertados = 0, errores = 0;
+  const CHUNK = 50;
+
+  const setProgress = (pct) => {
+    document.getElementById('import-progress-bar').style.width = pct + '%';
+    document.getElementById('import-progress-pct').textContent = pct + '%';
+    document.getElementById('imp-insertados').textContent = insertados;
+    document.getElementById('imp-errores').textContent = errores;
+  };
+
+  try {
+    // 1. Rubros
+    addLog('Insertando rubros...');
+    await sbFetch('/rest/v1/lp_rubros', {
+      method: 'POST',
+      headers: { 'Prefer': 'resolution=ignore-duplicates' },
+      body: JSON.stringify(data.lp_rubros)
+    });
+    addLog(`✅ ${data.lp_rubros.length} rubros OK`, 'ok');
+    setProgress(5);
+
+    // 2. Proveedores
+    addLog('Insertando proveedores...');
+    await sbFetch('/rest/v1/lp_proveedores', {
+      method: 'POST',
+      headers: { 'Prefer': 'resolution=ignore-duplicates' },
+      body: JSON.stringify(data.lp_proveedores)
+    });
+    addLog(`✅ ${data.lp_proveedores.length} proveedores OK`, 'ok');
+    setProgress(10);
+
+    // 3. Leer IDs de rubros y proveedores para hacer join
+    addLog('Leyendo IDs de rubros y proveedores...');
+    const [rubrosDB, provsDB] = await Promise.all([
+      sbFetch('/rest/v1/lp_rubros?select=id,nombre'),
+      sbFetch('/rest/v1/lp_proveedores?select=id,nombre')
+    ]);
+    const rubroIdx = {};
+    rubrosDB.forEach(r => { rubroIdx[r.nombre] = r.id; });
+    const provIdx = {};
+    provsDB.forEach(p => { provIdx[p.nombre] = p.id; });
+    addLog(`✅ ${rubrosDB.length} rubros, ${provsDB.length} proveedores indexados`, 'ok');
+    setProgress(15);
+
+    // 4. Productos en chunks
+    addLog(`Insertando ${data.lp_productos.length} productos en bloques de ${CHUNK}...`);
+    const productosConIds = data.lp_productos.map(p => ({
+      codigo_barras: p.codigo_barras,
+      descripcion: p.descripcion,
+      rubro_id: rubroIdx[p.rubro_nombre] || null,
+      proveedor_id: provIdx[p.proveedor_nombre] || null,
+      iva_pct: p.iva_pct,
+      en_tienda: p.en_tienda,
+      es_promo: p.es_promo || false,
+      activo: p.activo
+    }));
+
+    const productosInsertados = [];
+    for (let i = 0; i < productosConIds.length; i += CHUNK) {
+      const chunk = productosConIds.slice(i, i + CHUNK);
+      try {
+        const res = await sbFetch('/rest/v1/lp_productos?select=id,descripcion', {
+          method: 'POST',
+          headers: { 'Prefer': 'return=representation,resolution=ignore-duplicates' },
+          body: JSON.stringify(chunk)
+        });
+        if (Array.isArray(res)) productosInsertados.push(...res);
+        insertados += chunk.length;
+      } catch (e) {
+        errores += chunk.length;
+        addLog(`⚠️ Error en bloque ${i/CHUNK+1}: ${e.message}`, 'warn');
+      }
+      const pct = 15 + Math.round((i/productosConIds.length)*45);
+      setProgress(pct);
+      document.getElementById('imp-restantes').textContent =
+        productosConIds.length - i - CHUNK;
+    }
+    addLog(`✅ ${insertados} productos insertados, ${errores} errores`, 'ok');
+
+    // 5. Leer todos los productos insertados para índice desc → id
+    addLog('Indexando productos para precios y costos...');
+    const todosProds = await sbFetch('/rest/v1/lp_productos?select=id,descripcion&limit=2000');
+    const prodIdx = {};
+    todosProds.forEach(p => { prodIdx[p.descripcion.trim()] = p.id; });
+    addLog(`✅ ${todosProds.length} productos indexados`, 'ok');
+    setProgress(62);
+
+    // 6. Precios
+    addLog(`Insertando ${data.lp_precios_inicial.length} precios...`);
+    const preciosConId = data.lp_precios_inicial
+      .filter(p => prodIdx[p.desc_key])
+      .map(p => ({
+        producto_id: prodIdx[p.desc_key],
+        canal: p.canal,
+        precio: p.precio,
+        activo: true
+      }));
+
+    for (let i = 0; i < preciosConId.length; i += CHUNK) {
+      const chunk = preciosConId.slice(i, i + CHUNK);
+      try {
+        await sbFetch('/rest/v1/lp_precios', {
+          method: 'POST',
+          headers: { 'Prefer': 'resolution=ignore-duplicates' },
+          body: JSON.stringify(chunk)
+        });
+      } catch (e) {
+        addLog(`⚠️ Error precios bloque ${i/CHUNK+1}`, 'warn');
+      }
+      setProgress(62 + Math.round((i/preciosConId.length)*20));
+    }
+    addLog(`✅ ${preciosConId.length} precios insertados`, 'ok');
+
+    // 7. Costos
+    addLog(`Insertando ${data.lp_costos_inicial.length} costos...`);
+    const costosConId = data.lp_costos_inicial
+      .filter(c => prodIdx[c.desc_key])
+      .map(c => ({
+        producto_id: prodIdx[c.desc_key],
+        precio_costo: c.precio_costo,
+        precio_costo_con_iva: c.precio_costo_con_iva,
+        fuente: c.fuente,
+        fecha: c.fecha,
+        notas: c.notas
+      }));
+
+    for (let i = 0; i < costosConId.length; i += CHUNK) {
+      const chunk = costosConId.slice(i, i + CHUNK);
+      try {
+        await sbFetch('/rest/v1/lp_costos', {
+          method: 'POST',
+          body: JSON.stringify(chunk)
+        });
+      } catch (e) {
+        addLog(`⚠️ Error costos bloque ${i/CHUNK+1}`, 'warn');
+      }
+      setProgress(82 + Math.round((i/costosConId.length)*10));
+    }
+    addLog(`✅ ${costosConId.length} costos insertados`, 'ok');
+
+    setProgress(100);
+    marcarStep(3, 'done');
+    marcarStep(4, 'done');
+    addLog('🎉 Importación completada exitosamente', 'ok');
+    showToast('✅ Importación completada — ' + insertados + ' productos', 'ok');
+
+    // Recargar datos
+    setTimeout(cargarDatos, 1500);
+
+  } catch (err) {
+    addLog('❌ Error fatal: ' + err.message, 'err');
+    showToast('❌ Error en importación: ' + err.message, 'error');
+    document.getElementById('btn-import').disabled = false;
+  }
+}
+
+// ── CONFIG ─────────────────────────────────────────────────────────
+function renderComisionesConfig() {
+  const canales = ['pya','rappi','mp'];
+  const grouped = {};
+  state.comisiones.forEach(c => {
+    if (!grouped[c.canal]) grouped[c.canal] = [];
+    grouped[c.canal].push(c);
+  });
+
+  if (!state.comisiones.length) {
+    document.getElementById('comisiones-panel').innerHTML =
+      '<div style="color:var(--text3);font-size:12px">Sin comisiones cargadas. Correr SQL primero.</div>';
+    return;
+  }
+
+  document.getElementById('comisiones-panel').innerHTML = canales.map(canal => {
+    const items = grouped[canal] || [];
+    return `
+      <div style="margin-bottom:16px">
+        <div style="font-family:Syne,sans-serif;font-weight:700;font-size:11px;
+                    text-transform:uppercase;color:var(--accent);margin-bottom:8px">
+          ${canal.toUpperCase()}
+        </div>
+        ${items.map(c => `
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+            <span style="font-size:11px;color:var(--text2);width:140px">${c.nombre}</span>
+            <input type="number" value="${c.valor}" step="0.1"
+              data-id="${c.id}"
+              style="width:70px;background:var(--bg3);border:1px solid var(--border);
+                     border-radius:4px;padding:4px 8px;color:var(--text);
+                     font-family:DM Mono,monospace;font-size:12px"
+            >
+            <span style="font-size:11px;color:var(--text3)">${c.tipo === 'porcentaje' ? '%' : '$'}</span>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }).join('');
+}
+
+async function guardarComisiones() {
+  const inputs = document.querySelectorAll('#comisiones-panel input[data-id]');
+  let ok = 0;
+  for (const input of inputs) {
+    const id = input.dataset.id;
+    const valor = parseFloat(input.value);
+    if (isNaN(valor)) continue;
+    try {
+      await sbFetch(`/rest/v1/lp_comisiones?id=eq.${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ valor })
+      });
+      ok++;
+    } catch(e) {
+      showToast('Error guardando: ' + e.message, 'error');
+    }
+  }
+  if (ok) showToast(`✅ ${ok} comisiones actualizadas`);
+  cargarDatos();
+}
+
+function renderRubrosConfig() {
+  if (!state.rubros.length) return;
+  document.getElementById('rubros-config-panel').innerHTML = state.rubros.map(r => `
+    <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)">
+      <span style="flex:1;font-size:11px;color:var(--text2)">${r.nombre}</span>
+      <span class="stat-badge ${r.activo ? 'badge-green' : 'badge-gray'}">${r.activo ? 'activo' : 'inactivo'}</span>
+    </div>
+  `).join('');
+}
+
+// ── TABS ───────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelector(`.tab[onclick="switchTab('${tab}')"]`).classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+}
+
+// ── TOAST ──────────────────────────────────────────────────────────
+function showToast(msg, tipo = 'ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.display = 'block';
+  el.style.borderColor = tipo === 'error' ? 'var(--red)' : tipo === 'warn' ? 'var(--yellow)' : 'var(--green)';
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => { el.style.display = 'none'; }, 3500);
+}
+</script>
+</body>
+</html>

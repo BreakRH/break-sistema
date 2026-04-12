@@ -1025,7 +1025,7 @@ function buildDatosJson(tipo) {
     const respPlataforma = resp === 'plataforma' ? (document.querySelector('#ped-resp-plataforma-sec .chip.sel-blue.selected')?.textContent?.trim() || null) : null;
     const base = {
       tipo_pedido:             pedTipo,
-      plataforma:              document.querySelector('.chip.sel-blue.selected')?.textContent?.trim(),
+      plataforma:              document.querySelector('.chip.sel-blue.selected[onclick*="ped-plat"]')?.textContent?.trim(),
       id_pedido:               document.getElementById('ped-id')?.value || null,
       id_facilvirtual:         document.getElementById('ped-fv')?.value || null,
       responsable_tipo:        resp,

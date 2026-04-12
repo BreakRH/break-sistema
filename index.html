@@ -922,39 +922,81 @@
   .pt-venta-valor { font-family: var(--mono); font-size: 15px; font-weight: 500; color: var(--text2); }
 
   /* Cierre — billetes */
+  /* ── LAYOUT 2 COLUMNAS: CAJA CHICA | CAJA GRANDE ── */
+  .pt-caja-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 10px;
+    align-items: start;
+  }
+  .pt-caja-col-title {
+    font-family: var(--mono); font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .08em;
+    padding: 5px 10px 5px 10px;
+    background: var(--bg4); border-bottom: 1px solid var(--border2);
+    color: var(--text2);
+  }
+
   /* ── CAJA CHICA — tabla compacta de billetes ── */
   .pt-caja-table {
     width: 100%; border-collapse: collapse;
     background: var(--bg3); border: 1px solid var(--border2);
     border-radius: var(--radius); overflow: hidden;
-    margin-bottom: 10px;
+    margin-bottom: 0;
   }
   .pt-caja-table thead th {
     font-family: var(--mono); font-size: 9px; font-weight: 600;
     color: var(--text2); text-transform: uppercase; letter-spacing: .07em;
-    padding: 7px 10px; background: var(--bg4);
-    border-bottom: 1px solid var(--border2); text-align: left;
+    padding: 5px 4px; background: var(--bg4);
+    border-bottom: 1px solid var(--border2); text-align: center;
   }
-  .pt-caja-table thead th:last-child { text-align: right; }
+  .pt-caja-table thead th:first-child { text-align: left; padding-left: 8px; }
+  .pt-caja-table thead th:last-child { text-align: right; padding-right: 8px; }
   .pt-caja-table tbody tr { border-bottom: 1px solid var(--border); }
   .pt-caja-table tbody tr:last-child { border-bottom: none; }
   .pt-caja-table tbody tr:hover { background: var(--bg4); }
   .pt-caja-denom {
-    font-family: var(--mono); font-size: 14px; font-weight: 500;
-    color: var(--text); padding: 8px 10px; width: 90px;
+    font-family: var(--mono); font-size: 12px; font-weight: 500;
+    color: var(--text); padding: 4px 4px 4px 8px; width: 64px; white-space: nowrap;
   }
-  .pt-caja-inp-wrap { padding: 5px 8px; }
+  .pt-caja-inp-wrap { padding: 3px 3px; text-align: center; vertical-align: middle; }
   .pt-billete-inp {
     background: var(--bg2); border: 1px solid var(--border2);
-    color: var(--text); border-radius: 8px; padding: 9px 8px;
-    font-family: var(--mono); font-size: 15px; width: 80px;
+    color: var(--text); border-radius: 6px; padding: 5px 4px;
+    font-family: var(--mono); font-size: 13px; width: 88px;
     text-align: center; outline: none; transition: border-color 0.15s;
-    -webkit-appearance: none; appearance: none;
+    -webkit-appearance: none; -moz-appearance: textfield; appearance: none;
   }
   .pt-billete-inp:focus { border-color: var(--accent); background: var(--bg); }
+  .pt-billete-inp::-webkit-outer-spin-button,
+  .pt-billete-inp::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  /* Paca/Bulto config inputs (valor de referencia — persistente) */
+  .pt-cfg-inp {
+    background: var(--bg4); border: 1px dashed var(--border2);
+    color: var(--text3); border-radius: 5px; padding: 4px 3px;
+    font-family: var(--mono); font-size: 9px; width: 40px;
+    text-align: center; outline: none; transition: border-color 0.15s, color 0.15s;
+    -webkit-appearance: none; -moz-appearance: textfield; appearance: none;
+  }
+  .pt-cfg-inp:focus { border-color: var(--accent); color: var(--text); border-style: solid; }
+  .pt-cfg-inp::-webkit-outer-spin-button,
+  .pt-cfg-inp::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .pt-cfg-lbl { display: none; }
+  /* Cantidad de pacas/bultos (se ingresa por turno) */
+  .pt-pb-inp {
+    background: var(--bg2); border: 1px solid var(--border2);
+    color: var(--text); border-radius: 6px; padding: 5px 3px;
+    font-family: var(--mono); font-size: 13px; width: 44px;
+    text-align: center; outline: none; transition: border-color 0.15s;
+    -webkit-appearance: none; -moz-appearance: textfield; appearance: none;
+  }
+  .pt-pb-inp:focus { border-color: var(--blue); background: var(--bg); }
+  .pt-pb-inp::-webkit-outer-spin-button,
+  .pt-pb-inp::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
   .pt-caja-sub {
-    font-family: var(--mono); font-size: 13px; color: var(--text2);
-    padding: 8px 10px; text-align: right;
+    font-family: var(--mono); font-size: 11px; color: var(--text2);
+    padding: 4px 8px 4px 2px; text-align: right; white-space: nowrap;
   }
 
   /* ── PACAS — tabla compacta ── */
@@ -962,12 +1004,12 @@
     width: 100%; border-collapse: collapse;
     background: var(--bg3); border: 1px solid var(--border2);
     border-radius: var(--radius); overflow: hidden;
-    margin-bottom: 10px;
+    margin-bottom: 0;
   }
   .pt-pacas-table thead th {
     font-family: var(--mono); font-size: 9px; font-weight: 600;
     color: var(--text2); text-transform: uppercase; letter-spacing: .07em;
-    padding: 7px 10px; background: var(--bg4);
+    padding: 5px 8px; background: var(--bg4);
     border-bottom: 1px solid var(--border2); text-align: left;
   }
   .pt-pacas-table thead th:last-child { text-align: right; }
@@ -976,33 +1018,39 @@
   .pt-pacas-table tbody tr:hover { background: var(--bg4); }
   .pt-paca-lbl {
     font-family: var(--mono); font-size: 12px; color: var(--text);
-    padding: 6px 10px;
+    padding: 5px 8px;
   }
-  .pt-paca-inp-wrap { padding: 4px 8px; }
+  .pt-paca-inp-wrap { padding: 3px 6px; }
   .pt-paca-inp {
     background: var(--bg2); border: 1px solid var(--border2);
     color: var(--text); border-radius: 5px; padding: 5px 8px;
-    font-family: var(--mono); font-size: 13px; width: 64px;
+    font-family: var(--mono); font-size: 13px; width: 88px;
     text-align: center; outline: none; transition: border-color 0.15s;
+    -webkit-appearance: none; -moz-appearance: textfield; appearance: none;
   }
   .pt-paca-inp:focus { border-color: var(--accent); background: var(--bg); }
+  .pt-paca-inp::-webkit-outer-spin-button,
+  .pt-paca-inp::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
   .pt-paca-name-inp {
     background: var(--bg2); border: 1px solid var(--border2);
     color: var(--text); border-radius: 5px; padding: 5px 8px;
-    font-family: var(--mono); font-size: 12px; width: 110px;
+    font-family: var(--mono); font-size: 12px; width: 150px;
     outline: none; transition: border-color 0.15s;
   }
   .pt-paca-name-inp:focus { border-color: var(--accent); }
   .pt-paca-val-inp {
     background: var(--bg2); border: 1px solid var(--border2);
     color: var(--text); border-radius: 5px; padding: 5px 8px;
-    font-family: var(--mono); font-size: 12px; width: 90px;
+    font-family: var(--mono); font-size: 12px; width: 120px;
     outline: none; transition: border-color 0.15s;
+    -webkit-appearance: none; -moz-appearance: textfield; appearance: none;
   }
   .pt-paca-val-inp:focus { border-color: var(--accent); }
+  .pt-paca-val-inp::-webkit-outer-spin-button,
+  .pt-paca-val-inp::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
   .pt-paca-sub {
-    font-family: var(--mono); font-size: 12px; color: var(--text2);
-    padding: 6px 10px; text-align: right;
+    font-family: var(--mono); font-size: 11px; color: var(--text2);
+    padding: 5px 10px; text-align: right;
   }
 
   /* ── TOTALES ── */
@@ -1943,8 +1991,8 @@
       <div class="filter-chip" onclick="admCierresFiltro('local','san_telmo',this)">San Telmo</div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
-      <input type="date" id="adm-cierres-desde" style="font-size:12px;padding:7px 10px" onchange="admRenderCierres()">
-      <input type="date" id="adm-cierres-hasta" style="font-size:12px;padding:7px 10px" onchange="admRenderCierres()">
+      <input type="date" id="adm-cierres-desde" style="font-size:12px;padding:7px 10px" onchange="admLoadCierres()">
+      <input type="date" id="adm-cierres-hasta" style="font-size:12px;padding:7px 10px" onchange="admLoadCierres()">
     </div>
     <div id="adm-cierres-list">
       <div style="text-align:center;padding:30px;font-family:var(--mono);font-size:11px;color:var(--text3)">Cargando...</div>
@@ -2304,24 +2352,6 @@
       </div>
     </div>
 
-    <!-- Ventas (placeholder) — COLAPSABLE -->
-    <div class="pt-section">
-      <div class="pt-section-header collapsible" onclick="ptToggleSection('pt-body-ventas',this)">
-        <div class="pt-section-title"><div class="pt-dot" style="background:var(--text3)"></div>Ventas del turno<span class="pt-collapse-arrow" id="pt-arr-ventas">▾</span></div>
-        <span class="pt-future-tag">⏳ Pendiente POS</span>
-      </div>
-      <div class="pt-section-body collapsed" id="pt-body-ventas">
-        <div style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-bottom:10px;">Se completará cuando el POS esté conectado</div>
-        <div class="pt-ventas-grid">
-          <div class="pt-venta-card"><div class="pt-venta-medio">Efectivo</div><div class="pt-venta-valor">$—</div></div>
-          <div class="pt-venta-card"><div class="pt-venta-medio">Mercado Pago</div><div class="pt-venta-valor">$—</div></div>
-          <div class="pt-venta-card"><div class="pt-venta-medio">Rappi</div><div class="pt-venta-valor">$—</div></div>
-          <div class="pt-venta-card"><div class="pt-venta-medio">PedidosYa</div><div class="pt-venta-valor">$—</div></div>
-          <div class="pt-venta-card"><div class="pt-venta-medio">Tarjeta</div><div class="pt-venta-valor">$—</div></div>
-          <div class="pt-venta-card"><div class="pt-venta-medio">QR / Transfer.</div><div class="pt-venta-valor">$—</div></div>
-        </div>
-      </div>
-    </div>
 
     <!-- Cierre de turno -->
     <div class="pt-section" id="pt-cierre-section">
@@ -2491,29 +2521,120 @@
               <span id="pt-sticky-neta" style="color:var(--green);font-weight:600">$0</span>
             </div>
           </div>
-          <div class="form-section-title" style="margin-bottom:10px">💵 Caja chica — billetes</div>
-          <table class="pt-caja-table" style="margin-bottom:10px">
+          <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:8px">Los valores de <span style="color:var(--accent)">Paca</span> y <span style="color:var(--blue)">Bulto</span> se guardan automáticamente</div>
+          <div class="pt-caja-grid">
+          <!-- ══ COLUMNA IZQUIERDA: CAJA CHICA ══ -->
+          <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);overflow:hidden">
+            <div class="pt-caja-col-title">💵 Caja chica — billetes</div>
+          <table class="pt-caja-table" style="margin-bottom:0;border:none;border-radius:0">
             <thead><tr>
-              <th>Billete</th>
-              <th style="text-align:center">Cantidad</th>
-              <th style="text-align:right">Subtotal</th>
+              <th style="text-align:left;padding-left:8px">Billete</th>
+              <th>Sueltos</th>
+              <th style="color:var(--accent)">Paca cant</th>
+              <th style="color:var(--accent);opacity:.7">val$</th>
+              <th style="color:var(--blue)">Bulto cant</th>
+              <th style="color:var(--blue);opacity:.7">val$</th>
+              <th style="text-align:right;padding-right:8px">Subtotal</th>
             </tr></thead>
             <tbody>
-              <tr><td class="pt-caja-denom">$10</td><td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb10" value="0" oninput="ptRecalc()"></td><td class="pt-caja-sub" id="ptbs10">$0</td></tr>
-              <tr><td class="pt-caja-denom">$20</td><td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb20" value="0" oninput="ptRecalc()"></td><td class="pt-caja-sub" id="ptbs20">$0</td></tr>
-              <tr><td class="pt-caja-denom">$50</td><td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb50" value="0" oninput="ptRecalc()"></td><td class="pt-caja-sub" id="ptbs50">$0</td></tr>
-              <tr><td class="pt-caja-denom">$100</td><td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb100" value="0" oninput="ptRecalc()"></td><td class="pt-caja-sub" id="ptbs100">$0</td></tr>
-              <tr><td class="pt-caja-denom">$200</td><td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb200" value="0" oninput="ptRecalc()"></td><td class="pt-caja-sub" id="ptbs200">$0</td></tr>
-              <tr><td class="pt-caja-denom">$500</td><td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb500" value="0" oninput="ptRecalc()"></td><td class="pt-caja-sub" id="ptbs500">$0</td></tr>
-              <tr><td class="pt-caja-denom">$1.000</td><td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb1000" value="0" oninput="ptRecalc()"></td><td class="pt-caja-sub" id="ptbs1000">$0</td></tr>
-              <tr><td class="pt-caja-denom">$2.000</td><td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb2000" value="0" oninput="ptRecalc()"></td><td class="pt-caja-sub" id="ptbs2000">$0</td></tr>
-              <tr><td class="pt-caja-denom">$10.000</td><td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb10000" value="0" oninput="ptRecalc()"></td><td class="pt-caja-sub" id="ptbs10000">$0</td></tr>
-              <tr><td class="pt-caja-denom">$20.000</td><td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb20000" value="0" oninput="ptRecalc()"></td><td class="pt-caja-sub" id="ptbs20000">$0</td></tr>
+              <tr>
+                <td class="pt-caja-denom">$10</td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb10" value="0" oninput="ptRecalc()"></td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptpa10" placeholder="cant" oninput="ptRecalc()"></td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-cfg-inp" id="ptpav10" placeholder="val$" oninput="ptSavePBConfig();ptRecalc()"></td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptbu10" placeholder="cant" oninput="ptRecalc()"></td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-cfg-inp" id="ptbuv10" placeholder="val$" oninput="ptSavePBConfig();ptRecalc()"></td>
+                <td class="pt-caja-sub" id="ptbs10">$0</td>
+              </tr>
+              <tr>
+                <td class="pt-caja-denom">$20</td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb20" value="0" oninput="ptRecalc()"></td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptpa20" placeholder="cant" oninput="ptRecalc()"></td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-cfg-inp" id="ptpav20" placeholder="val$" oninput="ptSavePBConfig();ptRecalc()"></td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptbu20" placeholder="cant" oninput="ptRecalc()"></td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-cfg-inp" id="ptbuv20" placeholder="val$" oninput="ptSavePBConfig();ptRecalc()"></td>
+                <td class="pt-caja-sub" id="ptbs20">$0</td>
+              </tr>
+              <tr>
+                <td class="pt-caja-denom">$50</td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb50" value="0" oninput="ptRecalc()"></td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptpa50" placeholder="cant" oninput="ptRecalc()"></td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-cfg-inp" id="ptpav50" placeholder="val$" oninput="ptSavePBConfig();ptRecalc()"></td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptbu50" placeholder="cant" oninput="ptRecalc()"></td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-cfg-inp" id="ptbuv50" placeholder="val$" oninput="ptSavePBConfig();ptRecalc()"></td>
+                <td class="pt-caja-sub" id="ptbs50">$0</td>
+              </tr>
+              <tr>
+                <td class="pt-caja-denom">$100</td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb100" value="0" oninput="ptRecalc()"></td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptpa100" placeholder="cant" oninput="ptRecalc()"></td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-cfg-inp" id="ptpav100" placeholder="val$" oninput="ptSavePBConfig();ptRecalc()"></td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptbu100" placeholder="cant" oninput="ptRecalc()"></td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-cfg-inp" id="ptbuv100" placeholder="val$" oninput="ptSavePBConfig();ptRecalc()"></td>
+                <td class="pt-caja-sub" id="ptbs100">$0</td>
+              </tr>
+              <tr>
+                <td class="pt-caja-denom">$200</td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb200" value="0" oninput="ptRecalc()"></td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptpa200" placeholder="cant" oninput="ptRecalc()"></td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-cfg-inp" id="ptpav200" placeholder="val$" oninput="ptSavePBConfig();ptRecalc()"></td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptbu200" placeholder="cant" oninput="ptRecalc()"></td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-cfg-inp" id="ptbuv200" placeholder="val$" oninput="ptSavePBConfig();ptRecalc()"></td>
+                <td class="pt-caja-sub" id="ptbs200">$0</td>
+              </tr>
+              <tr>
+                <td class="pt-caja-denom">$500</td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb500" value="0" oninput="ptRecalc()"></td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptpa500" placeholder="cant" oninput="ptRecalc()"></td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-cfg-inp" id="ptpav500" placeholder="val$" oninput="ptSavePBConfig();ptRecalc()"></td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptbu500" placeholder="cant" oninput="ptRecalc()"></td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-cfg-inp" id="ptbuv500" placeholder="val$" oninput="ptSavePBConfig();ptRecalc()"></td>
+                <td class="pt-caja-sub" id="ptbs500">$0</td>
+              </tr>
+              <tr>
+                <td class="pt-caja-denom">$1.000</td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb1000" value="0" oninput="ptRecalc()"></td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptpa1000" placeholder="cant" oninput="ptRecalc()"></td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-cfg-inp" id="ptpav1000" placeholder="val$" oninput="ptSavePBConfig();ptRecalc()"></td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptbu1000" placeholder="cant" oninput="ptRecalc()"></td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-cfg-inp" id="ptbuv1000" placeholder="val$" oninput="ptSavePBConfig();ptRecalc()"></td>
+                <td class="pt-caja-sub" id="ptbs1000">$0</td>
+              </tr>
+              <tr>
+                <td class="pt-caja-denom">$2.000</td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb2000" value="0" oninput="ptRecalc()"></td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptpa2000" placeholder="cant" oninput="ptRecalc()"></td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-cfg-inp" id="ptpav2000" placeholder="val$" oninput="ptSavePBConfig();ptRecalc()"></td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptbu2000" placeholder="cant" oninput="ptRecalc()"></td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-cfg-inp" id="ptbuv2000" placeholder="val$" oninput="ptSavePBConfig();ptRecalc()"></td>
+                <td class="pt-caja-sub" id="ptbs2000">$0</td>
+              </tr>
+              <tr>
+                <td class="pt-caja-denom">$10.000</td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb10000" value="0" oninput="ptRecalc()"></td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptpa10000" placeholder="cant" oninput="ptRecalc()"></td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-cfg-inp" id="ptpav10000" placeholder="val$" oninput="ptSavePBConfig();ptRecalc()"></td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptbu10000" placeholder="cant" oninput="ptRecalc()"></td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-cfg-inp" id="ptbuv10000" placeholder="val$" oninput="ptSavePBConfig();ptRecalc()"></td>
+                <td class="pt-caja-sub" id="ptbs10000">$0</td>
+              </tr>
+              <tr>
+                <td class="pt-caja-denom">$20.000</td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb20000" value="0" oninput="ptRecalc()"></td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptpa20000" placeholder="cant" oninput="ptRecalc()"></td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-cfg-inp" id="ptpav20000" placeholder="val$" oninput="ptSavePBConfig();ptRecalc()"></td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptbu20000" placeholder="cant" oninput="ptRecalc()"></td>
+                <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-cfg-inp" id="ptbuv20000" placeholder="val$" oninput="ptSavePBConfig();ptRecalc()"></td>
+                <td class="pt-caja-sub" id="ptbs20000">$0</td>
+              </tr>
             </tbody>
           </table>
+          </div><!-- /caja chica col -->
 
-          <div class="form-section-title" style="margin-bottom:10px">📦 Caja grande — pacas</div>
-          <table class="pt-pacas-table" style="margin-bottom:10px">
+          <!-- ══ COLUMNA DERECHA: CAJA GRANDE ══ -->
+          <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);overflow:hidden">
+            <div class="pt-caja-col-title" style="color:var(--blue)">📦 Caja grande — pacas</div>
+          <table class="pt-pacas-table" style="margin-bottom:0;border:none;border-radius:0">
             <thead><tr>
               <th>Denominación</th>
               <th style="text-align:center">Cantidad</th>
@@ -2536,96 +2657,87 @@
                 <td class="pt-paca-sub" id="ptps-f3">$0</td>
               </tr>
               <tr>
-                <td class="pt-paca-inp-wrap" style="padding:6px 8px">
-                  <input type="text" class="pt-paca-name-inp" id="ptpn-c1" placeholder="Nombre paca..." oninput="ptRecalcPacas()">
-                  <input type="number" min="0" class="pt-paca-val-inp" id="ptpd-c1" placeholder="Valor $" oninput="ptRecalcPacas()" style="margin-left:4px">
+                <td class="pt-paca-inp-wrap" style="padding:5px 8px">
+                  <div style="display:flex;gap:4px;align-items:center">
+                    <input type="text" class="pt-paca-name-inp" id="ptpn-c1" placeholder="Nombre..." oninput="ptRecalcPacas()" style="width:90px;flex:1;min-width:0">
+                    <input type="number" min="0" class="pt-paca-val-inp" id="ptpd-c1" placeholder="Valor $" oninput="ptRecalcPacas()" style="width:80px;flex-shrink:0">
+                  </div>
                 </td>
                 <td class="pt-paca-inp-wrap"><input type="number" min="0" class="pt-paca-inp" id="ptpc-c1" placeholder="0" oninput="ptRecalcPacas()"></td>
                 <td class="pt-paca-sub" id="ptps-c1">$0</td>
               </tr>
               <tr>
-                <td class="pt-paca-inp-wrap" style="padding:6px 8px">
-                  <input type="text" class="pt-paca-name-inp" id="ptpn-c2" placeholder="Nombre paca..." oninput="ptRecalcPacas()">
-                  <input type="number" min="0" class="pt-paca-val-inp" id="ptpd-c2" placeholder="Valor $" oninput="ptRecalcPacas()" style="margin-left:4px">
+                <td class="pt-paca-inp-wrap" style="padding:5px 8px">
+                  <div style="display:flex;gap:4px;align-items:center">
+                    <input type="text" class="pt-paca-name-inp" id="ptpn-c2" placeholder="Nombre..." oninput="ptRecalcPacas()" style="width:90px;flex:1;min-width:0">
+                    <input type="number" min="0" class="pt-paca-val-inp" id="ptpd-c2" placeholder="Valor $" oninput="ptRecalcPacas()" style="width:80px;flex-shrink:0">
+                  </div>
                 </td>
                 <td class="pt-paca-inp-wrap"><input type="number" min="0" class="pt-paca-inp" id="ptpc-c2" placeholder="0" oninput="ptRecalcPacas()"></td>
                 <td class="pt-paca-sub" id="ptps-c2">$0</td>
               </tr>
               <tr>
-                <td class="pt-paca-inp-wrap" style="padding:6px 8px">
-                  <input type="text" class="pt-paca-name-inp" id="ptpn-c3" placeholder="Nombre paca..." oninput="ptRecalcPacas()">
-                  <input type="number" min="0" class="pt-paca-val-inp" id="ptpd-c3" placeholder="Valor $" oninput="ptRecalcPacas()" style="margin-left:4px">
+                <td class="pt-paca-inp-wrap" style="padding:5px 8px">
+                  <div style="display:flex;gap:4px;align-items:center">
+                    <input type="text" class="pt-paca-name-inp" id="ptpn-c3" placeholder="Nombre..." oninput="ptRecalcPacas()" style="width:90px;flex:1;min-width:0">
+                    <input type="number" min="0" class="pt-paca-val-inp" id="ptpd-c3" placeholder="Valor $" oninput="ptRecalcPacas()" style="width:80px;flex-shrink:0">
+                  </div>
                 </td>
                 <td class="pt-paca-inp-wrap"><input type="number" min="0" class="pt-paca-inp" id="ptpc-c3" placeholder="0" oninput="ptRecalcPacas()"></td>
                 <td class="pt-paca-sub" id="ptps-c3">$0</td>
               </tr>
             </tbody>
           </table>
+          </div><!-- /caja grande col -->
+          </div><!-- /pt-caja-grid -->
 
-          <!-- Subtotales caja -->
-          <div class="pt-total-ef" style="margin-bottom:8px">
-            <div class="pt-total-ef-lbl">💵 Total caja chica</div>
-            <div class="pt-total-ef-val" id="pt-total-ef">$0</div>
-          </div>
-          <div class="pt-total-ef" style="margin-bottom:8px;border-color:var(--blue)">
-            <div class="pt-total-ef-lbl" style="color:var(--blue)">📦 Total caja grande</div>
-            <div class="pt-total-ef-val" id="pt-total-pacas" style="color:var(--blue)">$0</div>
-          </div>
-          <div class="pt-total-ef" style="margin-bottom:16px;border-color:var(--accent)">
-            <div class="pt-total-ef-lbl">💰 Total en caja</div>
-            <div class="pt-total-ef-val" id="pt-total-general">$0</div>
-          </div>
-
-          <!-- ══════════════════════════════
-               DEUDAS — solo total
-          ══════════════════════════════ -->
-          <div id="pt-deudas-local" style="background:var(--bg4,#1a1a1a);border:0.5px solid var(--border2);border-radius:var(--radius);padding:12px 14px;margin-bottom:8px;font-family:var(--mono);font-size:13px;color:var(--text3)">
-            Cargando...
-          </div>
-
-          <!-- Caja neta = total caja + deudas -->
-          <div class="pt-total-ef" style="margin-bottom:20px;border-color:var(--green)">
-            <div class="pt-total-ef-lbl" style="color:var(--green)">✅ Caja neta</div>
-            <div class="pt-total-ef-val" id="pt-caja-neta" style="color:var(--green)">$0</div>
-          </div>
-
-          <!-- Movimientos de Caja FacilVirtual -->
-          <div class="form-section-title" style="margin-bottom:10px">💳 Movimientos de Caja FacilVirtual</div>
-          <div style="font-family:var(--mono);font-size:11px;color:var(--text2);margin-bottom:10px">Ingresá el monto de movimientos de caja que indica FacilVirtual</div>
-          <div class="pt-medio-item" style="margin-bottom:12px">
-            <div class="pt-medio-lbl">Movimientos de caja</div>
-            <input type="number" min="0" class="pt-medio-inp" id="ptmed-sistema" placeholder="$0" oninput="ptRecalcCajaNeta()">
-          </div>
-
-          <!-- Diferencia caja vs sistema -->
-          <div class="pt-diferencia pt-dif-neutral" id="pt-diferencia" style="margin-bottom:20px">
-            <div>
-              <div class="pt-dif-lbl" id="pt-dif-lbl">Diferencia</div>
-              <div class="pt-dif-desc" id="pt-dif-desc">Ingresá el monto del sistema para calcular</div>
+          <!-- Subtotales en fila horizontal -->
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+            <div class="pt-total-ef" style="margin-bottom:0">
+              <div class="pt-total-ef-lbl">💵 Caja chica</div>
+              <div class="pt-total-ef-val" id="pt-total-ef">$0</div>
             </div>
-            <div class="pt-dif-val" id="pt-dif-val">—</div>
+            <div class="pt-total-ef" style="margin-bottom:0;border-color:var(--blue)">
+              <div class="pt-total-ef-lbl" style="color:var(--blue)">📦 Caja grande</div>
+              <div class="pt-total-ef-val" id="pt-total-pacas" style="color:var(--blue)">$0</div>
+            </div>
+            <div class="pt-total-ef" style="margin-bottom:0;border-color:var(--accent)">
+              <div class="pt-total-ef-lbl">💰 Total en caja</div>
+              <div class="pt-total-ef-val" id="pt-total-general">$0</div>
+            </div>
           </div>
 
           <!-- ══════════════════════════════
-               VENTAS FACILVIRTUAL
+               DEUDAS + CAJA NETA + MOVIMIENTOS — fila horizontal
           ══════════════════════════════ -->
-          <div class="form-section-title" style="margin-bottom:10px">🖥️ Ventas FacilVirtual</div>
-          <div style="font-family:var(--mono);font-size:11px;color:var(--text2);margin-bottom:10px">Ingresá el monto de ventas que indica FacilVirtual</div>
-          <div class="pt-medio-item" style="margin-bottom:8px">
-            <div class="pt-medio-lbl">Efectivo</div>
-            <input type="number" min="0" class="pt-medio-inp" id="ptven-efectivo" placeholder="$0" oninput="ptRecalcVentas()">
-          </div>
-          <div class="pt-medio-item" style="margin-bottom:8px">
-            <div class="pt-medio-lbl">Transferencia / MP</div>
-            <input type="number" min="0" class="pt-medio-inp" id="ptven-mp" placeholder="$0" oninput="ptRecalcVentas()">
-          </div>
-          <div class="pt-medio-item" style="margin-bottom:8px">
-            <div class="pt-medio-lbl">Débito / Crédito</div>
-            <input type="number" min="0" class="pt-medio-inp" id="ptven-debito" placeholder="$0" oninput="ptRecalcVentas()">
-          </div>
-          <div class="pt-total-ef" style="margin-bottom:16px;border-color:var(--purple)">
-            <div class="pt-total-ef-lbl" style="color:var(--purple)">🖥️ Total ventas sistema</div>
-            <div class="pt-total-ef-val" id="ptven-total" style="color:var(--purple)">$0</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;align-items:start">
+            <!-- Deudas + Caja neta -->
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div id="pt-deudas-local" style="background:var(--bg4,#1a1a1a);border:0.5px solid var(--border2);border-radius:var(--radius);padding:10px 12px;font-family:var(--mono);font-size:13px;color:var(--text3)">
+                Cargando...
+              </div>
+              <div class="pt-total-ef" style="margin-bottom:0;border-color:var(--green)">
+                <div class="pt-total-ef-lbl" style="color:var(--green)">✅ Caja neta</div>
+                <div class="pt-total-ef-val" id="pt-caja-neta" style="color:var(--green)">$0</div>
+              </div>
+            </div>
+            <!-- Movimientos FV + Diferencia -->
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:10px 12px">
+                <div class="form-section-title" style="margin-bottom:6px;padding:0;background:none;border:none;font-size:11px">💳 Movimientos FacilVirtual</div>
+                <div class="pt-medio-item" style="margin-bottom:0">
+                  <div class="pt-medio-lbl">Movimientos de caja</div>
+                  <input type="number" min="0" class="pt-medio-inp" id="ptmed-sistema" placeholder="$0" oninput="ptRecalcCajaNeta()">
+                </div>
+              </div>
+              <div class="pt-diferencia pt-dif-neutral" id="pt-diferencia" style="margin-bottom:0">
+                <div>
+                  <div class="pt-dif-lbl" id="pt-dif-lbl">Diferencia</div>
+                  <div class="pt-dif-desc" id="pt-dif-desc">Ingresá el monto del sistema para calcular</div>
+                </div>
+                <div class="pt-dif-val" id="pt-dif-val">—</div>
+              </div>
+            </div>
           </div>
 
           <!-- Observaciones -->
@@ -3687,7 +3799,7 @@ function admCierresFiltro(tipo, val, el) {
   admLoadCierres();
 }
 
-function admRenderCierres() { admLoadCierres(); } // alias para el date input
+// admRenderCierres está definida arriba — no alias aquí
 
 // ── TAB 3: TAREAS ─────────────────────────
 async function admLoadTareas() {
@@ -3752,17 +3864,14 @@ function admRenderTareas() {
 }
 
 function admNuevaTarea() {
-  // Reutiliza el modal del panel de turno
   if (typeof ptOpenDefModal === 'function') {
     ptOpenDefModal();
-    ptOpenModal('pt-modal-def');
   }
 }
 
 function admEditarTarea(id) {
   if (typeof ptOpenDefModal === 'function') {
     ptOpenDefModal(id);
-    ptOpenModal('pt-modal-def');
   }
 }
 
@@ -4696,9 +4805,24 @@ function renderAdminReports(reportes) {
 // ── Modal detalle reporte ────────────────────────────────────
 let _repModalData = [];
 
-function openRepModal(id) {
+async function openRepModal(id) {
   const r = _repModalData.find(x => x.id === id);
   if (!r) return;
+
+  // Lazy-load items si no vinieron en el join inicial
+  if (r.tipo === 'rotos_vencidos' && (!r.reporte_items || r.reporte_items.length === 0)) {
+    try {
+      const items = await sbFetch(`reporte_items?reporte_id=eq.${id}&order=id.asc`);
+      r.reporte_items = items || [];
+    } catch(e) { console.warn('No se pudieron cargar reporte_items:', e); }
+  }
+  if (r.tipo === 'ticket' && (!r.ticket_items || r.ticket_items.length === 0)) {
+    try {
+      const items = await sbFetch(`ticket_items?reporte_id=eq.${id}&order=id.asc`);
+      r.ticket_items = items || [];
+    } catch(e) { console.warn('No se pudieron cargar ticket_items:', e); }
+  }
+
   const c     = TIPO_COLORS[r.tipo] || TIPO_COLORS.edilicio;
   const label = TIPO_LABELS[r.tipo] || r.tipo;
   const emp   = r.cuentas?.nombre || '—';
@@ -4752,7 +4876,7 @@ function openRepModal(id) {
     addRow('Monto reintegro', dj.monto_reintegro ? '$' + dj.monto_reintegro : null);
     addRow('Motivo reintegro', dj.motivo_reintegro);
     // Responsable
-    const respTipoLabels = { empleado: 'Empleado', plataforma: 'Plataforma' };
+    const respTipoLabels = { empleado: 'Empleado', plataforma: 'Plataforma', rider: 'Rider', cliente: 'Cliente' };
     addRow('Responsable tipo', respTipoLabels[dj.responsable_tipo] || dj.responsable_tipo);
     addRow('Plataforma responsable', dj.responsable_plataforma);
     if (dj.reclamo_justificado !== undefined) addRow('Reclamo justificado', dj.reclamo_justificado ? '✓ Sí' : '✗ No');
@@ -4812,9 +4936,10 @@ function openRepModal(id) {
   const tkItems = r.ticket_items || [];
   let tkSection = '';
   if (tkItems.length > 0) {
-    const tkSubtipo = r.subtipo || '';
+    const tkSubtipo = r.subtipo || dj.tipo_ticket || '';
     const tkColor = tkSubtipo === 'articulo_nuevo' ? 'var(--green)' : 'var(--blue)';
-    tkSection = '<div style="margin-top:16px"><div style="font-family:var(--mono);font-size:10px;font-weight:600;color:' + tkColor + ';text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">' + (SUBTIPO_LABELS[tkSubtipo] || tkSubtipo) + '</div>'
+    const tkLabel = SUBTIPO_LABELS[tkSubtipo] || tkSubtipo || 'Artículos del ticket';
+    tkSection = '<div style="margin-top:16px"><div style="font-family:var(--mono);font-size:10px;font-weight:600;color:' + tkColor + ';text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">' + tkLabel + '</div>'
       + tkItems.map(item =>
           '<div class="rep-item-card">'
         + '<div class="rep-item-name">' + (item.nombre_articulo || '—') + '</div>'
@@ -5938,6 +6063,7 @@ function ptInitCore() {
   document.getElementById('pt-btn-cerrar').disabled = false;
   document.getElementById('pt-btn-cerrar').textContent = '🔒 Cerrar turno';
   PT_DENOM.forEach(d => { const el = document.getElementById(d.id); if(el) el.value = 0; });
+  ptInitPBConfig();
   const sistemaEl = document.getElementById('ptmed-sistema');
   if (sistemaEl) sistemaEl.value = '';
   document.getElementById('pt-obs-cierre').value = '';
@@ -6366,6 +6492,7 @@ let ptTurnosCtrl = [], ptLocalesCtrl = ['todos'];
 
 function ptOpenDefModal(defId = null) {
   ptTurnosCtrl = []; ptLocalesCtrl = ['todos'];
+  // Reset form
   document.getElementById('ptd-nombre').value = '';
   document.getElementById('ptd-frec').value = 'diaria';
   document.getElementById('ptd-hora').value = '09:00';
@@ -6375,6 +6502,40 @@ function ptOpenDefModal(defId = null) {
   document.querySelectorAll('.ptd-dia').forEach(c=>c.checked=false);
   document.querySelectorAll('.pt-tchip').forEach(c=>{c.classList.remove('sel-manana','sel-tarde','sel-noche','sel-local');});
   document.getElementById('ptd-lchip-todos').classList.add('sel-local');
+
+  // Si es edición, cargar datos existentes
+  if (defId) {
+    const def = (ptData.definiciones || []).find(d => d.id === defId)
+             || (admData?.tareasDefs || []).find(d => d.id === defId);
+    if (def) {
+      document.getElementById('ptd-nombre').value = def.nombre || '';
+      document.getElementById('ptd-frec').value   = def.frecuencia || 'diaria';
+      document.getElementById('ptd-hora').value   = def.hora_inicio || '09:00';
+      document.getElementById('ptd-intervalo').value = def.intervalo_horas || '1';
+      document.getElementById('ptd-permanente').checked = def.permanente !== false;
+      // Turnos
+      (def.turnos || []).forEach(t => {
+        ptTurnosCtrl.push(t);
+        const chip = document.getElementById(`ptd-chip-${t}`);
+        if (chip) chip.classList.add(`sel-${t}`);
+      });
+      // Locales
+      if (def.local) {
+        ptLocalesCtrl = [def.local];
+        document.getElementById('ptd-lchip-todos').classList.remove('sel-local');
+        const lchip = document.getElementById(`ptd-lchip-${def.local}`);
+        if (lchip) lchip.classList.add('sel-local');
+      }
+      // Días semana
+      if (def.frecuencia === 'semanal' && def.dias_semana) {
+        def.dias_semana.forEach(d => {
+          const cb = document.querySelector(`.ptd-dia[value="${d}"]`);
+          if (cb) cb.checked = true;
+        });
+      }
+    }
+  }
+
   ptFrecChange();
   document.getElementById('pt-def-modal-title').textContent = defId ? 'Editar tarea' : 'Nueva tarea';
   ptOpenModal('pt-modal-def');
@@ -6492,64 +6653,122 @@ function ptRecalcVentas() {
   ptRecalcCajaNeta();
 }
 
+// ── PACA / BULTO — configuración persistente ─────────────────
+const PT_PB_KEY = 'break_paca_bulto_cfg';
+
+function ptSavePBConfig() {
+  const cfg = {};
+  PT_DENOM.forEach(d => {
+    const sfx = d.id.replace('ptb','');
+    const pav = parseFloat(document.getElementById(`ptpav${sfx}`)?.value) || 0;
+    const buv = parseFloat(document.getElementById(`ptbuv${sfx}`)?.value) || 0;
+    if (pav) cfg[`pav${sfx}`] = pav;
+    if (buv) cfg[`buv${sfx}`] = buv;
+  });
+  localStorage.setItem(PT_PB_KEY, JSON.stringify(cfg));
+}
+
+function ptLoadPBConfig() {
+  try { return JSON.parse(localStorage.getItem(PT_PB_KEY) || '{}'); }
+  catch(e) { return {}; }
+}
+
+function ptInitPBConfig() {
+  const cfg = ptLoadPBConfig();
+  PT_DENOM.forEach(d => {
+    const sfx = d.id.replace('ptb','');
+    const pavInp = document.getElementById(`ptpav${sfx}`);
+    const buvInp = document.getElementById(`ptbuv${sfx}`);
+    if (pavInp && cfg[`pav${sfx}`]) pavInp.value = cfg[`pav${sfx}`];
+    if (buvInp && cfg[`buv${sfx}`]) buvInp.value = cfg[`buv${sfx}`];
+  });
+}
+
 function ptRecalc() {
-  // Caja chica
+  // Cargar config paca/bulto desde localStorage
+  const pbCfg = ptLoadPBConfig();
+
+  // Caja chica: sueltos + pacas + bultos
   let totalEf = 0;
   PT_DENOM.forEach(d => {
-    const inp = document.getElementById(d.id);
-    const sub = document.getElementById(d.id.replace('ptb','ptbs'));
-    const cant = parseInt(inp?.value) || 0;
-    const st = cant * d.val;
+    const denom = d.val;
+    const id    = d.id;
+    const sfx   = id.replace('ptb',''); // sufijo numérico ej: "1000"
+
+    const inp  = document.getElementById(id);
+    const sub  = document.getElementById(id.replace('ptb','ptbs'));
+    const paInp = document.getElementById(`ptpa${sfx}`);
+    const buInp = document.getElementById(`ptbu${sfx}`);
+    const pavInp = document.getElementById(`ptpav${sfx}`);
+    const buvInp = document.getElementById(`ptbuv${sfx}`);
+    const pavLbl = document.getElementById(`ptpavl${sfx}`);
+    const buvLbl = document.getElementById(`ptbuvl${sfx}`);
+
+    // Valores de config (persistentes)
+    const pavVal = parseFloat(pavInp?.value) || pbCfg[`pav${sfx}`] || 0;
+    const buvVal = parseFloat(buvInp?.value) || pbCfg[`buv${sfx}`] || 0;
+
+    // Cantidades del turno
+    const sueltos = parseInt(inp?.value)    || 0;
+    const pacaCnt = parseInt(paInp?.value)  || 0;
+    const bultoCnt= parseInt(buInp?.value)  || 0;
+
+    // Subtotal fila = sueltos*denom + pacas*pavVal + bultos*buvVal
+    const st = sueltos * denom + pacaCnt * pavVal + bultoCnt * buvVal;
     totalEf += st;
-    if (sub) sub.textContent = `$${st.toLocaleString('es-AR')}`;
+    if (sub) sub.textContent = st > 0 ? `$${st.toLocaleString('es-AR')}` : '$0';
+
+    // Actualizar labels de referencia bajo los inputs de config
+    if (pavLbl) pavLbl.textContent = pavVal ? `=$${(pavVal).toLocaleString('es-AR')}` : '';
+    if (buvLbl) buvLbl.textContent = buvVal ? `=$${(buvVal).toLocaleString('es-AR')}` : '';
   });
+
   const efEl = document.getElementById('pt-total-ef');
   if (efEl) efEl.textContent = `$${totalEf.toLocaleString('es-AR')}`;
-  // Sync sticky chica
   const stickyChica = document.getElementById('pt-sticky-chica');
   if (stickyChica) stickyChica.textContent = `$${totalEf.toLocaleString('es-AR')}`;
 
-  // Caja grande (pacas) — leer desde pt-total-pacas que ya fue calculado por ptRecalcPacas
-  const pacasEl = document.getElementById('pt-total-pacas');
+  // Caja grande (pacas) — leer desde ptRecalcPacas
   let totalPacas = 0;
-  if (pacasEl) {
-    const raw = pacasEl.textContent.replace(/[$.]/g, '').replace(',', '.').trim();
-    totalPacas = parseFloat(raw.replace(/\./g, '').replace(',', '.')) || 0;
-    // Recalcular manualmente para mayor precisión
-    totalPacas = 0;
-    const PACAS_FIJAS2 = [{ id:'f1', val:10000 }, { id:'f2', val:50000 }, { id:'f3', val:100000 }];
-    PACAS_FIJAS2.forEach(p => {
-      const cant = parseFloat(document.getElementById(`ptpc-${p.id}`)?.value) || 0;
-      totalPacas += p.val * cant;
-    });
-    for (let i = 1; i <= 3; i++) {
-      const denom = parseFloat(document.getElementById(`ptpd-c${i}`)?.value) || 0;
-      const cant  = parseFloat(document.getElementById(`ptpc-c${i}`)?.value) || 0;
-      totalPacas += denom * cant;
-    }
+  const PACAS_FIJAS2 = [{ id:'f1', val:10000 }, { id:'f2', val:50000 }, { id:'f3', val:100000 }];
+  PACAS_FIJAS2.forEach(p => {
+    const cant = parseFloat(document.getElementById(`ptpc-${p.id}`)?.value) || 0;
+    totalPacas += p.val * cant;
+  });
+  for (let i = 1; i <= 3; i++) {
+    const denom = parseFloat(document.getElementById(`ptpd-c${i}`)?.value) || 0;
+    const cant  = parseFloat(document.getElementById(`ptpc-c${i}`)?.value) || 0;
+    totalPacas += denom * cant;
   }
+  const pacasEl = document.getElementById('pt-total-pacas');
+  if (pacasEl) pacasEl.textContent = `$${totalPacas.toLocaleString('es-AR')}`;
 
   // Total general
   const totalGeneral = totalEf + totalPacas;
   const genEl = document.getElementById('pt-total-general');
   if (genEl) genEl.textContent = `$${totalGeneral.toLocaleString('es-AR')}`;
-  // Sync sticky grande + total
   const stickyGrande = document.getElementById('pt-sticky-grande');
   if (stickyGrande) stickyGrande.textContent = `$${totalPacas.toLocaleString('es-AR')}`;
   const stickyTotal = document.getElementById('pt-sticky-total');
   if (stickyTotal) stickyTotal.textContent = `$${totalGeneral.toLocaleString('es-AR')}`;
 
-  // Actualizar caja neta con deudas
   ptRecalcCajaNeta();
 }
 
 function ptRecalcCajaNeta() {
-  const genEl = document.getElementById('pt-total-general');
-  const totalGeneral = genEl ? (parseFloat(genEl.textContent.replace(/[$.]/g,'').replace(',','.').replace(/\./g,'')) || 0) : 0;
-  // Recalcular totalGeneral directamente
+  // Recalcular totalEf incluyendo pacas y bultos de caja chica
+  const pbCfg = ptLoadPBConfig();
   let tEf = 0;
   if (typeof PT_DENOM !== 'undefined') {
-    PT_DENOM.forEach(d => { tEf += (parseInt(document.getElementById(d.id)?.value)||0)*d.val; });
+    PT_DENOM.forEach(d => {
+      const sfx = d.id.replace('ptb','');
+      const sueltos  = parseInt(document.getElementById(d.id)?.value) || 0;
+      const pacaCnt  = parseInt(document.getElementById(`ptpa${sfx}`)?.value) || 0;
+      const bultoCnt = parseInt(document.getElementById(`ptbu${sfx}`)?.value) || 0;
+      const pavVal   = parseFloat(document.getElementById(`ptpav${sfx}`)?.value) || pbCfg[`pav${sfx}`] || 0;
+      const buvVal   = parseFloat(document.getElementById(`ptbuv${sfx}`)?.value) || pbCfg[`buv${sfx}`] || 0;
+      tEf += sueltos * d.val + pacaCnt * pavVal + bultoCnt * buvVal;
+    });
   }
   let tPacas = 0;
   [{id:'f1',val:10000},{id:'f2',val:50000},{id:'f3',val:100000}].forEach(p => {
@@ -6599,9 +6818,9 @@ function ptRecalcCajaNeta() {
 async function ptCerrar() {
   if (ptData.cierreGuardado) return;
 
-  // Validar checklist completa
+  // Validar checklist completa — null=pendiente, true=ok, false=no se hizo (válido)
   const CHECKS = ['recargas','hielos','delivery','rotos','transf','cigarrillos','cerohs'];
-  const faltantes = CHECKS.filter(k => !ptData.checks[k]);
+  const faltantes = CHECKS.filter(k => ptData.checks[k] === null || ptData.checks[k] === undefined);
   if (faltantes.length > 0) {
     // Resaltar items faltantes
     faltantes.forEach(k => {
@@ -6615,7 +6834,16 @@ async function ptCerrar() {
     return;
   }
 
-  const totalEf = PT_DENOM.reduce((acc,d) => acc + (parseInt(document.getElementById(d.id)?.value)||0)*d.val, 0);
+  const _pbCfgSave = ptLoadPBConfig();
+  const totalEf = PT_DENOM.reduce((acc,d) => {
+    const sfx = d.id.replace('ptb','');
+    const sueltos  = parseInt(document.getElementById(d.id)?.value) || 0;
+    const pacaCnt  = parseInt(document.getElementById(`ptpa${sfx}`)?.value) || 0;
+    const bultoCnt = parseInt(document.getElementById(`ptbu${sfx}`)?.value) || 0;
+    const pavVal   = parseFloat(document.getElementById(`ptpav${sfx}`)?.value) || _pbCfgSave[`pav${sfx}`] || 0;
+    const buvVal   = parseFloat(document.getElementById(`ptbuv${sfx}`)?.value) || _pbCfgSave[`buv${sfx}`] || 0;
+    return acc + sueltos * d.val + pacaCnt * pavVal + bultoCnt * buvVal;
+  }, 0);
   const totalPacas = (() => {
     let t = 0;
     [{id:'f1',val:10000},{id:'f2',val:50000},{id:'f3',val:100000}].forEach(p => {
