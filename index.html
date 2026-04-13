@@ -7502,11 +7502,58 @@ window.addEventListener('message', e => {
   if (e.data?.type === 'reportes-back') {
     goTo('hub');
   }
-  if (e.data?.type === 'drive-token-request') {
+  // El iframe de reportes pide subir una foto a Drive (no puede hacerlo directo por Tracking Prevention)
+  if (e.data?.type === 'drive-upload-request') {
     const iframe = document.getElementById('reportes-iframe');
-    driveGetOAuthToken(e.data.forceReauth === true)
-      .then(token => iframe?.contentWindow?.postMessage({ type: 'drive-token-response', token }, '*'))
-      .catch(err  => iframe?.contentWindow?.postMessage({ type: 'drive-token-response', token: null, error: err.message }, '*'));
+    const { reqId, base64, mimeType, fileName, formType, localKey } = e.data;
+    (async () => {
+      try {
+        const token = await driveGetOAuthToken();
+        const folderId = DRIVE_FOLDERS[formType];
+        if (!folderId) throw new Error(`Sin carpeta para tipo: ${formType}`);
+        const localName = LOCALES[localKey] || localKey;
+        let subFolderId;
+        try {
+          subFolderId = await driveGetOrCreateFolder(token, folderId, localName);
+        } catch(folderErr) {
+          // 404/403 = cuenta incorrecta → re-auth
+          if (folderErr.message.includes('404') || folderErr.message.includes('403')) {
+            const token2 = await driveGetOAuthToken(true);
+            subFolderId = await driveGetOrCreateFolder(token2, folderId, localName);
+          } else throw folderErr;
+        }
+        // Convertir base64 a Blob
+        const bytes = atob(base64);
+        const arr = new Uint8Array(bytes.length);
+        for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+        const fileBlob = new Blob([arr], { type: mimeType });
+        const ts = new Date().toISOString().replace(/[:.]/g, '-');
+        const ext = fileName.split('.').pop() || 'jpg';
+        const finalName = `${formType}_${localKey}_${ts}.${ext}`;
+        const metadata = JSON.stringify({ name: finalName, parents: [subFolderId] });
+        const form = new FormData();
+        form.append('metadata', new Blob([metadata], { type: 'application/json' }));
+        form.append('file', fileBlob);
+        const uploadRes = await fetch(
+          'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',
+          { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: form }
+        );
+        const uploadData = await uploadRes.json();
+        if (!uploadRes.ok) throw new Error(`Drive upload ${uploadRes.status}: ${uploadData?.error?.message}`);
+        const fileId = uploadData.id;
+        // Hacer público
+        await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/permissions`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ role: 'reader', type: 'anyone' })
+        });
+        const url = `https://drive.google.com/file/d/${fileId}/view`;
+        iframe?.contentWindow?.postMessage({ type: 'drive-upload-response', reqId, url }, '*');
+      } catch(err) {
+        console.error('[Drive upload from iframe]', err);
+        iframe?.contentWindow?.postMessage({ type: 'drive-upload-response', reqId, url: null, error: err.message }, '*');
+      }
+    })();
   }
 });
 

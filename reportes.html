@@ -621,90 +621,53 @@ async function sbFetch(path, opts = {}) {
 }
 
 // ═══════════════════════════════════════
-// GOOGLE DRIVE
+// GOOGLE DRIVE — upload delegado al padre
+// El iframe no puede abrir popups OAuth (bloqueado por Tracking Prevention).
+// Solución: convertir el archivo a base64 y mandarlo al padre via postMessage.
+// El padre (index.html, top-level) hace el upload real a Drive API.
 // ═══════════════════════════════════════
-let _driveToken = null, _driveTokenExp = 0;
 
-// Delega OAuth al padre (index.html) — evita bloqueo de popups en iframes
-function driveGetOAuthToken(forceReauth = false) {
+function fileToBase64(file) {
   return new Promise((resolve, reject) => {
-    if (!forceReauth && _driveToken && Date.now() < _driveTokenExp - 120000) return resolve(_driveToken);
-    if (forceReauth) _driveToken = null;
+    const reader = new FileReader();
+    reader.onload  = () => resolve(reader.result.split(',')[1]); // solo la parte base64
+    reader.onerror = () => reject(new Error('Error leyendo archivo'));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function uploadToDrive(file, formType, localKey) {
+  return new Promise(async (resolve, reject) => {
+    const reqId = Math.random().toString(36).slice(2); // ID único para matchear respuesta
     const timeout = setTimeout(() => {
       window.removeEventListener('message', handler);
-      reject(new Error('Timeout esperando token de Drive. Intentá de nuevo.'));
-    }, 30000);
+      reject(new Error('Timeout subiendo foto. Intentá de nuevo.'));
+    }, 60000);
     function handler(e) {
-      if (e.data?.type !== 'drive-token-response') return;
+      if (e.data?.type !== 'drive-upload-response' || e.data?.reqId !== reqId) return;
       clearTimeout(timeout);
       window.removeEventListener('message', handler);
-      if (e.data.error || !e.data.token) { reject(new Error(e.data.error || 'Sin token')); return; }
-      _driveToken = e.data.token;
-      _driveTokenExp = Date.now() + 55 * 60 * 1000;
-      resolve(_driveToken);
+      if (e.data.error) { reject(new Error(e.data.error)); return; }
+      resolve(e.data.url || null);
     }
     window.addEventListener('message', handler);
-    window.parent.postMessage({ type: 'drive-token-request', forceReauth }, '*');
-  });
-}
-
-async function driveGetOrCreateFolder(token, parentId, name) {
-  const q = encodeURIComponent(`name='${name}' and '${parentId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`);
-  const r = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id)`, { headers: { Authorization: `Bearer ${token}` } });
-  if (!r.ok) { const err = await r.json().catch(() => ({})); throw new Error(`Drive folder search ${r.status}: ${err?.error?.message || 'sin acceso'}`); }
-  const d = await r.json();
-  if (d.files?.length > 0) return d.files[0].id;
-  const cr = await fetch('https://www.googleapis.com/drive/v3/files', {
-    method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, mimeType: 'application/vnd.google-apps.folder', parents: [parentId] })
-  });
-  if (!cr.ok) { const err = await cr.json().catch(() => ({})); throw new Error(`Drive folder create ${cr.status}: ${err?.error?.message}`); }
-  const cd = await cr.json();
-  if (!cd.id) throw new Error('Drive no devolvió ID de carpeta');
-  return cd.id;
-}
-
-async function uploadToDrive(file, formType, localKey, forceReauth = false) {
-  try {
-    const token = await driveGetOAuthToken(forceReauth);
-    const folderId = DRIVE_FOLDERS[formType];
-    if (!folderId) throw new Error(`Sin carpeta para tipo: ${formType}`);
-    const localName = LOCALES[localKey] || localKey;
-    let subFolderId;
     try {
-      subFolderId = await driveGetOrCreateFolder(token, folderId, localName);
-    } catch(folderErr) {
-      // Si falla con 404/403, probablemente es la cuenta incorrecta — reintentar con re-auth
-      if (!forceReauth && (folderErr.message.includes('404') || folderErr.message.includes('403'))) {
-        console.warn('[Drive] Cuenta incorrecta detectada, solicitando re-autenticación...');
-        _driveToken = null; // invalidar token cacheado
-        return uploadToDrive(file, formType, localKey, true); // reintentar con forceReauth
-      }
-      throw folderErr;
+      const base64 = await fileToBase64(file);
+      window.parent.postMessage({
+        type:     'drive-upload-request',
+        reqId,
+        base64,
+        mimeType: file.type || 'image/jpeg',
+        fileName: file.name || `foto.jpg`,
+        formType,
+        localKey,
+      }, '*');
+    } catch(e) {
+      clearTimeout(timeout);
+      window.removeEventListener('message', handler);
+      reject(e);
     }
-    const ts = new Date().toISOString().replace(/[:.]/g, '-');
-    const ext = file.name.split('.').pop();
-    const fileName = `${formType}_${localKey}_${ts}.${ext}`;
-    const metadata = JSON.stringify({ name: fileName, parents: [subFolderId] });
-    const form = new FormData();
-    form.append('metadata', new Blob([metadata], { type: 'application/json' }));
-    form.append('file', file);
-    const uploadRes = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', {
-      method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: form
-    });
-    const uploadData = await uploadRes.json();
-    if (!uploadRes.ok) throw new Error(`Drive upload ${uploadRes.status}: ${uploadData?.error?.message}`);
-    const fileId = uploadData.id;
-
-    // Hacer el archivo público para que el admin pueda verlo
-    await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/permissions`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ role: 'reader', type: 'anyone' })
-    });
-
-    return `https://drive.google.com/file/d/${fileId}/view`;
-  } catch(e) { console.error('Drive upload error:', e); return null; }
+  });
 }
 
 // ═══════════════════════════════════════
