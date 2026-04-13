@@ -267,6 +267,7 @@
   .badge-live { background: var(--green-bg); color: var(--green); }
   .badge-new { background: rgba(232,197,71,0.12); color: var(--accent); }
   .badge-soon { background: var(--bg4); color: var(--text3); }
+  .badge-alert { background: var(--red-bg); color: var(--red); font-weight: 700; }
 
   /* ── FORM SCREENS ── */
   .form-scroll { flex: 1; overflow-y: auto; padding: 20px 20px 120px; }
@@ -1825,7 +1826,7 @@
 
     <div class="module-card" style="--card-accent:var(--blue);--icon-bg:var(--blue-bg)"
          onclick="openModule('panel-turno')">
-      <div class="module-badge badge-new">nuevo</div>
+      <div class="module-badge badge-alert" id="badge-tareas" style="display:none"></div>
       <div class="module-icon">🎛</div>
       <div class="module-name">Control/Cierre de Turno</div>
       <div class="module-desc">tareas · cierre · caja</div>
@@ -4566,17 +4567,6 @@ ${repsJustPdf.length ? `
 </div>
 
 <script>window.onload = () => { window.print(); }<\/script>
-
-<!-- ── Modal detalle reporte ──────────────────────────────── -->
-<div class="rep-modal-overlay" id="rep-modal-overlay" onclick="closeRepModal(event)">
-  <div class="rep-modal" id="rep-modal-body">
-    <div class="rep-modal-head">
-      <span class="rep-modal-tipo" id="rep-modal-tipo-badge">—</span>
-      <button class="rep-modal-close" onclick="closeRepModal()">✕</button>
-    </div>
-    <div id="rep-modal-content"></div>
-  </div>
-</div>
 </body></html>`);
   win.document.close();
 }
@@ -6281,9 +6271,11 @@ async function ptLoadTareas() {
 }
 
 function ptDefAplicaHoy(def) {
+  // Tareas no-permanentes solo aplican si el turno actual está en def.turnos
+  // (ya se chequea antes de llamar esta función, pero doble guard)
   if (def.frecuencia === 'diaria' || def.frecuencia === 'cada_n_horas' || def.frecuencia === 'mensual') return true;
   if (def.frecuencia === 'semanal') {
-    return (def.dias_semana||[]).includes(new Date().getDay());
+    return (def.dias_semana || []).includes(new Date().getDay());
   }
   return true;
 }
@@ -6291,7 +6283,7 @@ function ptDefAplicaHoy(def) {
 async function ptCargarReasignadas(hoy) {
   try {
     const reasig = await sbFetch(
-      `tareas_instancia?local=eq.${state.local}&estado=eq.reasignada&fecha=lt.${hoy}`
+      `tareas_instancia?local=eq.${state.local}&turno=eq.${state.turno}&estado=eq.reasignada&fecha=lt.${hoy}`
     );
     if (!reasig || reasig.length === 0) return;
     const idsOrigen = reasig.map(r=>r.id);
@@ -6350,7 +6342,15 @@ function ptRenderTareas() {
   const list = document.getElementById('pt-tareas-list');
   const empty = document.getElementById('pt-tareas-empty');
 
-  const sorted = [...ptData.instancias].sort((a,b) => {
+  // Filtrar instancias cuya definición no aplica al turno actual (guard contra contaminación)
+  const instFiltradas = ptData.instancias.filter(inst => {
+    const def = ptData.definiciones.find(d => d.id === inst.tarea_id);
+    if (!def) return true; // sin def conocida, mostrar igual
+    if (!def.turnos || !def.turnos.length) return true;
+    return def.turnos.includes(state.turno);
+  });
+
+  const sorted = [...instFiltradas].sort((a,b) => {
     if (a.estado==='completada' && b.estado!=='completada') return 1;
     if (a.estado!=='completada' && b.estado==='completada') return -1;
     return new Date(a.hora_asignacion) - new Date(b.hora_asignacion);
@@ -6403,13 +6403,27 @@ function ptRenderTareas() {
 }
 
 function ptUpdateStats() {
-  const total = ptData.instancias.length;
-  const ok    = ptData.instancias.filter(i=>i.estado==='completada').length;
+  // Filtrar por turno actual (igual que ptRenderTareas)
+  const instFiltradas = ptData.instancias.filter(inst => {
+    const def = ptData.definiciones.find(d => d.id === inst.tarea_id);
+    if (!def) return true;
+    if (!def.turnos || !def.turnos.length) return true;
+    return def.turnos.includes(state.turno);
+  });
+  const total = instFiltradas.length;
+  const ok    = instFiltradas.filter(i=>i.estado==='completada').length;
   document.getElementById('pt-stat-ok').textContent    = ok;
   document.getElementById('pt-stat-pend').textContent  = total-ok;
   document.getElementById('pt-stat-total').textContent = total;
   const lbl = document.getElementById('pt-tareas-count');
   if (lbl) lbl.textContent = (total-ok)>0 ? `${total-ok} pendiente${total-ok>1?'s':''}` : '✓ Todo listo';
+  // Badge topbar
+  const badge = document.getElementById('badge-tareas');
+  if (badge) {
+    const pend = total - ok;
+    badge.textContent = pend > 0 ? pend : '';
+    badge.style.display = pend > 0 ? 'flex' : 'none';
+  }
 }
 
 // ── TAREAS — ACCIONES ─────────────────────
@@ -6650,7 +6664,7 @@ async function ptSaveDef() {
     dias_semana: frec==='semanal' ? dias : null,
     hora_inicio: frec!=='cada_n_horas' ? hora : null,
     intervalo_horas: frec==='cada_n_horas' ? intv : null,
-    turnos: ptTurnosCtrl, local: localFinal, activa: true, es_base: !editId
+    turnos: ptTurnosCtrl, local: localFinal, activa: true, es_base: !editId, permanente: perm
   };
   try {
     if (editId) {
@@ -6933,29 +6947,28 @@ async function ptCerrar() {
     return;
   }
 
-  const _pbCfgSave = ptLoadPBConfig();
-  const totalEf = PT_DENOM.reduce((acc,d) => {
-    const sfx = d.id.replace('ptb','');
-    const sueltos  = parseInt(document.getElementById(d.id)?.value) || 0;
-    const pacaCnt  = parseInt(document.getElementById(`ptpa${sfx}`)?.value) || 0;
-    const bultoCnt = parseInt(document.getElementById(`ptbu${sfx}`)?.value) || 0;
-    const pavVal   = parseFloat(document.getElementById(`ptpav${sfx}`)?.value) || _pbCfgSave[`pav${sfx}`] || 0;
-    const buvVal   = parseFloat(document.getElementById(`ptbuv${sfx}`)?.value) || _pbCfgSave[`buv${sfx}`] || 0;
-    return acc + sueltos * d.val + pacaCnt * pavVal + bultoCnt * buvVal;
+  // ── Caja chica: sueltos (misma lógica que ptRecalc) ──
+  let totalEf = PT_DENOM.reduce((acc, d) => {
+    return acc + (parseInt(document.getElementById(d.id)?.value) || 0) * d.val;
   }, 0);
-  const totalPacas = (() => {
-    let t = 0;
-    [{id:'f1',val:10000},{id:'f2',val:50000},{id:'f3',val:100000}].forEach(p => {
-      t += (parseFloat(document.getElementById(`ptpc-${p.id}`)?.value)||0) * p.val;
-    });
-    for(let i=1;i<=3;i++){
-      const d = parseFloat(document.getElementById(`ptpd-c${i}`)?.value)||0;
-      const c = parseFloat(document.getElementById(`ptpc-c${i}`)?.value)||0;
-      t += d*c;
-    }
-    return t;
-  })();
-  const totalGeneral = totalEf + totalPacas;
+  // ── Caja chica: pacas fijas ──
+  const PACAS_CH_C = [{id:'p100',val:100},{id:'p200',val:200},{id:'p500',val:500},{id:'p1000',val:1000},{id:'p10000',val:10000}];
+  PACAS_CH_C.forEach(p => {
+    totalEf += (parseInt(document.getElementById(`ptpa-${p.id}`)?.value) || 0) * p.val;
+  });
+  // ── Caja grande: pacas ──
+  const PACAS_CG_C = [{id:'pa100',val:100},{id:'pa200',val:200},{id:'pa500',val:500},{id:'pa1000',val:1000},{id:'pa10000',val:10000}];
+  const BULTOS_CG_C = [{id:'bu10000',val:10000},{id:'bu50000',val:50000},{id:'bu100000',val:100000}];
+  let totalGrande = 0;
+  PACAS_CG_C.forEach(p => { totalGrande += (parseInt(document.getElementById(`ptcg-${p.id}`)?.value) || 0) * p.val; });
+  BULTOS_CG_C.forEach(b => { totalGrande += (parseInt(document.getElementById(`ptcg-${b.id}`)?.value) || 0) * b.val; });
+  // ── Caja grande: customs ──
+  for (let i = 1; i <= 2; i++) {
+    const val  = parseFloat(document.getElementById(`ptcg-cv${i}`)?.value) || 0;
+    const cant = parseInt(document.getElementById(`ptcg-cc${i}`)?.value) || 0;
+    totalGrande += val * cant;
+  }
+  const totalGeneral = totalEf + totalGrande;
   const totalSis = parseFloat(document.getElementById('ptmed-sistema')?.value)||null;
 
   const checksJson = {
@@ -7306,7 +7319,7 @@ function ptProgramarAlarmas() {
         if (instActual?.estado === 'completada') return;
         const notif = new Notification('⏰ Break — Tarea pendiente', {
           body: def.nombre,
-          icon: 'https://sage-pithivier-f2a779.netlify.app/favicon.ico',
+          icon: 'https://breakrh.github.io/break-sistema/favicon.ico',
           tag: `tarea-${inst.id}`,
           requireInteraction: false,
         });
@@ -7725,6 +7738,17 @@ async function ptConfirmarApertura() {
     style="flex:1;border:none;width:100%;min-height:0"
     allow="clipboard-write"
   ></iframe>
+</div>
+
+<!-- ── Modal detalle reporte ──────────────────────────────── -->
+<div class="rep-modal-overlay" id="rep-modal-overlay" onclick="closeRepModal(event)">
+  <div class="rep-modal" id="rep-modal-body">
+    <div class="rep-modal-head">
+      <span class="rep-modal-tipo" id="rep-modal-tipo-badge">—</span>
+      <button class="rep-modal-close" onclick="closeRepModal()">✕</button>
+    </div>
+    <div id="rep-modal-content"></div>
+  </div>
 </div>
 
 </body>
