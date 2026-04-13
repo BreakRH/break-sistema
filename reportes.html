@@ -623,26 +623,34 @@ async function sbFetch(path, opts = {}) {
 // ═══════════════════════════════════════
 // GOOGLE DRIVE
 // ═══════════════════════════════════════
-const OAUTH_CLIENT_ID = '780824362766-h1te7jdtsjbfourv1vhvg6ipevc603ms.apps.googleusercontent.com';
-const OAUTH_SCOPE     = 'https://www.googleapis.com/auth/drive.file';
-let _driveToken = null, _driveTokenExp = 0, _gisClient = null;
+let _driveToken = null, _driveTokenExp = 0;
 
+// Pide el token OAuth al padre (index.html), que tiene GIS en contexto top-level
+// Evita el problema de popups bloqueados en iframes
 function driveGetOAuthToken() {
   return new Promise((resolve, reject) => {
+    // Reusar token si todavía es válido (margen 2 min)
     if (_driveToken && Date.now() < _driveTokenExp - 120000) return resolve(_driveToken);
-    if (!_gisClient) {
-      if (!window.google?.accounts?.oauth2) return reject(new Error('Google Identity Services no cargó aún. Intentá de nuevo.'));
-      _gisClient = google.accounts.oauth2.initTokenClient({
-        client_id: OAUTH_CLIENT_ID, scope: OAUTH_SCOPE,
-        callback: (resp) => {
-          if (resp.error) return reject(new Error('OAuth error: ' + resp.error));
-          _driveToken = resp.access_token;
-          _driveTokenExp = Date.now() + (resp.expires_in || 3600) * 1000;
-          resolve(_driveToken);
-        },
-      });
+    // Timeout de seguridad: 30s
+    const timeout = setTimeout(() => {
+      window.removeEventListener('message', handler);
+      reject(new Error('Timeout esperando token de Drive. Intentá de nuevo.'));
+    }, 30000);
+    function handler(e) {
+      if (e.data?.type !== 'drive-token-response') return;
+      clearTimeout(timeout);
+      window.removeEventListener('message', handler);
+      if (e.data.error || !e.data.token) {
+        reject(new Error(e.data.error || 'No se obtuvo token de Drive'));
+        return;
+      }
+      _driveToken = e.data.token;
+      _driveTokenExp = Date.now() + 55 * 60 * 1000; // 55 min
+      resolve(_driveToken);
     }
-    _gisClient.requestAccessToken();
+    window.addEventListener('message', handler);
+    // Pedir token al padre
+    window.parent.postMessage({ type: 'drive-token-request' }, '*');
   });
 }
 
@@ -690,8 +698,8 @@ async function uploadToDrive(file, formType, localKey) {
       body: JSON.stringify({ role: 'reader', type: 'anyone' })
     });
 
-    // URL directa de imagen (no requiere login de Drive)
-    return `https://drive.google.com/uc?export=view&id=${fileId}`;
+    // URL del viewer de Drive (funciona para archivos públicos en todos los browsers)
+    return `https://drive.google.com/file/d/${fileId}/view`;
   } catch(e) { console.error('Drive upload error:', e); return null; }
 }
 
