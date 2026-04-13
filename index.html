@@ -2958,26 +2958,29 @@ async function getConfig(clave) {
 // GOOGLE DRIVE UPLOAD — OAuth2 usuario
 // ═══════════════════════════════════════
 const OAUTH_CLIENT_ID = '780824362766-h1te7jdtsjbfourv1vhvg6ipevc603ms.apps.googleusercontent.com';
-const OAUTH_SCOPE     = 'https://www.googleapis.com/auth/drive.file';
+const OAUTH_SCOPE     = 'https://www.googleapis.com/auth/drive';
 let _driveToken       = null;
 let _driveTokenExp    = 0;
 let _gisClient        = null;
 
 // driveGetOAuthToken — usa Google Identity Services (sin redirect URI)
-function driveGetOAuthToken() {
+function driveGetOAuthToken(forceReauth = false) {
   return new Promise((resolve, reject) => {
-    // Reusar token si todavía es válido (margen 2 min)
-    if (_driveToken && Date.now() < _driveTokenExp - 120000) {
+    // Reusar token si todavía es válido (margen 2 min) y no se fuerza re-auth
+    if (!forceReauth && _driveToken && Date.now() < _driveTokenExp - 120000) {
       return resolve(_driveToken);
     }
-    // Inicializar cliente GIS si no existe
+    // Resetear token si se fuerza re-auth
+    if (forceReauth) { _driveToken = null; _gisClient = null; }
+    // Inicializar cliente GIS
     if (!_gisClient) {
       if (!window.google?.accounts?.oauth2) {
         return reject(new Error('Google Identity Services no cargó aún. Intentá de nuevo.'));
       }
       _gisClient = google.accounts.oauth2.initTokenClient({
-        client_id: OAUTH_CLIENT_ID,
-        scope:     OAUTH_SCOPE,
+        client_id:   OAUTH_CLIENT_ID,
+        scope:       OAUTH_SCOPE,
+        hint:        'golovko.ucv@gmail.com',
         callback:  (resp) => {
           if (resp.error) return reject(new Error('OAuth error: ' + resp.error));
           _driveToken    = resp.access_token;
@@ -2986,8 +2989,8 @@ function driveGetOAuthToken() {
         },
       });
     }
-    // Solicitar token — abre popup de Google gestionado por GIS
-    _gisClient.requestAccessToken();
+    // prompt:'select_account' fuerza elegir cuenta (evita usar cuenta incorrecta cacheada)
+    _gisClient.requestAccessToken({ prompt: forceReauth ? 'select_account' : '' });
   });
 }
 
@@ -4567,17 +4570,6 @@ ${repsJustPdf.length ? `
 </div>
 
 <script>window.onload = () => { window.print(); }<\/script>
-
-<!-- ── Modal detalle reporte ──────────────────────────────── -->
-<div class="rep-modal-overlay" id="rep-modal-overlay" onclick="closeRepModal(event)">
-  <div class="rep-modal" id="rep-modal-body">
-    <div class="rep-modal-head">
-      <span class="rep-modal-tipo" id="rep-modal-tipo-badge">—</span>
-      <button class="rep-modal-close" onclick="closeRepModal()">✕</button>
-    </div>
-    <div id="rep-modal-content"></div>
-  </div>
-</div>
 </body></html>`);
   win.document.close();
 }
@@ -4820,19 +4812,16 @@ function renderAdminReports(reportes) {
 }
 
 // ── Modal detalle reporte ────────────────────────────────────
-// Extrae el fileId de cualquier URL de Google Drive
+// Extrae fileId de cualquier URL de Google Drive
 function driveFileId(url) {
   if (!url) return null;
   let m = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
   if (m) return m[1];
   m = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
   if (m) return m[1];
-  m = url.match(/open\?id=([a-zA-Z0-9_-]+)/);
-  if (m) return m[1];
   return null;
 }
-
-// Genera HTML de foto inline: thumbnail + link al viewer
+// Genera thumbnail inline + link al viewer de Drive
 function drivePhotoHtml(url) {
   if (!url) return '';
   const id = driveFileId(url);
@@ -6379,11 +6368,9 @@ function ptRenderTareas() {
   const list = document.getElementById('pt-tareas-list');
   const empty = document.getElementById('pt-tareas-empty');
 
-  // Filtrar instancias cuya definición no aplica al turno actual
   const instFiltradas = ptData.instancias.filter(inst => {
     const def = ptData.definiciones.find(d => d.id === inst.tarea_id);
-    if (!def) return true;
-    if (!def.turnos || !def.turnos.length) return true;
+    if (!def || !def.turnos || !def.turnos.length) return true;
     return def.turnos.includes(state.turno);
   });
 
@@ -6442,8 +6429,7 @@ function ptRenderTareas() {
 function ptUpdateStats() {
   const instFiltradas = ptData.instancias.filter(inst => {
     const def = ptData.definiciones.find(d => d.id === inst.tarea_id);
-    if (!def) return true;
-    if (!def.turnos || !def.turnos.length) return true;
+    if (!def || !def.turnos || !def.turnos.length) return true;
     return def.turnos.includes(state.turno);
   });
   const total = instFiltradas.length;
@@ -6454,7 +6440,7 @@ function ptUpdateStats() {
   const lbl = document.getElementById('pt-tareas-count');
   if (lbl) lbl.textContent = (total-ok)>0 ? `${total-ok} pendiente${total-ok>1?'s':''}` : '✓ Todo listo';
   const badge = document.getElementById('badge-tareas');
-  if (badge) { const pend = total-ok; badge.textContent = pend>0?pend:''; badge.style.display = pend>0?'flex':'none'; }
+  if (badge) { const p=total-ok; badge.textContent=p>0?p:''; badge.style.display=p>0?'flex':'none'; }
 }
 
 // ── TAREAS — ACCIONES ─────────────────────
@@ -6978,26 +6964,15 @@ async function ptCerrar() {
     return;
   }
 
-  // ── Caja chica: sueltos (misma lógica que ptRecalc) ──
-  let totalEf = PT_DENOM.reduce((acc, d) => {
-    return acc + (parseInt(document.getElementById(d.id)?.value) || 0) * d.val;
-  }, 0);
-  // ── Caja chica: pacas fijas ──
+  let totalEf = PT_DENOM.reduce((acc, d) => acc + (parseInt(document.getElementById(d.id)?.value)||0)*d.val, 0);
   const PACAS_CH_C = [{id:'p100',val:100},{id:'p200',val:200},{id:'p500',val:500},{id:'p1000',val:1000},{id:'p10000',val:10000}];
-  PACAS_CH_C.forEach(p => {
-    totalEf += (parseInt(document.getElementById(`ptpa-${p.id}`)?.value) || 0) * p.val;
-  });
-  // ── Caja grande: pacas + bultos + customs ──
+  PACAS_CH_C.forEach(p => { totalEf += (parseInt(document.getElementById(`ptpa-${p.id}`)?.value)||0)*p.val; });
   const PACAS_CG_C = [{id:'pa100',val:100},{id:'pa200',val:200},{id:'pa500',val:500},{id:'pa1000',val:1000},{id:'pa10000',val:10000}];
   const BULTOS_CG_C = [{id:'bu10000',val:10000},{id:'bu50000',val:50000},{id:'bu100000',val:100000}];
   let totalGrande = 0;
-  PACAS_CG_C.forEach(p => { totalGrande += (parseInt(document.getElementById(`ptcg-${p.id}`)?.value) || 0) * p.val; });
-  BULTOS_CG_C.forEach(b => { totalGrande += (parseInt(document.getElementById(`ptcg-${b.id}`)?.value) || 0) * b.val; });
-  for (let i = 1; i <= 2; i++) {
-    const val  = parseFloat(document.getElementById(`ptcg-cv${i}`)?.value) || 0;
-    const cant = parseInt(document.getElementById(`ptcg-cc${i}`)?.value) || 0;
-    totalGrande += val * cant;
-  }
+  PACAS_CG_C.forEach(p => { totalGrande += (parseInt(document.getElementById(`ptcg-${p.id}`)?.value)||0)*p.val; });
+  BULTOS_CG_C.forEach(b => { totalGrande += (parseInt(document.getElementById(`ptcg-${b.id}`)?.value)||0)*b.val; });
+  for(let i=1;i<=2;i++){totalGrande+=(parseFloat(document.getElementById(`ptcg-cv${i}`)?.value)||0)*(parseInt(document.getElementById(`ptcg-cc${i}`)?.value)||0);}
   const totalGeneral = totalEf + totalGrande;
   const totalSis = parseFloat(document.getElementById('ptmed-sistema')?.value)||null;
 
@@ -7527,16 +7502,11 @@ window.addEventListener('message', e => {
   if (e.data?.type === 'reportes-back') {
     goTo('hub');
   }
-  // El iframe de reportes pide token OAuth para subir fotos a Drive
   if (e.data?.type === 'drive-token-request') {
-    const reportesIframe = document.getElementById('reportes-iframe');
-    driveGetOAuthToken()
-      .then(token => {
-        reportesIframe?.contentWindow?.postMessage({ type: 'drive-token-response', token }, '*');
-      })
-      .catch(err => {
-        reportesIframe?.contentWindow?.postMessage({ type: 'drive-token-response', token: null, error: err.message }, '*');
-      });
+    const iframe = document.getElementById('reportes-iframe');
+    driveGetOAuthToken(e.data.forceReauth === true)
+      .then(token => iframe?.contentWindow?.postMessage({ type: 'drive-token-response', token }, '*'))
+      .catch(err  => iframe?.contentWindow?.postMessage({ type: 'drive-token-response', token: null, error: err.message }, '*'));
   }
 });
 

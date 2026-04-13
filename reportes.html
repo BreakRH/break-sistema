@@ -625,13 +625,11 @@ async function sbFetch(path, opts = {}) {
 // ═══════════════════════════════════════
 let _driveToken = null, _driveTokenExp = 0;
 
-// Pide el token OAuth al padre (index.html), que tiene GIS en contexto top-level
-// Evita el problema de popups bloqueados en iframes
-function driveGetOAuthToken() {
+// Delega OAuth al padre (index.html) — evita bloqueo de popups en iframes
+function driveGetOAuthToken(forceReauth = false) {
   return new Promise((resolve, reject) => {
-    // Reusar token si todavía es válido (margen 2 min)
-    if (_driveToken && Date.now() < _driveTokenExp - 120000) return resolve(_driveToken);
-    // Timeout de seguridad: 30s
+    if (!forceReauth && _driveToken && Date.now() < _driveTokenExp - 120000) return resolve(_driveToken);
+    if (forceReauth) _driveToken = null;
     const timeout = setTimeout(() => {
       window.removeEventListener('message', handler);
       reject(new Error('Timeout esperando token de Drive. Intentá de nuevo.'));
@@ -640,17 +638,13 @@ function driveGetOAuthToken() {
       if (e.data?.type !== 'drive-token-response') return;
       clearTimeout(timeout);
       window.removeEventListener('message', handler);
-      if (e.data.error || !e.data.token) {
-        reject(new Error(e.data.error || 'No se obtuvo token de Drive'));
-        return;
-      }
+      if (e.data.error || !e.data.token) { reject(new Error(e.data.error || 'Sin token')); return; }
       _driveToken = e.data.token;
-      _driveTokenExp = Date.now() + 55 * 60 * 1000; // 55 min
+      _driveTokenExp = Date.now() + 55 * 60 * 1000;
       resolve(_driveToken);
     }
     window.addEventListener('message', handler);
-    // Pedir token al padre
-    window.parent.postMessage({ type: 'drive-token-request' }, '*');
+    window.parent.postMessage({ type: 'drive-token-request', forceReauth }, '*');
   });
 }
 
@@ -670,13 +664,24 @@ async function driveGetOrCreateFolder(token, parentId, name) {
   return cd.id;
 }
 
-async function uploadToDrive(file, formType, localKey) {
+async function uploadToDrive(file, formType, localKey, forceReauth = false) {
   try {
-    const token = await driveGetOAuthToken();
+    const token = await driveGetOAuthToken(forceReauth);
     const folderId = DRIVE_FOLDERS[formType];
     if (!folderId) throw new Error(`Sin carpeta para tipo: ${formType}`);
     const localName = LOCALES[localKey] || localKey;
-    const subFolderId = await driveGetOrCreateFolder(token, folderId, localName);
+    let subFolderId;
+    try {
+      subFolderId = await driveGetOrCreateFolder(token, folderId, localName);
+    } catch(folderErr) {
+      // Si falla con 404/403, probablemente es la cuenta incorrecta — reintentar con re-auth
+      if (!forceReauth && (folderErr.message.includes('404') || folderErr.message.includes('403'))) {
+        console.warn('[Drive] Cuenta incorrecta detectada, solicitando re-autenticación...');
+        _driveToken = null; // invalidar token cacheado
+        return uploadToDrive(file, formType, localKey, true); // reintentar con forceReauth
+      }
+      throw folderErr;
+    }
     const ts = new Date().toISOString().replace(/[:.]/g, '-');
     const ext = file.name.split('.').pop();
     const fileName = `${formType}_${localKey}_${ts}.${ext}`;
@@ -691,14 +696,13 @@ async function uploadToDrive(file, formType, localKey) {
     if (!uploadRes.ok) throw new Error(`Drive upload ${uploadRes.status}: ${uploadData?.error?.message}`);
     const fileId = uploadData.id;
 
-    // Hacer el archivo público (viewer) para que el admin pueda verlo
+    // Hacer el archivo público para que el admin pueda verlo
     await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/permissions`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ role: 'reader', type: 'anyone' })
     });
 
-    // URL del viewer de Drive (funciona para archivos públicos en todos los browsers)
     return `https://drive.google.com/file/d/${fileId}/view`;
   } catch(e) { console.error('Drive upload error:', e); return null; }
 }
