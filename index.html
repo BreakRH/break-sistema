@@ -4914,7 +4914,7 @@ function drivePhotoHtml(url) {
       `<img src="${imgUrl}" style="width:100%;max-height:260px;object-fit:contain;border-radius:8px;border:0.5px solid var(--border2);background:var(--bg4)" ` +
       `onerror="this.style.display='none';this.nextElementSibling.style.display='inline-block'">` +
       `</a>` +
-      `<a href="${viewerUrl}" target="_blank" style="display:none;margin-top:6px;font-family:var(--mono);font-size:11px;color:var(--blue);text-decoration:none;border:0.5px solid rgba(91,156,246,0.3);padding:3px 10px;border-radius:5px">ver foto en Drive ↗</a>`;
+      `<a href="${viewerUrl}" target="_blank" style="display:inline-block;margin-top:6px;font-family:var(--mono);font-size:11px;color:var(--blue);text-decoration:none;border:0.5px solid rgba(91,156,246,0.3);padding:3px 10px;border-radius:5px">ver foto en Drive ↗</a>`;
   }
   return `<a href="${viewerUrl}" target="_blank" style="display:inline-block;margin-top:6px;font-family:var(--mono);font-size:11px;color:var(--blue);text-decoration:none;border:0.5px solid rgba(91,156,246,0.3);padding:3px 10px;border-radius:5px">ver foto en Drive ↗</a>`;
 }
@@ -7695,7 +7695,24 @@ window.addEventListener('message', e => {
           headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({ role: 'reader', type: 'anyone' })
         });
-        if (!permRes.ok) console.warn('[GIS] No se pudo hacer público:', await permRes.text());
+        if (!permRes.ok) {
+          const permErr = await permRes.text();
+          console.error('[GIS] ERROR al hacer público (status ' + permRes.status + '):', permErr);
+          // Intentar con allowFileDiscovery: false como fallback
+          const permRes2 = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/permissions`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ role: 'reader', type: 'anyone', allowFileDiscovery: false })
+          });
+          if (!permRes2.ok) {
+            const permErr2 = await permRes2.text();
+            console.error('[GIS] ERROR fallback permisos (status ' + permRes2.status + '):', permErr2);
+          } else {
+            console.log('[GIS] Permiso público OK (fallback allowFileDiscovery:false)');
+          }
+        } else {
+          console.log('[GIS] Permiso público OK');
+        }
         const url = `https://drive.google.com/file/d/${fileId}/view`;
         console.log('[GIS] Upload desde iframe OK:', url);
         iframe?.contentWindow?.postMessage({ type: 'drive-upload-response', reqId, url }, '*');
