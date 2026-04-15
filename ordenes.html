@@ -1194,7 +1194,7 @@ function openDetalle(id) {
       <div class="detail-section-title" style="margin-bottom:10px">📎 Foto de factura</div>
       <div id="modal-fotos-wrap" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px">
         ${(o.foto_factura_urls||[]).length
-          ? (o.foto_factura_urls).map(url=>`<a href="${url}" target="_blank"><img src="${url}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;border:1px solid var(--border2)"></a>`).join('')
+          ? (o.foto_factura_urls).map(url=>otFotoHtml(url)).join('')
           : '<span style="font-family:var(--mono);font-size:11px;color:var(--text3)">Sin fotos adjuntas</span>'}
       </div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
@@ -1897,6 +1897,23 @@ function renderCalendario() {
     </div>`;
 }
 
+
+// Extrae el file ID de una URL de Google Drive
+function driveIdFromUrl(url) {
+  if (!url) return null;
+  let m = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  if (m) return m[1];
+  m = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (m) return m[1];
+  return null;
+}
+// Genera link cliqueable para fotos de OT
+function otFotoHtml(url) {
+  const id = driveIdFromUrl(url);
+  const viewUrl = id ? 'https://drive.google.com/file/d/' + id + '/view' : url;
+  return '<a href="' + viewUrl + '" target="_blank" style="display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;color:var(--blue);text-decoration:none;border:0.5px solid rgba(91,156,246,0.3);padding:6px 12px;border-radius:6px;background:rgba(91,156,246,0.06);">📎 ver foto en Drive ↗</a>';
+}
+
 // ─── HISTORIAL OT ────────────────────────────────────────────
 let historialOT = [];
 async function loadHistorialOT() {
@@ -2090,7 +2107,7 @@ async function _subirFotoADrive(file) {
     const wrap = document.getElementById('modal-fotos-wrap');
     if (wrap) {
       wrap.innerHTML = newUrls.map(u =>
-        '<a href="' + u + '" target="_blank"><img src="' + u + '" style="width:80px;height:80px;object-fit:cover;border-radius:6px;border:1px solid var(--border2)"></a>'
+        otFotoHtml(u)
       ).join('');
     }
     if (statusEl) statusEl.textContent = '✓ Adjuntado';
