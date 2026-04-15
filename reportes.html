@@ -621,54 +621,97 @@ async function sbFetch(path, opts = {}) {
 }
 
 // ═══════════════════════════════════════
-// GOOGLE DRIVE — upload delegado al padre
-// El iframe no puede abrir popups OAuth (bloqueado por Tracking Prevention).
-// Solución: convertir el archivo a base64 y mandarlo al padre via postMessage.
-// El padre (index.html, top-level) hace el upload real a Drive API.
+// GOOGLE DRIVE — upload delegado al padre (protocolo dos pasos)
+// El iframe no puede abrir popups OAuth (bloqueado por Firefox/Safari/Tracking Prevention).
+//
+// PASO 1 — driveRequestAuth(localKey):
+//   Manda drive-auth-request al padre. El padre muestra un overlay con botón real.
+//   El usuario hace click → GIS abre popup → padre obtiene token.
+//   El padre responde con drive-auth-response { token } o { error }.
+//
+// PASO 2 — uploadToDrive(file, formType, localKey):
+//   Llama driveRequestAuth primero para asegurar que hay token.
+//   Luego manda drive-upload-request con la foto en base64.
+//   El padre sube a Drive con el token cacheado y responde con la URL.
 // ═══════════════════════════════════════
 
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload  = () => resolve(reader.result.split(',')[1]); // solo la parte base64
+    reader.onload  = () => resolve(reader.result.split(',')[1]);
     reader.onerror = () => reject(new Error('Error leyendo archivo'));
     reader.readAsDataURL(file);
   });
 }
 
-async function uploadToDrive(file, formType, localKey) {
-  return new Promise(async (resolve, reject) => {
-    const reqId = Math.random().toString(36).slice(2); // ID único para matchear respuesta
+// Paso 1: pedir autorización OAuth al padre
+// Devuelve el token si el usuario autorizó, o lanza error si canceló
+function driveRequestAuth(localKey) {
+  return new Promise((resolve, reject) => {
+    const reqId = Math.random().toString(36).slice(2);
     const timeout = setTimeout(() => {
       window.removeEventListener('message', handler);
-      reject(new Error('Timeout subiendo foto. Intentá de nuevo.'));
-    }, 60000);
+      reject(new Error('Timeout esperando autorización Drive.'));
+    }, 120000); // 2 min para que el usuario complete el popup
     function handler(e) {
-      if (e.data?.type !== 'drive-upload-response' || e.data?.reqId !== reqId) return;
+      if (e.data?.type !== 'drive-auth-response' || e.data?.reqId !== reqId) return;
       clearTimeout(timeout);
       window.removeEventListener('message', handler);
       if (e.data.error) { reject(new Error(e.data.error)); return; }
-      resolve(e.data.url || null);
+      resolve(e.data.token);
     }
     window.addEventListener('message', handler);
+    window.parent.postMessage({ type: 'drive-auth-request', reqId, localKey }, '*');
+  });
+}
+
+// Paso 2: subir archivo a Drive (el padre ya tiene el token)
+async function uploadToDrive(file, formType, localKey) {
+  return new Promise(async (resolve, reject) => {
+    // Primero asegurar que el padre tiene token válido
+    try {
+      await driveRequestAuth(localKey);
+    } catch(authErr) {
+      if (authErr.message === 'cancelled') {
+        resolve(null); // usuario canceló — continuar sin foto
+        return;
+      }
+      reject(authErr);
+      return;
+    }
+    // Auth OK — mandar el archivo para subir
+    const reqId = Math.random().toString(36).slice(2);
+    const timeout = setTimeout(() => {
+      window.removeEventListener('message', uploadHandler);
+      reject(new Error('Timeout subiendo foto. Intentá de nuevo.'));
+    }, 60000);
+    function uploadHandler(e) {
+      if (e.data?.type !== 'drive-upload-response' || e.data?.reqId !== reqId) return;
+      clearTimeout(timeout);
+      window.removeEventListener('message', uploadHandler);
+      if (e.data.error) { reject(new Error(e.data.error)); return; }
+      resolve(e.data.url || null);
+    }
+    window.addEventListener('message', uploadHandler);
     try {
       const base64 = await fileToBase64(file);
       window.parent.postMessage({
-        type:     'drive-upload-request',
+        type: 'drive-upload-request',
         reqId,
         base64,
         mimeType: file.type || 'image/jpeg',
-        fileName: file.name || `foto.jpg`,
+        fileName: file.name || 'foto.jpg',
         formType,
         localKey,
       }, '*');
     } catch(e) {
       clearTimeout(timeout);
-      window.removeEventListener('message', handler);
+      window.removeEventListener('message', uploadHandler);
       reject(e);
     }
   });
 }
+
 
 // ═══════════════════════════════════════
 // NAVIGATION

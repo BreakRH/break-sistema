@@ -1457,6 +1457,39 @@
     color: var(--text3); margin-top: 8px;
   }
   /* Reporte detail modal */
+  /* ── Drive Auth Overlay ── */
+  .drive-auth-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+    z-index: 900; display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .drive-auth-overlay.open { opacity: 1; pointer-events: all; }
+  .drive-auth-box {
+    background: var(--bg2); border: 0.5px solid var(--border2);
+    border-radius: 16px; padding: 28px 24px 24px;
+    width: calc(100% - 40px); max-width: 360px; text-align: center;
+  }
+  .drive-auth-icon { font-size: 36px; margin-bottom: 12px; }
+  .drive-auth-title {
+    font-family: var(--syne); font-size: 16px; font-weight: 700;
+    color: var(--text); margin-bottom: 8px;
+  }
+  .drive-auth-sub {
+    font-family: var(--mono); font-size: 12px; color: var(--text2);
+    margin-bottom: 20px; line-height: 1.5;
+  }
+  .drive-auth-btn {
+    width: 100%; padding: 14px; border-radius: 10px;
+    background: var(--accent); color: #000;
+    font-family: var(--syne); font-size: 14px; font-weight: 700;
+    border: none; cursor: pointer; margin-bottom: 10px;
+  }
+  .drive-auth-cancel {
+    background: none; border: none; color: var(--text3);
+    font-family: var(--mono); font-size: 12px; cursor: pointer;
+    padding: 6px;
+  }
+
   .rep-modal-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,0.7);
     z-index: 500; display: flex; align-items: flex-end; justify-content: center;
@@ -2983,7 +3016,7 @@ let _gisHint       = null; // hint activo — si cambia de local, recrear client
 // - prompt:'none' intenta refresh silencioso; si falla → prompt:\'\' (selector).
 // - forceReauth usa prompt:\'select_account\'.
 
-function driveGetOAuthToken(localKey, forceReauth = false) {
+function driveGetOAuthToken(localKey, forceReauth = false, fromUserClick = false) {
   return new Promise((resolve, reject) => {
     const hint = DRIVE_HINTS[localKey] || null;
 
@@ -3014,7 +3047,9 @@ function driveGetOAuthToken(localKey, forceReauth = false) {
     function tryRequest(promptValue) {
       _gisClient.callback = (resp) => {
         if (resp.error) {
-          if (resp.error === 'interaction_required' && promptValue === 'none') {
+          // prompt:'none' falló por falta de interacción → reintentar con '' SOLO si no venimos de click
+          // Si venimos de click (fromUserClick=true) no reintentamos — ya estamos en el click
+          if (resp.error === 'interaction_required' && promptValue === 'none' && !fromUserClick) {
             tryRequest('');
             return;
           }
@@ -3029,7 +3064,15 @@ function driveGetOAuthToken(localKey, forceReauth = false) {
       _gisClient.requestAccessToken({ prompt: promptValue });
     }
 
-    forceReauth ? tryRequest('select_account') : tryRequest('none');
+    if (forceReauth) {
+      tryRequest('select_account');
+    } else if (fromUserClick) {
+      // Viene de un click real del usuario — ir directo al selector sin intentar silent refresh
+      // (el silent refresh dispararía un segundo popup bloqueado por el browser)
+      tryRequest('');
+    } else {
+      tryRequest('none');
+    }
   });
 }
 
@@ -7540,18 +7583,83 @@ function reportesOpen() {
   }, 50);
 }
 
+// ── Drive Auth desde iframe ──────────────────────────────────
+// El iframe no puede abrir popups OAuth (bloqueado por Firefox/Safari).
+// Protocolo de dos pasos:
+//   1. iframe → padre: drive-auth-request (sin datos)
+//      Padre muestra overlay con botón — el usuario hace click real → GIS abre popup
+//   2. padre → iframe: drive-auth-response { token } (o { error })
+//      iframe retoma el submit con el token ya en mano
+//   3. iframe → padre: drive-upload-request (base64, metadata)
+//      Padre hace el upload real con el token cacheado
+// ─────────────────────────────────────────────────────────────
+
+let _driveAuthReqId   = null; // reqId del auth pendiente
+let _driveAuthLocal   = null; // localKey del auth pendiente
+let _driveUploadQueue = {};   // uploads pendientes { reqId: { base64, mimeType, fileName, formType, localKey } }
+
+function driveAuthConfirm() {
+  // Este click es real — GIS puede abrir el popup
+  // fromUserClick=true: salta el prompt:'none' silencioso que dispararía un segundo popup bloqueado
+  const localKey = _driveAuthLocal;
+  document.getElementById('drive-auth-overlay').classList.remove('open');
+  driveGetOAuthToken(localKey, false, true).then(token => {
+    const iframe = document.getElementById('reportes-iframe');
+    iframe?.contentWindow?.postMessage({ type: 'drive-auth-response', reqId: _driveAuthReqId, token }, '*');
+    _driveAuthReqId = null; _driveAuthLocal = null;
+  }).catch(err => {
+    console.error('[GIS auth]', err);
+    const iframe = document.getElementById('reportes-iframe');
+    iframe?.contentWindow?.postMessage({ type: 'drive-auth-response', reqId: _driveAuthReqId, error: err.message }, '*');
+    _driveAuthReqId = null; _driveAuthLocal = null;
+  });
+}
+
+function driveAuthCancel() {
+  document.getElementById('drive-auth-overlay').classList.remove('open');
+  const iframe = document.getElementById('reportes-iframe');
+  // Responder con error — el iframe enviará el reporte sin foto
+  iframe?.contentWindow?.postMessage({ type: 'drive-auth-response', reqId: _driveAuthReqId, error: 'cancelled' }, '*');
+  _driveAuthReqId = null; _driveAuthLocal = null;
+}
+
 // Escuchar mensaje de vuelta del iframe de reportes
 window.addEventListener('message', e => {
   if (e.data?.type === 'reportes-back') {
     goTo('hub');
   }
-  // El iframe de reportes pide subir una foto a Drive via GIS (cuenta de tienda)
+
+  // PASO 1: iframe pide autorización OAuth (sin datos de foto aún)
+  if (e.data?.type === 'drive-auth-request') {
+    const { reqId, localKey } = e.data;
+    // Si ya tenemos token válido, responder directamente sin mostrar el overlay
+    if (_driveToken && Date.now() < _driveTokenExp - 120000 && _gisHint === (DRIVE_HINTS[localKey] || null)) {
+      const iframe = document.getElementById('reportes-iframe');
+      iframe?.contentWindow?.postMessage({ type: 'drive-auth-response', reqId, token: _driveToken }, '*');
+      return;
+    }
+    // No hay token — mostrar overlay para que el usuario haga click real
+    _driveAuthReqId = reqId;
+    _driveAuthLocal = localKey;
+    const hint = DRIVE_HINTS[localKey];
+    const sub = document.getElementById('drive-auth-sub');
+    if (sub) sub.textContent = hint
+      ? `Autorizá con la cuenta ${hint} para subir la foto a Drive.`
+      : 'Autorizá el acceso a Google Drive para subir la foto.';
+    document.getElementById('drive-auth-overlay').classList.add('open');
+  }
+
+  // PASO 2: iframe manda el archivo para subir (ya tiene el OK del auth)
   if (e.data?.type === 'drive-upload-request') {
     const iframe = document.getElementById('reportes-iframe');
     const { reqId, base64, mimeType, fileName, formType, localKey } = e.data;
     (async () => {
       try {
-        let token = await driveGetOAuthToken(localKey);
+        // Usar token cacheado — ya fue autorizado en el paso 1
+        let token = _driveToken;
+        if (!token || Date.now() >= _driveTokenExp - 120000) {
+          throw new Error('Token Drive expirado. Intentá de nuevo.');
+        }
         const folderId = DRIVE_FOLDERS[formType];
         if (!folderId) throw new Error(`Sin carpeta para tipo: ${formType}`);
         const localName   = LOCALES[localKey] || localKey;
@@ -7559,14 +7667,11 @@ window.addEventListener('message', e => {
         try {
           subFolderId = await driveGetOrCreateFolder(token, folderId, localName);
         } catch(folderErr) {
-          // 403/404 = cuenta incorrecta → forzar selector de cuenta
           if (folderErr.message.includes('403') || folderErr.message.includes('404')) {
-            console.warn('[GIS] Carpeta inaccesible, forzando re-auth:', folderErr.message);
-            token = await driveGetOAuthToken(localKey, true);
-            subFolderId = await driveGetOrCreateFolder(token, folderId, localName);
+            console.warn('[GIS] Carpeta inaccesible:', folderErr.message);
+            throw new Error('Sin acceso a la carpeta. Verificá que la carpeta esté compartida con tu cuenta.');
           } else throw folderErr;
         }
-        // Convertir base64 a Blob
         const bytes = atob(base64);
         const arr = new Uint8Array(bytes.length);
         for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
@@ -7841,6 +7946,17 @@ async function ptConfirmarApertura() {
     style="flex:1;border:none;width:100%;min-height:0"
     allow="clipboard-write"
   ></iframe>
+</div>
+
+<!-- ── Drive Auth Overlay ─────────────────────────────────── -->
+<div class="drive-auth-overlay" id="drive-auth-overlay">
+  <div class="drive-auth-box">
+    <div class="drive-auth-icon">📁</div>
+    <div class="drive-auth-title">Autorizar Google Drive</div>
+    <div class="drive-auth-sub" id="drive-auth-sub">Para subir la foto necesitás autorizar el acceso a Drive con la cuenta de la tienda.</div>
+    <button class="drive-auth-btn" id="drive-auth-btn" onclick="driveAuthConfirm()">Autorizar con Google</button>
+    <button class="drive-auth-cancel" onclick="driveAuthCancel()">Cancelar — enviar sin foto</button>
+  </div>
 </div>
 
 <!-- ── Modal detalle reporte ──────────────────────────────── -->
