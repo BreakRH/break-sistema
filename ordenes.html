@@ -1154,7 +1154,12 @@ function openDetalle(id) {
       <div class="detail-section-title">Datos del comprobante</div>
       <div class="detail-grid">
         <div class="detail-item"><div class="detail-item-label">Fecha</div><div class="detail-item-value">${formatDateDisplay(o.fecha)} ${o.hora||''}</div></div>
-        <div class="detail-item"><div class="detail-item-label">N° Factura</div><div class="detail-item-value">${o.nro_factura||'—'}</div></div>
+        <div class="detail-item"><div class="detail-item-label">N° Factura</div><div class="detail-item-value">
+          <input id="modal-nro-factura" type="text" value="${o.nro_factura||''}" placeholder="Sin número"
+            style="background:transparent;border:none;border-bottom:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:13px;width:100%;outline:none;padding:2px 0;"
+            onblur="guardarNroFactura('${o.id}',this.value)"
+            onkeydown="if(event.key==='Enter'){this.blur();}">
+        </div></div>
         <div class="detail-item"><div class="detail-item-label">Proveedor</div><div class="detail-item-value">${o.proveedor||'—'}</div></div>
         <div class="detail-item"><div class="detail-item-label">Tipo</div><div class="detail-item-value">${badgeTipo(o.tipo_comprobante)}</div></div>
       </div>
@@ -1612,6 +1617,46 @@ async function eliminarOT() {
     await sbFetch(`ordenes_trabajo?id=eq.${editingId}`, { method: 'DELETE' });
     showToast('Orden eliminada', 'success');
     cancelEdit();
+    loadOrdenes();
+  } catch(e) {
+    showToast('Error al eliminar: ' + e.message, 'error');
+  }
+}
+
+// Guardar nro_factura inline desde el modal
+async function guardarNroFactura(ordenId, valor) {
+  const orden = ordenes.find(o => o.id === ordenId);
+  if (!orden) return;
+  const nro = valor.trim();
+  if (nro === (orden.nro_factura || '')) return; // sin cambios
+  try {
+    await sbFetch(`ordenes_trabajo?id=eq.${ordenId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ nro_factura: nro || null })
+    });
+    orden.nro_factura = nro || null;
+    document.getElementById('modal-titulo').textContent = `${orden.nro_factura || 'OT'} · ${orden.proveedor || ''}`;
+    renderTabla();
+    showToast('N° factura actualizado ✓', 'success');
+  } catch(e) {
+    showToast('Error al guardar: ' + e.message, 'error');
+  }
+}
+
+// Eliminar OT desde el modal de detalle (solo admin)
+async function eliminarOTdesdeModal() {
+  if (rolActual !== 'admin') { showToast('Solo el administrador puede eliminar órdenes', 'error'); return; }
+  if (!modalOrdenId) return;
+  const orden = ordenes.find(o => o.id === modalOrdenId);
+  if (orden && orden.pedido_id) {
+    showToast('Esta OT fue generada desde un pedido y no puede eliminarse.', 'error');
+    return;
+  }
+  if (!confirm('¿Eliminar esta orden de trabajo? Esta acción no se puede deshacer.')) return;
+  try {
+    await sbFetch(`ordenes_trabajo?id=eq.${modalOrdenId}`, { method: 'DELETE' });
+    showToast('Orden eliminada', 'success');
+    closeModal();
     loadOrdenes();
   } catch(e) {
     showToast('Error al eliminar: ' + e.message, 'error');
