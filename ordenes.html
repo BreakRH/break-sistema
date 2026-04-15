@@ -1939,6 +1939,12 @@ const GIS_CLIENT_ID = '780824362766-h1te7jdtsjbfourv1vhvg6ipevc603ms.apps.google
 // Carpeta raíz OT Facturas — leída desde config de Supabase
 // Estructura: OT Facturas / [Local] / [Proveedor] / fotos
 const DRIVE_FOLDER_OT_ROOT_ID = '1jKQeNv9YED_E-2qcxNKAvNYQVGosN2eh';
+const DRIVE_HINTS_OT = {
+  palermo:      'Break7.52palermo@gmail.com',
+  belgrano:     'break7.52belgrano@gmail.com',
+  barrio_chino: 'Break7.52juramento@gmail.com',
+  san_telmo:    'Break7.52santelmo@gmail.com',
+};
 const LOCAL_FOLDER_NAMES = {
   palermo:      'Thames · Palermo',
   belgrano:     'Roosevelt · Belgrano',
@@ -1955,7 +1961,8 @@ function getOTTokenClient() {
   if (!window.google) { showToast('GIS no disponible', 'error'); return null; }
   _otTokenClient = google.accounts.oauth2.initTokenClient({
     client_id: GIS_CLIENT_ID,
-    scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive',
+    scope: 'https://www.googleapis.com/auth/drive',
+    hint: DRIVE_HINTS_OT[localKey] || 'angeldgolovko@gmail.com',
     callback: async (tokenResponse) => {
       if (tokenResponse.error) {
         const statusEl = document.getElementById('modal-foto-status');
