@@ -1896,7 +1896,7 @@
 <div class="screen" id="screen-reportes" style="flex-direction:column">
   <iframe
     id="reportes-iframe"
-    src="reportes.html"
+    src="about:blank"
     style="flex:1;border:none;width:100%;height:100%"
     allow="camera; identity-credentials-get"
   ></iframe>
@@ -2955,42 +2955,81 @@ async function getConfig(clave) {
 }
 
 // ═══════════════════════════════════════
-// GOOGLE DRIVE UPLOAD — OAuth2 usuario
+// GOOGLE DRIVE UPLOAD — OAuth2 GIS por cuenta de tienda
+// Cada local usa su propia cuenta Gmail como hint.
+// Las 5 carpetas de reportes están compartidas con las 4 cuentas de tienda
+// como Editor, y con angeldgolovko@gmail.com para acceso admin.
 // ═══════════════════════════════════════
-const OAUTH_CLIENT_ID = '780824362766-h1te7jdtsjbfourv1vhvg6ipevc603ms.apps.googleusercontent.com';
-const OAUTH_SCOPE     = 'https://www.googleapis.com/auth/drive';
-let _driveToken       = null;
-let _driveTokenExp    = 0;
-let _gisClient        = null;
 
-// driveGetOAuthToken — usa Google Identity Services (sin redirect URI)
-function driveGetOAuthToken(forceReauth = false) {
+const OAUTH_SCOPE = 'https://www.googleapis.com/auth/drive';
+
+// Hint por local — el popup sugiere la cuenta de la tienda correspondiente
+const DRIVE_HINTS = {
+  palermo:      'Break7.52palermo@gmail.com',
+  belgrano:     'break7.52belgrano@gmail.com',
+  barrio_chino: 'Break7.52juramento@gmail.com',
+  san_telmo:    'Break7.52santelmo@gmail.com',
+};
+
+let _driveToken    = null;
+let _driveTokenExp = 0;
+let _gisClient     = null;
+let _gisHint       = null; // hint activo — si cambia de local, recrear cliente
+
+// driveGetOAuthToken — GIS con hint dinámico por local
+// - _gisClient se inicializa una sola vez por hint.
+//   Si el local cambia, se resetea para usar el hint correcto.
+// - callback se reasigna antes de cada requestAccessToken (Promise propia).
+// - prompt:'none' intenta refresh silencioso; si falla → prompt:\'\' (selector).
+// - forceReauth usa prompt:\'select_account\'.
+
+function driveGetOAuthToken(localKey, forceReauth = false) {
   return new Promise((resolve, reject) => {
-    // Reusar token si todavía es válido (margen 2 min) y no se fuerza re-auth
-    if (!forceReauth && _driveToken && Date.now() < _driveTokenExp - 120000) {
+    const hint = DRIVE_HINTS[localKey] || null;
+
+    // Token válido en caché y mismo local
+    if (!forceReauth && _driveToken && Date.now() < _driveTokenExp - 120000 && _gisHint === hint) {
       return resolve(_driveToken);
     }
-    // Resetear token si se fuerza re-auth
-    if (forceReauth) { _driveToken = null; _gisClient = null; }
-    // Inicializar cliente GIS
+    _driveToken = null;
+
+    // Si el hint cambió (cambio de local) o forceReauth, resetear cliente
+    if (_gisHint !== hint || forceReauth) {
+      _gisClient = null;
+      _gisHint   = hint;
+    }
+
     if (!_gisClient) {
       if (!window.google?.accounts?.oauth2) {
-        return reject(new Error('Google Identity Services no cargó aún. Intentá de nuevo.'));
+        return reject(new Error('Google Identity Services no cargó. Recargá la página.'));
       }
       _gisClient = google.accounts.oauth2.initTokenClient({
-        client_id:   OAUTH_CLIENT_ID,
-        scope:       OAUTH_SCOPE,
-        hint:        'golovko.ucv@gmail.com',
-        callback:  (resp) => {
-          if (resp.error) return reject(new Error('OAuth error: ' + resp.error));
-          _driveToken    = resp.access_token;
-          _driveTokenExp = Date.now() + (resp.expires_in || 3600) * 1000;
-          resolve(_driveToken);
-        },
+        client_id: '780824362766-h1te7jdtsjbfourv1vhvg6ipevc603ms.apps.googleusercontent.com',
+        scope:     OAUTH_SCOPE,
+        hint:      hint || undefined,
+        callback:  () => {},
       });
     }
-    // prompt:'select_account' fuerza elegir cuenta (evita usar cuenta incorrecta cacheada)
-    _gisClient.requestAccessToken({ prompt: forceReauth ? 'select_account' : '' });
+
+    function tryRequest(promptValue) {
+      _gisClient.callback = (resp) => {
+        if (resp.error) {
+          if (resp.error === 'interaction_required' && promptValue === 'none') {
+            tryRequest('');
+            return;
+          }
+          reject(new Error('OAuth error: ' + resp.error));
+          return;
+        }
+        _driveToken    = resp.access_token;
+        _driveTokenExp = Date.now() + (resp.expires_in || 3600) * 1000;
+        console.log('[GIS] Token OK para', hint || 'cuenta sin hint', '— expira en', resp.expires_in || 3600, 's');
+        resolve(_driveToken);
+      };
+      _gisClient.requestAccessToken({ prompt: promptValue });
+    }
+
+    forceReauth ? tryRequest('select_account') : tryRequest('none');
   });
 }
 
@@ -3005,7 +3044,6 @@ async function driveGetOrCreateFolder(token, parentId, name) {
   }
   const d = await r.json();
   if (d.files?.length > 0) return d.files[0].id;
-  // No existe — crearla
   const cr = await fetch('https://www.googleapis.com/drive/v3/files', {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -3022,41 +3060,39 @@ async function driveGetOrCreateFolder(token, parentId, name) {
 
 async function uploadToDrive(file, formType, localKey) {
   try {
-    const token = await driveGetOAuthToken();
-
+    const token = await driveGetOAuthToken(localKey);
     const folderId = DRIVE_FOLDERS[formType];
     if (!folderId) throw new Error(`Sin carpeta configurada para tipo: ${formType}`);
-
-    // Subcarpeta por local
     const localName   = LOCALES[localKey] || localKey;
     const subFolderId = await driveGetOrCreateFolder(token, folderId, localName);
-
-    // Nombre del archivo
     const ts  = new Date().toISOString().replace(/[:.]/g, '-');
-    const ext = file.name.split('.').pop();
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
     const fileName = `${formType}_${localKey}_${ts}.${ext}`;
-
     const metadata = JSON.stringify({ name: fileName, parents: [subFolderId] });
     const form = new FormData();
     form.append('metadata', new Blob([metadata], { type: 'application/json' }));
     form.append('file', file);
-
     const uploadRes = await fetch(
-      'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink',
+      'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',
       { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: form }
     );
     const uploadData = await uploadRes.json();
-    if (!uploadRes.ok) {
-      console.error('[Drive upload]', uploadRes.status, JSON.stringify(uploadData));
-      throw new Error(`Drive upload ${uploadRes.status}: ${uploadData?.error?.message}`);
-    }
-    return uploadData.webViewLink || `https://drive.google.com/file/d/${uploadData.id}/view`;
+    if (!uploadRes.ok) throw new Error(`Drive upload ${uploadRes.status}: ${uploadData?.error?.message}`);
+    const fileId = uploadData.id;
+    const permRes = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/permissions`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role: 'reader', type: 'anyone' })
+    });
+    if (!permRes.ok) console.warn('[GIS] No se pudo hacer público el archivo:', await permRes.text());
+    const url = `https://drive.google.com/file/d/${fileId}/view`;
+    console.log('[GIS] Upload OK:', url);
+    return url;
   } catch(e) {
-    console.error('Drive upload error:', e);
+    console.error('[GIS] Upload error:', e.message);
     return null;
   }
 }
-
 // ═══════════════════════════════════════
 // NAVIGATION
 // ═══════════════════════════════════════
@@ -4822,14 +4858,17 @@ function driveFileId(url) {
   return null;
 }
 // Genera thumbnail inline + link al viewer de Drive
+// Usa /uc?export=view como src — es la URL de descarga directa para archivos públicos,
+// no requiere autenticación y no tiene X-Frame-Options que bloquee el load.
 function drivePhotoHtml(url) {
   if (!url) return '';
   const id = driveFileId(url);
   const viewerUrl = id ? `https://drive.google.com/file/d/${id}/view` : url;
-  const thumbUrl  = id ? `https://drive.google.com/thumbnail?id=${id}&sz=w800` : null;
-  if (thumbUrl) {
+  // /uc?export=view&id=X sirve la imagen directamente para archivos públicos (sin login)
+  const imgUrl = id ? `https://drive.google.com/uc?export=view&id=${id}` : null;
+  if (imgUrl) {
     return `<a href="${viewerUrl}" target="_blank" style="display:block;margin-top:8px">` +
-      `<img src="${thumbUrl}" style="width:100%;max-height:260px;object-fit:contain;border-radius:8px;border:0.5px solid var(--border2);background:var(--bg4)" ` +
+      `<img src="${imgUrl}" style="width:100%;max-height:260px;object-fit:contain;border-radius:8px;border:0.5px solid var(--border2);background:var(--bg4)" ` +
       `onerror="this.style.display='none';this.nextElementSibling.style.display='inline-block'">` +
       `</a>` +
       `<a href="${viewerUrl}" target="_blank" style="display:none;margin-top:6px;font-family:var(--mono);font-size:11px;color:var(--blue);text-decoration:none;border:0.5px solid rgba(91,156,246,0.3);padding:3px 10px;border-radius:5px">ver foto en Drive ↗</a>`;
@@ -6505,7 +6544,7 @@ async function ptAddAdhoc() {
     const hoy = new Date().toISOString().split('T')[0];
     const defRes = await sbFetch('tareas_definicion', {
       method:'POST',
-      body: JSON.stringify([{ nombre, frecuencia:'diaria', turnos:[state.turno], local:state.local, activa:true, es_base:false }])
+      body: JSON.stringify([{ nombre, frecuencia:'diaria', turnos:[state.turno], local:state.local, activa:true }])
     });
     const def = defRes?.[0];
     if (def) {
@@ -6681,7 +6720,7 @@ async function ptSaveDef() {
     dias_semana: frec==='semanal' ? dias : null,
     hora_inicio: frec!=='cada_n_horas' ? hora : null,
     intervalo_horas: frec==='cada_n_horas' ? intv : null,
-    turnos: ptTurnosCtrl, local: localFinal, activa: true, es_base: !editId, permanente: perm
+    turnos: ptTurnosCtrl, local: localFinal, activa: true
   };
   try {
     if (editId) {
@@ -7477,7 +7516,7 @@ function ordenesOpen() {
 function reportesOpen() {
   goTo('reportes');
   const iframe = document.getElementById('reportes-iframe');
-  const ctx = {
+  const ctxMsg = {
     type:             'break-context-reportes',
     local:            state.local,
     localName:        LOCALES[state.local] || state.localName || '',
@@ -7486,15 +7525,19 @@ function reportesOpen() {
     empleado_nombre:  state.empleado_nombre,
     rol:              state.rol,
   };
-  iframe.src = '';
+  // Siempre resetear a about:blank primero para garantizar que onload dispare
+  iframe.src = 'about:blank';
   setTimeout(() => {
-    iframe.src = 'reportes.html';
     iframe.onload = function() {
+      // Doble setTimeout: 150ms garantiza que el iframe terminó de inicializar su JS
       setTimeout(() => {
-        try { iframe.contentWindow.postMessage(ctx, '*'); } catch(e) {}
-      }, 100);
+        try { iframe.contentWindow.postMessage(ctxMsg, '*'); } catch(err) {
+          console.warn('[reportesOpen] postMessage falló:', err);
+        }
+      }, 150);
     };
-  }, 0);
+    iframe.src = 'reportes.html';
+  }, 50);
 }
 
 // Escuchar mensaje de vuelta del iframe de reportes
@@ -7502,24 +7545,25 @@ window.addEventListener('message', e => {
   if (e.data?.type === 'reportes-back') {
     goTo('hub');
   }
-  // El iframe de reportes pide subir una foto a Drive (no puede hacerlo directo por Tracking Prevention)
+  // El iframe de reportes pide subir una foto a Drive via GIS (cuenta de tienda)
   if (e.data?.type === 'drive-upload-request') {
     const iframe = document.getElementById('reportes-iframe');
     const { reqId, base64, mimeType, fileName, formType, localKey } = e.data;
     (async () => {
       try {
-        const token = await driveGetOAuthToken();
+        let token = await driveGetOAuthToken(localKey);
         const folderId = DRIVE_FOLDERS[formType];
         if (!folderId) throw new Error(`Sin carpeta para tipo: ${formType}`);
-        const localName = LOCALES[localKey] || localKey;
+        const localName   = LOCALES[localKey] || localKey;
         let subFolderId;
         try {
           subFolderId = await driveGetOrCreateFolder(token, folderId, localName);
         } catch(folderErr) {
-          // 404/403 = cuenta incorrecta → re-auth
-          if (folderErr.message.includes('404') || folderErr.message.includes('403')) {
-            const token2 = await driveGetOAuthToken(true);
-            subFolderId = await driveGetOrCreateFolder(token2, folderId, localName);
+          // 403/404 = cuenta incorrecta → forzar selector de cuenta
+          if (folderErr.message.includes('403') || folderErr.message.includes('404')) {
+            console.warn('[GIS] Carpeta inaccesible, forzando re-auth:', folderErr.message);
+            token = await driveGetOAuthToken(localKey, true);
+            subFolderId = await driveGetOrCreateFolder(token, folderId, localName);
           } else throw folderErr;
         }
         // Convertir base64 a Blob
@@ -7528,7 +7572,7 @@ window.addEventListener('message', e => {
         for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
         const fileBlob = new Blob([arr], { type: mimeType });
         const ts = new Date().toISOString().replace(/[:.]/g, '-');
-        const ext = fileName.split('.').pop() || 'jpg';
+        const ext = (fileName.split('.').pop() || 'jpg').toLowerCase();
         const finalName = `${formType}_${localKey}_${ts}.${ext}`;
         const metadata = JSON.stringify({ name: finalName, parents: [subFolderId] });
         const form = new FormData();
@@ -7541,16 +7585,17 @@ window.addEventListener('message', e => {
         const uploadData = await uploadRes.json();
         if (!uploadRes.ok) throw new Error(`Drive upload ${uploadRes.status}: ${uploadData?.error?.message}`);
         const fileId = uploadData.id;
-        // Hacer público
-        await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/permissions`, {
+        const permRes = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/permissions`, {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({ role: 'reader', type: 'anyone' })
         });
+        if (!permRes.ok) console.warn('[GIS] No se pudo hacer público:', await permRes.text());
         const url = `https://drive.google.com/file/d/${fileId}/view`;
+        console.log('[GIS] Upload desde iframe OK:', url);
         iframe?.contentWindow?.postMessage({ type: 'drive-upload-response', reqId, url }, '*');
       } catch(err) {
-        console.error('[Drive upload from iframe]', err);
+        console.error('[GIS upload desde iframe]', err);
         iframe?.contentWindow?.postMessage({ type: 'drive-upload-response', reqId, url: null, error: err.message }, '*');
       }
     })();
