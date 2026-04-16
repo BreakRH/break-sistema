@@ -1305,7 +1305,7 @@ async function confirmarPago(ordenId) {
     renderTabla();
     renderStats();
     // Refrescar el modal en lugar de cerrarlo — permite corregir el método si se equivocaron
-    openModal(ordenId);
+    openDetalle(ordenId);
     showToast('Pago actualizado ✓', 'success');
   } catch(e) {
     showToast('Error al confirmar pago: ' + e.message, 'error');
