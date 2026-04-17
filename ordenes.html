@@ -130,6 +130,9 @@
   }
   .filter-chip:hover { border-color: var(--border2); color: var(--text); }
   .filter-chip.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+.filter-chip-local { background: var(--surface); border: 0.5px solid var(--border); border-radius: 20px; padding: 6px 12px; font-size: 12px; color: var(--text2); cursor: pointer; transition: all 0.12s; white-space: nowrap; font-family: var(--mono); }
+.filter-chip-local:hover { border-color: var(--border2); color: var(--text); }
+.filter-chip-local.active { background: rgba(91,156,246,0.10); border-color: #5b9cf6; color: #5b9cf6; }
 
   /* SEARCH */
   .search-input {
@@ -490,6 +493,13 @@
         <button class="filter-chip" data-filter="por_pagar" onclick="setFilter('por_pagar',this)">Por pagar</button>
         <button class="filter-chip" data-filter="ya_pagado" onclick="setFilter('ya_pagado',this)">Pagadas</button>
         <button class="filter-chip" data-filter="pendiente" onclick="setFilter('pendiente',this)">Incompletas</button>
+      </div>
+      <div class="filter-group" id="filter-local" style="display:none;margin-top:6px;padding-top:8px;border-top:0.5px solid var(--border);">
+        <button class="filter-chip-local active" data-local="" onclick="setFilterLocal('',this)">Todas</button>
+        <button class="filter-chip-local" data-local="palermo" onclick="setFilterLocal('palermo',this)">🌿 Thames</button>
+        <button class="filter-chip-local" data-local="belgrano" onclick="setFilterLocal('belgrano',this)">🏛️ Belgrano</button>
+        <button class="filter-chip-local" data-local="barrio_chino" onclick="setFilterLocal('barrio_chino',this)">🏮 B. Chino</button>
+        <button class="filter-chip-local" data-local="san_telmo" onclick="setFilterLocal('san_telmo',this)">🎭 San Telmo</button>
       </div>
       <div class="toolbar-right">
         <input class="search-input" type="text" placeholder="Buscar factura / proveedor..." id="search-input" oninput="renderTabla()">
@@ -943,6 +953,14 @@ let rolActual = 'empleado'; // 'empleado' | 'encargado' | 'admin'
 let empleadoNombre = '';
 let ordenes = [];
 let filtroActivo = 'todos';
+let filtroLocal = '';
+
+function setFilterLocal(loc, el) {
+  filtroLocal = loc;
+  document.querySelectorAll('.filter-chip-local').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderTabla();
+}
 let editingId = null;
 let modalOrdenId = null;
 
@@ -952,6 +970,8 @@ window.addEventListener('message', e => {
     localKey = e.data.local || '';
     localName = e.data.localName || localKey;
     rolActual = e.data.rol || 'empleado';
+    const flEl = document.getElementById('filter-local');
+    if (flEl) flEl.style.display = (rolActual === 'admin' || rolActual === 'supervisor') ? '' : 'none';
     empleadoNombre = e.data.empleado || '';
     empleadoNombre = e.data.empleado || '';
     empleadoNombre = e.data.empleado || '';
@@ -1056,6 +1076,8 @@ function renderTabla() {
   else if (filtroActivo === 'ya_pagado') data = data.filter(o => o.estado_pago === 'ya_pagado');
   else if (filtroActivo === 'pendiente') data = data.filter(o => !isComplete(o));
   else if (filtroActivo === 'por_recibir') data = data.filter(o => !o.registrado && o.estado_pago !== 'ya_pagado');
+
+  if (filtroLocal) data = data.filter(o => o.local === filtroLocal);
 
   if (search) data = data.filter(o =>
     (o.nro_factura||'').toLowerCase().includes(search) ||
@@ -1250,6 +1272,8 @@ function buildPagoSection(o) {
             <option value="transferencia" ${metodoActual==='transferencia'?'selected':''}>Transferencia</option>
             <option value="mp" ${metodoActual==='mp'?'selected':''}>Mercado Pago</option>
             <option value="qr" ${metodoActual==='qr'?'selected':''}>QR</option>
+            <option value="ya_pagado" ${metodoActual==='ya_pagado'?'selected':''}>Ya pagado</option>
+            <option value="por_pagar" ${metodoActual==='por_pagar'?'selected':''}>Por pagar</option>
           </select>
         </div>
         <div>
@@ -1305,7 +1329,7 @@ async function confirmarPago(ordenId) {
     renderTabla();
     renderStats();
     // Refrescar el modal en lugar de cerrarlo — permite corregir el método si se equivocaron
-    openDetalle(ordenId);
+    openModal(ordenId);
     showToast('Pago actualizado ✓', 'success');
   } catch(e) {
     showToast('Error al confirmar pago: ' + e.message, 'error');

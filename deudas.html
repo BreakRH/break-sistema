@@ -474,17 +474,38 @@ window.addEventListener('message', function(e) {
   if (!e.data || e.data.type !== 'break-context') return;
   const ctx = e.data;
   if (ctx.local) { currentLocal = ctx.local; applyLocalContext(); }
-  // Si el hub ya autenticó como admin, saltar el splash de PIN
+
+  const tryAutoLogin = (fn) => {
+    const overlay = document.getElementById('loading-overlay');
+    if (overlay && overlay.style.display !== 'none' && !overlay.classList.contains('hidden')) {
+      setTimeout(() => tryAutoLogin(fn), 150); return;
+    }
+    fn();
+  };
+
+  // Admin — entra directo a vista admin
   if (ctx.rol === 'admin') {
-    const tryAutoLogin = () => {
-      if (document.getElementById('loading-overlay') &&
-          document.getElementById('loading-overlay').style.display !== 'none') {
-        setTimeout(tryAutoLogin, 150); return;
-      }
+    tryAutoLogin(() => {
       currentUser = 'Administración'; currentRole = 'admin'; adminVerTodo = false;
       enterApp();
-    };
-    tryAutoLogin();
+    });
+    return;
+  }
+
+  // Empleado / encargado — auto-login con su nombre y ID si el hub los mandó
+  if ((ctx.rol === 'empleado' || ctx.rol === 'encargado') && ctx.empleadoId && ctx.empleadoNombre) {
+    tryAutoLogin(() => {
+      // Esperar a que state.cuentas esté cargado
+      const doLogin = () => {
+        const cuenta = state.cuentas.find(c => c.id === ctx.empleadoId);
+        if (!cuenta && state.cuentas.length === 0) { setTimeout(doLogin, 200); return; }
+        currentUserId   = ctx.empleadoId;
+        currentUser     = ctx.empleadoNombre;
+        currentRole     = 'emp';
+        enterApp();
+      };
+      doLogin();
+    });
   }
 });
 

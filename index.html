@@ -2561,7 +2561,7 @@
 
           <!-- ══ CAJA CHICA: billetes sueltos + pacas lado a lado ══ -->
           <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);overflow:hidden;margin-bottom:10px">
-            <div class="pt-caja-col-title" style="display:flex;align-items:center;justify-content:space-between;"><span>💵 Caja chica — billetes y pacas</span><button style="font-size:10px;font-family:var(--mono);padding:3px 10px;background:transparent;border:1px solid var(--border2);color:var(--text3);border-radius:4px;cursor:pointer;margin-left:8px;" onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text3)'" onclick="ptResetCajaChica()">↺ reset</button></div>
+            <div class="pt-caja-col-title">💵 Caja chica — billetes y pacas</div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
 
               <!-- Billetes sueltos -->
@@ -2573,16 +2573,16 @@
                     <th style="text-align:right;padding-right:8px">Subtotal</th>
                   </tr></thead>
                   <tbody>
-                    <tr><td class="pt-caja-denom">$10</td><td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb10" value="0" oninput="ptRecalc()" onfocus="this.select()" onkeydown="if(event.key==='Enter'||event.key==='Tab'||event.key==='ArrowDown'){event.preventDefault();document.getElementById('ptb20')?.focus();}"></td><td class="pt-caja-sub" id="ptbs10">$0</td></tr>
-                    <tr><td class="pt-caja-denom">$20</td><td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb20" value="0" oninput="ptRecalc()" onfocus="this.select()" onkeydown="if(event.key==='Enter'||event.key==='Tab'||event.key==='ArrowDown'){event.preventDefault();document.getElementById('ptb50')?.focus();} if(event.key==='ArrowUp'){event.preventDefault();document.getElementById('ptb10')?.focus();}"></td><td class="pt-caja-sub" id="ptbs20">$0</td></tr>
-                    <tr><td class="pt-caja-denom">$50</td><td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb50" value="0" oninput="ptRecalc()" onfocus="this.select()" onkeydown="if(event.key==='Enter'||event.key==='Tab'||event.key==='ArrowDown'){event.preventDefault();document.getElementById('ptb100')?.focus();} if(event.key==='ArrowUp'){event.preventDefault();document.getElementById('ptb20')?.focus();}"></td><td class="pt-caja-sub" id="ptbs50">$0</td></tr>
-                    <tr><td class="pt-caja-denom">$100</td><td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb100" value="0" oninput="ptRecalc()" onfocus="this.select()" onkeydown="if(event.key==='Enter'||event.key==='Tab'||event.key==='ArrowDown'){event.preventDefault();document.getElementById('ptb200')?.focus();} if(event.key==='ArrowUp'){event.preventDefault();document.getElementById('ptb50')?.focus();}"></td><td class="pt-caja-sub" id="ptbs100">$0</td></tr>
-                    <tr><td class="pt-caja-denom">$200</td><td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb200" value="0" oninput="ptRecalc()" onfocus="this.select()" onkeydown="if(event.key==='Enter'||event.key==='Tab'||event.key==='ArrowDown'){event.preventDefault();document.getElementById('ptb500')?.focus();} if(event.key==='ArrowUp'){event.preventDefault();document.getElementById('ptb100')?.focus();}"></td><td class="pt-caja-sub" id="ptbs200">$0</td></tr>
-                    <tr><td class="pt-caja-denom">$500</td><td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb500" value="0" oninput="ptRecalc()" onfocus="this.select()" onkeydown="if(event.key==='Enter'||event.key==='Tab'||event.key==='ArrowDown'){event.preventDefault();document.getElementById('ptb1000')?.focus();} if(event.key==='ArrowUp'){event.preventDefault();document.getElementById('ptb200')?.focus();}"></td><td class="pt-caja-sub" id="ptbs500">$0</td></tr>
-                    <tr><td class="pt-caja-denom">$1.000</td><td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb1000" value="0" oninput="ptRecalc()" onfocus="this.select()" onkeydown="if(event.key==='Enter'||event.key==='Tab'||event.key==='ArrowDown'){event.preventDefault();document.getElementById('ptb2000')?.focus();} if(event.key==='ArrowUp'){event.preventDefault();document.getElementById('ptb500')?.focus();}"></td><td class="pt-caja-sub" id="ptbs1000">$0</td></tr>
-                    <tr><td class="pt-caja-denom">$2.000</td><td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb2000" value="0" oninput="ptRecalc()" onfocus="this.select()" onkeydown="if(event.key==='Enter'||event.key==='Tab'||event.key==='ArrowDown'){event.preventDefault();document.getElementById('ptb10000')?.focus();} if(event.key==='ArrowUp'){event.preventDefault();document.getElementById('ptb1000')?.focus();}"></td><td class="pt-caja-sub" id="ptbs2000">$0</td></tr>
-                    <tr><td class="pt-caja-denom">$10.000</td><td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb10000" value="0" oninput="ptRecalc()" onfocus="this.select()" onkeydown="if(event.key==='Enter'||event.key==='Tab'||event.key==='ArrowDown'){event.preventDefault();document.getElementById('ptb20000')?.focus();} if(event.key==='ArrowUp'){event.preventDefault();document.getElementById('ptb2000')?.focus();}"></td><td class="pt-caja-sub" id="ptbs10000">$0</td></tr>
-                    <tr><td class="pt-caja-denom">$20.000</td><td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb20000" value="0" oninput="ptRecalc()" onfocus="this.select()" onkeydown="if(event.key==='Enter'||event.key==='Tab'||event.key==='ArrowDown'){event.preventDefault();document.getElementById('ptpa-p100')?.focus();} if(event.key==='ArrowUp'){event.preventDefault();document.getElementById('ptb10000')?.focus();}"></td><td class="pt-caja-sub" id="ptbs20000">$0</td></tr>
+                    <tr><td class="pt-caja-denom">$10</td><td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb10" value="0" oninput="ptRecalc()"></td><td class="pt-caja-sub" id="ptbs10">$0</td></tr>
+                    <tr><td class="pt-caja-denom">$20</td><td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb20" value="0" oninput="ptRecalc()"></td><td class="pt-caja-sub" id="ptbs20">$0</td></tr>
+                    <tr><td class="pt-caja-denom">$50</td><td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb50" value="0" oninput="ptRecalc()"></td><td class="pt-caja-sub" id="ptbs50">$0</td></tr>
+                    <tr><td class="pt-caja-denom">$100</td><td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb100" value="0" oninput="ptRecalc()"></td><td class="pt-caja-sub" id="ptbs100">$0</td></tr>
+                    <tr><td class="pt-caja-denom">$200</td><td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb200" value="0" oninput="ptRecalc()"></td><td class="pt-caja-sub" id="ptbs200">$0</td></tr>
+                    <tr><td class="pt-caja-denom">$500</td><td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb500" value="0" oninput="ptRecalc()"></td><td class="pt-caja-sub" id="ptbs500">$0</td></tr>
+                    <tr><td class="pt-caja-denom">$1.000</td><td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb1000" value="0" oninput="ptRecalc()"></td><td class="pt-caja-sub" id="ptbs1000">$0</td></tr>
+                    <tr><td class="pt-caja-denom">$2.000</td><td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb2000" value="0" oninput="ptRecalc()"></td><td class="pt-caja-sub" id="ptbs2000">$0</td></tr>
+                    <tr><td class="pt-caja-denom">$10.000</td><td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb10000" value="0" oninput="ptRecalc()"></td><td class="pt-caja-sub" id="ptbs10000">$0</td></tr>
+                    <tr><td class="pt-caja-denom">$20.000</td><td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-billete-inp" id="ptb20000" value="0" oninput="ptRecalc()"></td><td class="pt-caja-sub" id="ptbs20000">$0</td></tr>
                   </tbody>
                 </table>
               </div>
@@ -2600,31 +2600,31 @@
                     <tr>
                       <td class="pt-caja-denom" style="color:var(--accent)">$100</td>
                       <td class="pt-caja-sub" style="font-size:9px;color:var(--text3);text-align:left;padding-left:4px">$10</td>
-                      <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptpa-p100" placeholder="0" oninput="ptRecalc()" onfocus="this.select()" onkeydown="if(event.key==='Enter'||event.key==='Tab'||event.key==='ArrowDown'){event.preventDefault();document.getElementById('ptpa-p200')?.focus();} if(event.key==='ArrowUp'){event.preventDefault();document.getElementById('ptb20000')?.focus();}"></td>
+                      <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptpa-p100" placeholder="0" oninput="ptRecalc()"></td>
                       <td class="pt-caja-sub" id="ptps-p100">$0</td>
                     </tr>
                     <tr>
                       <td class="pt-caja-denom" style="color:var(--accent)">$200</td>
                       <td class="pt-caja-sub" style="font-size:9px;color:var(--text3);text-align:left;padding-left:4px">$20</td>
-                      <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptpa-p200" placeholder="0" oninput="ptRecalc()" onfocus="this.select()" onkeydown="if(event.key==='Enter'||event.key==='Tab'||event.key==='ArrowDown'){event.preventDefault();document.getElementById('ptpa-p500')?.focus();} if(event.key==='ArrowUp'){event.preventDefault();document.getElementById('ptpa-p100')?.focus();}"></td>
+                      <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptpa-p200" placeholder="0" oninput="ptRecalc()"></td>
                       <td class="pt-caja-sub" id="ptps-p200">$0</td>
                     </tr>
                     <tr>
                       <td class="pt-caja-denom" style="color:var(--accent)">$500</td>
                       <td class="pt-caja-sub" style="font-size:9px;color:var(--text3);text-align:left;padding-left:4px">$50</td>
-                      <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptpa-p500" placeholder="0" oninput="ptRecalc()" onfocus="this.select()" onkeydown="if(event.key==='Enter'||event.key==='Tab'||event.key==='ArrowDown'){event.preventDefault();document.getElementById('ptpa-p1000')?.focus();} if(event.key==='ArrowUp'){event.preventDefault();document.getElementById('ptpa-p200')?.focus();}"></td>
+                      <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptpa-p500" placeholder="0" oninput="ptRecalc()"></td>
                       <td class="pt-caja-sub" id="ptps-p500">$0</td>
                     </tr>
                     <tr>
                       <td class="pt-caja-denom" style="color:var(--accent)">$1.000</td>
                       <td class="pt-caja-sub" style="font-size:9px;color:var(--text3);text-align:left;padding-left:4px">$100/$200</td>
-                      <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptpa-p1000" placeholder="0" oninput="ptRecalc()" onfocus="this.select()" onkeydown="if(event.key==='Enter'||event.key==='Tab'||event.key==='ArrowDown'){event.preventDefault();document.getElementById('ptpa-p10000')?.focus();} if(event.key==='ArrowUp'){event.preventDefault();document.getElementById('ptpa-p500')?.focus();}"></td>
+                      <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptpa-p1000" placeholder="0" oninput="ptRecalc()"></td>
                       <td class="pt-caja-sub" id="ptps-p1000">$0</td>
                     </tr>
                     <tr>
                       <td class="pt-caja-denom" style="color:var(--accent)">$10.000</td>
                       <td class="pt-caja-sub" style="font-size:9px;color:var(--text3);text-align:left;padding-left:4px">$500/$1k/$2k</td>
-                      <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptpa-p10000" placeholder="0" oninput="ptRecalc()" onfocus="this.select()"></td>
+                      <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptpa-p10000" placeholder="0" oninput="ptRecalc()"></td>
                       <td class="pt-caja-sub" id="ptps-p10000">$0</td>
                     </tr>
                   </tbody>
@@ -2636,7 +2636,7 @@
 
           <!-- ══ CAJA GRANDE: pacas + bultos abajo ══ -->
           <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);overflow:hidden;margin-bottom:10px">
-            <div class="pt-caja-col-title" style="display:flex;align-items:center;justify-content:space-between;color:var(--blue)"><span>📦 Caja grande — pacas y bultos</span><button style="font-size:10px;font-family:var(--mono);padding:3px 10px;background:transparent;border:1px solid var(--border2);color:var(--text3);border-radius:4px;cursor:pointer;margin-left:8px;" onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text3)'" onclick="ptResetCajaGrande()">↺ reset</button></div>
+            <div class="pt-caja-col-title" style="color:var(--blue)">📦 Caja grande — pacas y bultos</div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
 
               <!-- Pacas caja grande -->
@@ -2652,31 +2652,31 @@
                     <tr>
                       <td class="pt-caja-denom" style="color:var(--accent)">$100</td>
                       <td class="pt-caja-sub" style="font-size:9px;color:var(--text3);text-align:left;padding-left:4px">$10</td>
-                      <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptcg-pa100" placeholder="0" oninput="ptRecalcGrande()" onfocus="this.select()" onkeydown="if(event.key==='Enter'||event.key==='Tab'||event.key==='ArrowDown'){event.preventDefault();document.getElementById('ptcg-pa200')?.focus();}"></td>
+                      <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptcg-pa100" placeholder="0" oninput="ptRecalcGrande()"></td>
                       <td class="pt-caja-sub" id="ptcgs-pa100">$0</td>
                     </tr>
                     <tr>
                       <td class="pt-caja-denom" style="color:var(--accent)">$200</td>
                       <td class="pt-caja-sub" style="font-size:9px;color:var(--text3);text-align:left;padding-left:4px">$20</td>
-                      <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptcg-pa200" placeholder="0" oninput="ptRecalcGrande()" onfocus="this.select()" onkeydown="if(event.key==='Enter'||event.key==='Tab'||event.key==='ArrowDown'){event.preventDefault();document.getElementById('ptcg-pa500')?.focus();} if(event.key==='ArrowUp'){event.preventDefault();document.getElementById('ptcg-pa100')?.focus();}"></td>
+                      <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptcg-pa200" placeholder="0" oninput="ptRecalcGrande()"></td>
                       <td class="pt-caja-sub" id="ptcgs-pa200">$0</td>
                     </tr>
                     <tr>
                       <td class="pt-caja-denom" style="color:var(--accent)">$500</td>
                       <td class="pt-caja-sub" style="font-size:9px;color:var(--text3);text-align:left;padding-left:4px">$50</td>
-                      <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptcg-pa500" placeholder="0" oninput="ptRecalcGrande()" onfocus="this.select()" onkeydown="if(event.key==='Enter'||event.key==='Tab'||event.key==='ArrowDown'){event.preventDefault();document.getElementById('ptcg-pa1000')?.focus();} if(event.key==='ArrowUp'){event.preventDefault();document.getElementById('ptcg-pa200')?.focus();}"></td>
+                      <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptcg-pa500" placeholder="0" oninput="ptRecalcGrande()"></td>
                       <td class="pt-caja-sub" id="ptcgs-pa500">$0</td>
                     </tr>
                     <tr>
                       <td class="pt-caja-denom" style="color:var(--accent)">$1.000</td>
                       <td class="pt-caja-sub" style="font-size:9px;color:var(--text3);text-align:left;padding-left:4px">$100/$200</td>
-                      <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptcg-pa1000" placeholder="0" oninput="ptRecalcGrande()" onfocus="this.select()" onkeydown="if(event.key==='Enter'||event.key==='Tab'||event.key==='ArrowDown'){event.preventDefault();document.getElementById('ptcg-pa10000')?.focus();} if(event.key==='ArrowUp'){event.preventDefault();document.getElementById('ptcg-pa500')?.focus();}"></td>
+                      <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptcg-pa1000" placeholder="0" oninput="ptRecalcGrande()"></td>
                       <td class="pt-caja-sub" id="ptcgs-pa1000">$0</td>
                     </tr>
                     <tr>
                       <td class="pt-caja-denom" style="color:var(--accent)">$10.000</td>
                       <td class="pt-caja-sub" style="font-size:9px;color:var(--text3);text-align:left;padding-left:4px">$500/$1k/$2k</td>
-                      <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptcg-pa10000" placeholder="0" oninput="ptRecalcGrande()" onfocus="this.select()" onkeydown="if(event.key==='Enter'||event.key==='Tab'||event.key==='ArrowDown'){event.preventDefault();document.getElementById('ptcg-cc1')?.focus();} if(event.key==='ArrowUp'){event.preventDefault();document.getElementById('ptcg-pa1000')?.focus();}"></td>
+                      <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptcg-pa10000" placeholder="0" oninput="ptRecalcGrande()"></td>
                       <td class="pt-caja-sub" id="ptcgs-pa10000">$0</td>
                     </tr>
                     <!-- Custom 1 y 2 — persisten en localStorage -->
@@ -2687,7 +2687,7 @@
                           <input type="number" min="0" class="pt-paca-val-inp" id="ptcg-cv1" placeholder="Valor $" oninput="ptSaveCGConfig();ptRecalcGrande()" style="width:80px;flex-shrink:0">
                         </div>
                       </td>
-                      <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptcg-cc1" placeholder="0" oninput="ptRecalcGrande()" onfocus="this.select()" onkeydown="if(event.key==='Enter'||event.key==='Tab'||event.key==='ArrowDown'){event.preventDefault();document.getElementById('ptcg-cc2')?.focus();} if(event.key==='ArrowUp'){event.preventDefault();document.getElementById('ptcg-pa10000')?.focus();}"></td>
+                      <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptcg-cc1" placeholder="0" oninput="ptRecalcGrande()"></td>
                       <td class="pt-caja-sub" id="ptcgs-cc1">$0</td>
                     </tr>
                     <tr>
@@ -2697,7 +2697,7 @@
                           <input type="number" min="0" class="pt-paca-val-inp" id="ptcg-cv2" placeholder="Valor $" oninput="ptSaveCGConfig();ptRecalcGrande()" style="width:80px;flex-shrink:0">
                         </div>
                       </td>
-                      <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptcg-cc2" placeholder="0" oninput="ptRecalcGrande()" onfocus="this.select()" onkeydown="if(event.key==='Enter'||event.key==='Tab'||event.key==='ArrowDown'){event.preventDefault();document.getElementById('ptcg-bu10000')?.focus();} if(event.key==='ArrowUp'){event.preventDefault();document.getElementById('ptcg-cc1')?.focus();}"></td>
+                      <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptcg-cc2" placeholder="0" oninput="ptRecalcGrande()"></td>
                       <td class="pt-caja-sub" id="ptcgs-cc2">$0</td>
                     </tr>
                   </tbody>
@@ -2717,19 +2717,19 @@
                     <tr>
                       <td class="pt-caja-denom" style="color:var(--blue)">$10.000</td>
                       <td class="pt-caja-sub" style="font-size:9px;color:var(--text3);text-align:left;padding-left:4px">pacas $100/$200</td>
-                      <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptcg-bu10000" placeholder="0" oninput="ptRecalcGrande()" onfocus="this.select()" onkeydown="if(event.key==='Enter'||event.key==='Tab'||event.key==='ArrowDown'){event.preventDefault();document.getElementById('ptcg-bu50000')?.focus();} if(event.key==='ArrowUp'){event.preventDefault();document.getElementById('ptcg-cc2')?.focus();}"></td>
+                      <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptcg-bu10000" placeholder="0" oninput="ptRecalcGrande()"></td>
                       <td class="pt-caja-sub" id="ptcgs-bu10000">$0</td>
                     </tr>
                     <tr>
                       <td class="pt-caja-denom" style="color:var(--blue)">$50.000</td>
                       <td class="pt-caja-sub" style="font-size:9px;color:var(--text3);text-align:left;padding-left:4px">pacas $1k/$2k</td>
-                      <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptcg-bu50000" placeholder="0" oninput="ptRecalcGrande()" onfocus="this.select()" onkeydown="if(event.key==='Enter'||event.key==='Tab'||event.key==='ArrowDown'){event.preventDefault();document.getElementById('ptcg-bu100000')?.focus();} if(event.key==='ArrowUp'){event.preventDefault();document.getElementById('ptcg-bu10000')?.focus();}"></td>
+                      <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptcg-bu50000" placeholder="0" oninput="ptRecalcGrande()"></td>
                       <td class="pt-caja-sub" id="ptcgs-bu50000">$0</td>
                     </tr>
                     <tr>
                       <td class="pt-caja-denom" style="color:var(--blue)">$100.000</td>
                       <td class="pt-caja-sub" style="font-size:9px;color:var(--text3);text-align:left;padding-left:4px">pacas $10k/$20k</td>
-                      <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptcg-bu100000" placeholder="0" oninput="ptRecalcGrande()" onfocus="this.select()"></td>
+                      <td class="pt-caja-inp-wrap"><input type="number" min="0" class="pt-pb-inp" id="ptcg-bu100000" placeholder="0" oninput="ptRecalcGrande()"></td>
                       <td class="pt-cga-sub" id="ptcgs-bu100000">$0</td>
                     </tr>
                   </tbody>
@@ -4914,7 +4914,7 @@ function drivePhotoHtml(url) {
       `<img src="${imgUrl}" style="width:100%;max-height:260px;object-fit:contain;border-radius:8px;border:0.5px solid var(--border2);background:var(--bg4)" ` +
       `onerror="this.style.display='none';this.nextElementSibling.style.display='inline-block'">` +
       `</a>` +
-      `<a href="${viewerUrl}" target="_blank" style="display:none;margin-top:6px;font-family:var(--mono);font-size:11px;color:var(--blue);text-decoration:none;border:0.5px solid rgba(91,156,246,0.3);padding:3px 10px;border-radius:5px">ver foto en Drive ↗</a>`;
+      `<a href="${viewerUrl}" target="_blank" style="display:inline-block;margin-top:6px;font-family:var(--mono);font-size:11px;color:var(--blue);text-decoration:none;border:0.5px solid rgba(91,156,246,0.3);padding:3px 10px;border-radius:5px">ver foto en Drive ↗</a>`;
   }
   return `<a href="${viewerUrl}" target="_blank" style="display:inline-block;margin-top:6px;font-family:var(--mono);font-size:11px;color:var(--blue);text-decoration:none;border:0.5px solid rgba(91,156,246,0.3);padding:3px 10px;border-radius:5px">ver foto en Drive ↗</a>`;
 }
@@ -6852,33 +6852,6 @@ function ptInitPBConfig() {
   });
 }
 
-
-function ptResetCajaChica() {
-  if (!confirm('¿Resetear todos los campos de caja chica?')) return;
-  ['ptb10','ptb20','ptb50','ptb100','ptb200','ptb500','ptb1000','ptb2000','ptb10000','ptb20000'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '0';
-  });
-  ['ptpa-p100','ptpa-p200','ptpa-p500','ptpa-p1000','ptpa-p10000'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
-  });
-  ptRecalc();
-  // Foco al primer campo
-  document.getElementById('ptb10')?.focus();
-}
-
-function ptResetCajaGrande() {
-  if (!confirm('¿Resetear todos los campos de caja grande?')) return;
-  ['ptcg-pa100','ptcg-pa200','ptcg-pa500','ptcg-pa1000','ptcg-pa10000',
-   'ptcg-cc1','ptcg-cc2','ptcg-bu10000','ptcg-bu50000','ptcg-bu100000'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
-  });
-  ptRecalcGrande();
-  document.getElementById('ptcg-pa100')?.focus();
-}
-
 function ptRecalc() {
   // ── Caja chica: sueltos ──
   let totalEf = 0;
@@ -7478,10 +7451,25 @@ function deudasOpen() {
   goTo('deudas');
   const badge = document.getElementById('badge-deudas-local');
   if (badge) badge.textContent = LOCALES[state.local] || '--';
-  // Blanquear src primero para forzar recarga aunque el local sea el mismo
   const iframe = document.getElementById('deudas-iframe');
+  const ctx = {
+    type: 'break-context',
+    local: state.local,
+    localName: LOCALES[state.local] || '',
+    turno: state.turno,
+    rol: state.rol,
+    empleadoId:     state.empleado_id     || null,
+    empleadoNombre: state.empleado_nombre || null
+  };
   iframe.src = '';
-  setTimeout(() => { iframe.src = 'deudas.html?local=' + (state.local || '') + '&rol=' + (state.rol || ''); }, 0);
+  setTimeout(() => {
+    iframe.src = 'deudas.html?local=' + (state.local || '');
+    iframe.onload = function() {
+      setTimeout(() => {
+        try { iframe.contentWindow.postMessage(ctx, '*'); } catch(e) {}
+      }, 150);
+    };
+  }, 0);
 }
 
 // === MODULO PEDIDOS ===
@@ -7722,7 +7710,24 @@ window.addEventListener('message', e => {
           headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({ role: 'reader', type: 'anyone' })
         });
-        if (!permRes.ok) console.warn('[GIS] No se pudo hacer público:', await permRes.text());
+        if (!permRes.ok) {
+          const permErr = await permRes.text();
+          console.error('[GIS] ERROR al hacer público (status ' + permRes.status + '):', permErr);
+          // Intentar con allowFileDiscovery: false como fallback
+          const permRes2 = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/permissions`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ role: 'reader', type: 'anyone', allowFileDiscovery: false })
+          });
+          if (!permRes2.ok) {
+            const permErr2 = await permRes2.text();
+            console.error('[GIS] ERROR fallback permisos (status ' + permRes2.status + '):', permErr2);
+          } else {
+            console.log('[GIS] Permiso público OK (fallback allowFileDiscovery:false)');
+          }
+        } else {
+          console.log('[GIS] Permiso público OK');
+        }
         const url = `https://drive.google.com/file/d/${fileId}/view`;
         console.log('[GIS] Upload desde iframe OK:', url);
         iframe?.contentWindow?.postMessage({ type: 'drive-upload-response', reqId, url }, '*');
@@ -7996,30 +8001,6 @@ async function ptConfirmarApertura() {
     <div id="rep-modal-content"></div>
   </div>
 </div>
-
-<!-- Botón flotante Guía -->
-<a href="https://breakrh.github.io/break-sistema/guia-break.html" target="_blank" id="fab-guia" style="
-  position:fixed;
-  bottom:24px;
-  right:20px;
-  z-index:9999;
-  display:flex;
-  align-items:center;
-  gap:7px;
-  background:#e8c87a;
-  color:#0e0e0f;
-  font-family:'DM Mono',monospace;
-  font-size:12px;
-  font-weight:500;
-  padding:10px 16px;
-  border-radius:24px;
-  text-decoration:none;
-  box-shadow:0 4px 18px rgba(232,200,122,0.35);
-  transition:opacity 0.15s, transform 0.15s;
-  letter-spacing:0.04em;
-" onmouseover="this.style.opacity='0.88';this.style.transform='translateY(-2px)'" onmouseout="this.style.opacity='1';this.style.transform='translateY(0)'">
-  <span style="font-size:14px;line-height:1">?</span> Guía
-</a>
 
 </body>
 </html>
