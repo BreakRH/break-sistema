@@ -475,36 +475,33 @@ window.addEventListener('message', function(e) {
   const ctx = e.data;
   if (ctx.local) { currentLocal = ctx.local; applyLocalContext(); }
 
-  const tryAutoLogin = (fn) => {
+  const waitReady = (fn) => {
     const overlay = document.getElementById('loading-overlay');
-    if (overlay && overlay.style.display !== 'none' && !overlay.classList.contains('hidden')) {
-      setTimeout(() => tryAutoLogin(fn), 150); return;
+    if (overlay && !overlay.classList.contains('hidden')) {
+      setTimeout(() => waitReady(fn), 150); return;
     }
     fn();
   };
 
-  // Admin — entra directo a vista admin
+  // Admin — entra directo a vista admin (comportamiento original)
   if (ctx.rol === 'admin') {
-    tryAutoLogin(() => {
+    waitReady(() => {
       currentUser = 'Administración'; currentRole = 'admin'; adminVerTodo = false;
       enterApp();
     });
     return;
   }
 
-  // Empleado / encargado — auto-login con su nombre y ID si el hub los mandó
-  if ((ctx.rol === 'empleado' || ctx.rol === 'encargado') && ctx.empleadoId && ctx.empleadoNombre) {
-    tryAutoLogin(() => {
-      // Esperar a que state.cuentas esté cargado
-      const doLogin = () => {
-        const cuenta = state.cuentas.find(c => c.id === ctx.empleadoId);
-        if (!cuenta && state.cuentas.length === 0) { setTimeout(doLogin, 200); return; }
-        currentUserId   = ctx.empleadoId;
-        currentUser     = ctx.empleadoNombre;
-        currentRole     = 'emp';
-        enterApp();
+  // Empleado / encargado — solo pre-selecciona su nombre en el splash
+  // No hace auto-login: el usuario puede cambiar el empleado antes de confirmar
+  if ((ctx.rol === 'empleado' || ctx.rol === 'encargado') && ctx.empleadoId) {
+    waitReady(() => {
+      const preselect = () => {
+        const sel = document.getElementById('emp-select');
+        if (!sel || sel.options.length <= 1) { setTimeout(preselect, 200); return; }
+        sel.value = ctx.empleadoId;
       };
-      doLogin();
+      preselect();
     });
   }
 });
