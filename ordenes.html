@@ -381,6 +381,12 @@
   .check-box-tick { display: none; color: #0a0a0a; font-size: 10px; font-weight: 700; }
   .check-item.checked .check-box-tick { display: block; }
   .check-label { font-size: 12px; color: var(--text2); }
+.venc-row { display:grid; grid-template-columns:1fr auto auto; gap:6px; align-items:center; margin-bottom:6px; }
+.venc-row input { font-family:var(--mono); font-size:13px; }
+.venc-badge { display:inline-block; padding:3px 8px; border-radius:12px; font-family:var(--mono); font-size:10px; font-weight:600; }
+.venc-verde    { background:rgba(93,191,138,0.12); color:var(--green);  border:0.5px solid rgba(93,191,138,0.3); }
+.venc-amarillo { background:rgba(232,200,122,0.12); color:var(--accent); border:0.5px solid rgba(232,200,122,0.3); }
+.venc-rojo     { background:rgba(240,96,96,0.12);   color:var(--red);    border:0.5px solid rgba(240,96,96,0.3); }
   .check-item.checked .check-label { color: var(--green); }
 
   /* DETAIL MODAL */
@@ -809,6 +815,17 @@
 
       </div>
 
+        <!-- Productos por vencer -->
+        <div class="section-divider" style="margin-top:8px;">
+          <span class="section-divider-label">📅 Productos por vencer</span>
+          <div class="section-divider-line"></div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:10px;">
+          Registrá los productos que llegaron con fecha de vencimiento próxima. Aparecerán en el semáforo del panel de turno.
+        </div>
+        <div id="venc-lista"></div>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="vencAgregar()" style="margin-bottom:4px;">+ Agregar producto</button>
+
       <div style="display:flex;gap:8px;margin-top:20px;">
         <button class="btn btn-primary" onclick="submitOT()">
           <span id="submit-icon">＋</span> <span id="submit-label">Guardar OT</span>
@@ -899,6 +916,7 @@
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal()">Cerrar</button>
       <button class="btn btn-ghost" id="btn-modal-editar" onclick="editFromModal()" style="display:none;">✎ Editar</button>
+      <button class="btn btn-primary" id="btn-modal-completar" onclick="completarOT()" style="display:none;">✓ Completar OT</button>
       <button class="btn btn-danger btn-sm" id="btn-modal-eliminar" onclick="eliminarOTdesdeModal()" style="display:none;margin-left:auto;">🗑 Eliminar</button>
     </div>
   </div>
@@ -1233,6 +1251,15 @@ function openDetalle(id) {
   document.getElementById('modal-detalle').classList.add('open');
   const btnEditar = document.getElementById('btn-modal-editar');
   if (btnEditar) btnEditar.style.display = (rolActual === 'admin' || rolActual === 'supervisor') ? '' : 'none';
+  const btnCompletar = document.getElementById('btn-modal-completar');
+  if (btnCompletar) {
+    const pagado = o.estado_pago && o.estado_pago !== 'por_pagar';
+    const completo = isComplete(o);
+    btnCompletar.style.display = (pagado && !completo) || (!isComplete(o)) ? '' : 'none';
+    btnCompletar.textContent = isComplete(o) ? '✓ Ver en historial' : '✓ Completar OT';
+  }
+  const btnEliminar = document.getElementById('btn-modal-eliminar');
+  if (btnEliminar) btnEliminar.style.display = (rolActual === 'admin' && !o.pedido_id) ? '' : 'none';
 }
 
 // ─── SECCIÓN PAGO MODAL (6.3) ────────────────────────────────
@@ -1329,7 +1356,7 @@ async function confirmarPago(ordenId) {
     renderTabla();
     renderStats();
     // Refrescar el modal en lugar de cerrarlo — permite corregir el método si se equivocaron
-    openModal(ordenId);
+    openDetalle(ordenId);
     showToast('Pago actualizado ✓', 'success');
   } catch(e) {
     showToast('Error al confirmar pago: ' + e.message, 'error');
@@ -1339,6 +1366,36 @@ async function confirmarPago(ordenId) {
 function closeModal() {
   document.getElementById('modal-detalle').classList.remove('open');
   modalOrdenId = null;
+}
+
+async function completarOT() {
+  const id = modalOrdenId;
+  if (!id) return;
+  const o = ordenes.find(x => x.id === id);
+  if (!o) return;
+  // Si ya está completa, ir directo al historial
+  if (isComplete(o)) {
+    closeModal();
+    switchTab('historial');
+    loadHistorialOT();
+    return;
+  }
+  // Marcar todos los campos de activación como true
+  const campos = ['repuesto','registrado','activo_pya','activo_mp','activo_rappi','check_factura','check_nocturno','revision_precios'];
+  const patch = {};
+  campos.forEach(c => { patch[c] = true; });
+  try {
+    await sbFetch(`ordenes_trabajo?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify(patch) });
+    campos.forEach(c => { o[c] = true; });
+    renderTabla();
+    renderStats();
+    showToast('OT completada ✓', 'success');
+    closeModal();
+    switchTab('historial');
+    await loadHistorialOT();
+  } catch(e) {
+    showToast('Error al completar OT: ' + e.message, 'error');
+  }
 }
 
 async function toggleCheckModal(ordenId, campo, el) {
@@ -1541,6 +1598,7 @@ function editOT(id) {
 }
 
 function cancelEdit() {
+  vencReset();
   editingId = null;
   resetForm();
   switchTab('lista');
@@ -1559,6 +1617,102 @@ function toggleCheck(el) {
   el.classList.toggle('checked');
   const cb = el.querySelector('input[type="checkbox"]');
   if (cb) cb.checked = !cb.checked;
+}
+
+// ── VENCIMIENTOS ─────────────────────────────────────────────
+let vencItems = []; // [{nombre, fecha_vencimiento}]
+
+function vencAgregar() {
+  const idx = vencItems.length;
+  vencItems.push({ nombre: '', fecha_vencimiento: '' });
+  vencRender();
+  // Foco en el input de nombre recién creado
+  setTimeout(() => {
+    const el = document.getElementById(`venc-nombre-${idx}`);
+    if (el) el.focus();
+  }, 50);
+}
+
+function vencEliminar(idx) {
+  vencItems.splice(idx, 1);
+  vencRender();
+}
+
+function vencUpdate(idx, campo, val) {
+  vencItems[idx][campo] = val;
+  if (campo === 'fecha_vencimiento') vencRender();
+}
+
+function vencDias(fechaStr) {
+  if (!fechaStr) return null;
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const venc = new Date(fechaStr + 'T00:00:00');
+  return Math.round((venc - hoy) / 86400000);
+}
+
+function vencColor(dias) {
+  if (dias === null) return '';
+  if (dias <= 7)  return 'rojo';
+  if (dias <= 30) return 'amarillo';
+  return 'verde';
+}
+
+function vencLabel(dias) {
+  if (dias === null) return '';
+  if (dias < 0)  return 'Vencido';
+  if (dias === 0) return 'Vence hoy';
+  return `${dias}d`;
+}
+
+function vencRender() {
+  const lista = document.getElementById('venc-lista');
+  if (!lista) return;
+  if (vencItems.length === 0) {
+    lista.innerHTML = '<div style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-bottom:8px;">Sin productos cargados.</div>';
+    return;
+  }
+  lista.innerHTML = vencItems.map((it, idx) => {
+    const dias = vencDias(it.fecha_vencimiento);
+    const col  = vencColor(dias);
+    const lbl  = vencLabel(dias);
+    return `<div class="venc-row">
+      <input class="form-input" type="text" id="venc-nombre-${idx}" value="${it.nombre}"
+        placeholder="Nombre del producto..." oninput="vencUpdate(${idx},'nombre',this.value)"
+        style="font-size:13px;padding:8px 10px;">
+      <input class="form-input" type="date" id="venc-fecha-${idx}" value="${it.fecha_vencimiento}"
+        onchange="vencUpdate(${idx},'fecha_vencimiento',this.value)"
+        style="font-size:13px;padding:8px 10px;width:140px;">
+      ${col ? `<span class="venc-badge venc-${col}">${lbl}</span>` : '<span style="width:36px"></span>'}
+      <button type="button" onclick="vencEliminar(${idx})"
+        style="background:transparent;border:none;color:var(--text3);cursor:pointer;font-size:16px;padding:4px 6px;line-height:1;">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function vencReset() {
+  vencItems = [];
+  vencRender();
+}
+
+async function vencGuardar(ot_id) {
+  if (!vencItems.length) return;
+  const proveedor = document.getElementById('f-proveedor')?.value.trim() || '';
+  const hoy = new Date().toISOString().split('T')[0];
+  const rows = vencItems
+    .filter(it => it.nombre && it.fecha_vencimiento)
+    .map(it => ({
+      local:             localKey,
+      nombre:            it.nombre,
+      fecha_vencimiento: it.fecha_vencimiento,
+      proveedor:         proveedor,
+      ot_id:             ot_id,
+      estado:            'activo',
+      created_at:        new Date().toISOString(),
+    }));
+  if (!rows.length) return;
+  try {
+    await sbFetch('productos_vencimiento', { method: 'POST', body: JSON.stringify(rows) });
+  } catch(e) { console.warn('[venc] Error guardando vencimientos:', e); }
 }
 
 async function submitOT() {
@@ -1610,10 +1764,18 @@ async function submitOT() {
       showToast('Orden actualizada', 'success');
     } else {
       payload.created_at = new Date().toISOString();
+      const resOT = await sbFetch('ordenes_trabajo?select=id&order=created_at.desc&limit=1&local=eq.' + localKey, {});
+      // Guardar con el ID de la OT recién creada
       await sbFetch('ordenes_trabajo', {
         method: 'POST',
         body: JSON.stringify(payload)
       });
+      // Recuperar ID real post-insert
+      try {
+        const creadas = await sbFetch(`ordenes_trabajo?local=eq.${localKey}&nro_factura=eq.${encodeURIComponent(payload.nro_factura)}&order=created_at.desc&limit=1&select=id`);
+        const newId = creadas?.[0]?.id || null;
+        await vencGuardar(newId);
+      } catch(e) { console.warn('[venc] no se pudo obtener ID OT:', e); }
       showToast('Orden creada', 'success');
     }
     cancelEdit();

@@ -910,6 +910,51 @@
   .sem-amarillo .pt-sem-stock { color: var(--accent); }
   .sem-rojo     .pt-sem-stock { color: var(--red); }
 
+  /* ── VENCIMIENTOS ── */
+  .pt-venc-grid { display:flex; flex-direction:column; gap:6px; }
+  .pt-venc-item {
+    display:flex; align-items:center; gap:10px;
+    background:var(--bg3); border:0.5px solid var(--border);
+    border-left:2px solid var(--green);
+    border-radius:var(--radius); padding:10px 12px;
+  }
+  .pt-venc-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+  .pt-venc-info { flex:1; min-width:0; }
+  .pt-venc-nombre { font-size:12px; color:var(--text); font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .pt-venc-meta   { font-family:var(--mono); font-size:10px; color:var(--text3); margin-top:1px; }
+  .pt-venc-badge  { font-family:var(--mono); font-size:11px; font-weight:700; flex-shrink:0; }
+  .pt-venc-alerta {
+    background:rgba(240,96,96,0.08); border:0.5px solid rgba(240,96,96,0.3);
+    border-radius:var(--radius); padding:10px 14px; margin-bottom:8px;
+    font-family:var(--mono); font-size:11px; color:var(--red); line-height:1.5;
+  }
+  /* pantalla vencimientos standalone */
+  .venc-screen-wrap { padding:16px; max-width:600px; margin:0 auto; }
+  .venc-form-card { background:var(--bg2); border:0.5px solid var(--line); border-radius:var(--radius); padding:16px; margin-bottom:14px; }
+  .venc-form-card .vc-title { font-size:13px; font-weight:700; margin-bottom:12px; color:var(--text); }
+  .venc-form-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .venc-inp { width:100%; background:var(--bg3); border:0.5px solid var(--border2); border-radius:var(--r2); color:var(--text); font-family:var(--mono); font-size:13px; padding:9px 12px; outline:none; box-sizing:border-box; }
+  .venc-inp:focus { border-color:var(--accent); }
+  .venc-inp.full { grid-column:1/-1; }
+  .venc-list { display:flex; flex-direction:column; gap:6px; margin-top:4px; }
+  .venc-list-item {
+    display:flex; align-items:center; gap:10px;
+    background:var(--bg3); border:0.5px solid var(--border); border-radius:var(--radius); padding:10px 12px;
+  }
+  .venc-list-item .vli-info { flex:1; min-width:0; }
+  .venc-list-item .vli-nombre { font-size:13px; font-weight:600; color:var(--text); }
+  .venc-list-item .vli-meta   { font-family:var(--mono); font-size:10px; color:var(--text3); margin-top:2px; }
+  .venc-list-item .vli-days   { font-family:var(--mono); font-size:12px; font-weight:700; flex-shrink:0; }
+  .venc-list-item .vli-del    { background:transparent; border:none; color:var(--text3); cursor:pointer; font-size:15px; padding:2px 6px; border-radius:4px; }
+  .venc-list-item .vli-del:hover { color:var(--red); }
+  .venc-badge-pill { display:inline-block; padding:2px 8px; border-radius:12px; font-family:var(--mono); font-size:10px; font-weight:600; }
+  .venc-verde    { background:rgba(93,191,138,0.12);  color:var(--green);  border:0.5px solid rgba(93,191,138,0.3); }
+  .venc-amarillo { background:rgba(232,200,122,0.12); color:var(--accent); border:0.5px solid rgba(232,200,122,0.3); }
+  .venc-rojo     { background:rgba(240,96,96,0.12);   color:var(--red);    border:0.5px solid rgba(240,96,96,0.3); }
+  .venc-tabs { display:flex; gap:4px; margin-bottom:14px; }
+  .venc-tab { flex:1; padding:8px; border:0.5px solid var(--border2); border-radius:var(--r2); background:var(--bg3); color:var(--text2); font-family:var(--mono); font-size:11px; cursor:pointer; text-align:center; }
+  .venc-tab.active { background:var(--accent2); border-color:var(--accent); color:var(--accent); }
+
   /* Ventas placeholder */
   .pt-ventas-grid {
     display: grid; grid-template-columns: repeat(2,1fr); gap: 7px;
@@ -1108,6 +1153,43 @@
   .pt-dif-ok       .pt-dif-val { color: var(--green); }
   .pt-dif-sobrante .pt-dif-val { color: var(--blue); }
   .pt-dif-faltante .pt-dif-val { color: var(--red); }
+
+
+  /* ── SELECTOR DE MODO DE CONTEO ── */
+  .pt-modo-selector { display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap; }
+  .pt-modo-btn {
+    flex:1; min-width:90px; padding:10px 8px; border:0.5px solid var(--border2);
+    border-radius:var(--radius); background:var(--bg3); color:var(--text2);
+    font-family:var(--mono); font-size:11px; cursor:pointer; text-align:center;
+    transition:all 0.15s; line-height:1.4;
+  }
+  .pt-modo-btn:hover { border-color:var(--accent); color:var(--text); }
+  .pt-modo-btn.active { background:var(--accent2); border-color:var(--accent); color:var(--accent); }
+  .pt-modo-title { font-size:13px; font-weight:700; display:block; margin-bottom:2px; }
+
+  /* ── MODO RÁPIDO ── */
+  .pt-rapido-wrap { display:flex; flex-direction:column; gap:10px; margin-bottom:10px; }
+  .pt-rapido-field { background:var(--bg3); border:1px solid var(--border2); border-radius:var(--radius); padding:14px; }
+  .pt-rapido-lbl { font-family:var(--mono); font-size:10px; color:var(--text3); text-transform:uppercase; letter-spacing:.08em; margin-bottom:8px; }
+  .pt-rapido-inp { width:100%; background:var(--bg4); border:1px solid var(--border2); border-radius:var(--r2); color:var(--text); font-family:var(--mono); font-size:22px; font-weight:600; padding:10px 14px; outline:none; text-align:right; box-sizing:border-box; }
+  .pt-rapido-inp:focus { border-color:var(--accent); }
+
+  /* ── MODO CALCULADORA ── */
+  .pt-calc-wrap { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
+  .pt-calc-display { background:var(--bg3); border:1px solid var(--border2); border-radius:var(--radius); padding:12px; }
+  .pt-calc-screen { font-family:var(--mono); font-size:26px; font-weight:700; color:var(--text); text-align:right; min-height:42px; word-break:break-all; margin-bottom:4px; }
+  .pt-calc-op { font-family:var(--mono); font-size:11px; color:var(--text3); text-align:right; min-height:16px; }
+  .pt-calc-tape { background:var(--bg4); border-radius:var(--r2); padding:8px 10px; font-family:var(--mono); font-size:11px; color:var(--text3); max-height:120px; overflow-y:auto; margin-top:8px; }
+  .pt-calc-tape-row { display:flex; justify-content:space-between; border-bottom:0.5px solid var(--line); padding:2px 0; }
+  .pt-calc-tape-row:last-child { border-bottom:none; color:var(--accent); font-weight:600; }
+  .pt-calc-btns { display:grid; grid-template-columns:repeat(4,1fr); gap:5px; }
+  .pt-calc-btn { padding:13px 4px; border:0.5px solid var(--border2); border-radius:var(--r2); background:var(--bg3); color:var(--text); font-family:var(--mono); font-size:14px; cursor:pointer; transition:all 0.1s; text-align:center; }
+  .pt-calc-btn:hover { background:var(--bg4); border-color:var(--border2); }
+  .pt-calc-btn:active { transform:scale(0.95); }
+  .pt-calc-btn.op { color:var(--accent); background:var(--accent2); }
+  .pt-calc-btn.ac { color:var(--red); }
+  .pt-calc-btn.eq { background:var(--accent); color:#0e0e0f; font-weight:700; border-color:var(--accent); }
+  .pt-calc-btn.wide { grid-column:span 2; }
 
   /* Botón cierre */
   .pt-cerrar-btn {
@@ -1911,6 +1993,14 @@
       <div class="module-desc">semáforo · vencimientos · proveedores</div>
     </div>
 
+    <div class="module-card" id="card-vencimientos"
+         style="--card-accent:var(--green);--icon-bg:rgba(93,191,138,0.08)"
+         onclick="vencOpen()">
+      <div class="module-icon">📅</div>
+      <div class="module-name">Vencimientos</div>
+      <div class="module-desc">registrá · monitoreá · alertas</div>
+    </div>
+
     <div class="module-card wide" id="card-turno-admin"
          style="--card-accent:var(--blue);--icon-bg:var(--blue-bg);display:none"
          onclick="admAbrirPanelTurno()">
@@ -2375,6 +2465,27 @@
       </div>
     </div>
 
+    <!-- Vencimientos — COLAPSABLE -->
+    <div class="pt-section" id="pt-venc-section">
+      <div class="pt-section-header collapsible" onclick="ptToggleSection('pt-body-venc',this)">
+        <div class="pt-section-title">
+          <div class="pt-dot" id="pt-venc-dot" style="background:var(--green)"></div>
+          📅 Vencimientos
+          <span class="pt-collapse-arrow" id="pt-arr-venc">▾</span>
+        </div>
+        <span id="pt-venc-badge-count" style="font-family:var(--mono);font-size:10px;color:var(--text3)"></span>
+      </div>
+      <div class="pt-section-body collapsed" id="pt-body-venc">
+        <div id="pt-venc-alertas"></div>
+        <div class="pt-venc-grid" id="pt-venc-grid">
+          <div style="font-family:var(--mono);font-size:11px;color:var(--text3);">Cargando...</div>
+        </div>
+        <button onclick="vencOpen()" style="margin-top:10px;width:100%;padding:8px;background:transparent;border:0.5px solid var(--border2);border-radius:var(--r2);color:var(--text3);font-family:var(--mono);font-size:11px;cursor:pointer;">
+          + Agregar / gestionar productos
+        </button>
+      </div>
+    </div>
+
     <!-- Semáforo (placeholder) — COLAPSABLE -->
     <div class="pt-section">
       <div class="pt-section-header collapsible" onclick="ptToggleSection('pt-body-semaforo',this)">
@@ -2556,9 +2667,27 @@
               <span id="pt-sticky-neta" style="color:var(--green);font-weight:600">$0</span>
             </div>
           </div>
+          <!-- SELECTOR DE MODO DE CONTEO -->
+          <div style="font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Modo de conteo</div>
+          <div class="pt-modo-selector" id="pt-modo-selector">
+            <button class="pt-modo-btn active" id="pt-modo-btn-detallado" onclick="ptSetModo('detallado',this)">
+              <span class="pt-modo-title">📊 Detallado</span>billetes · pacas · bultos
+            </button>
+            <button class="pt-modo-btn" id="pt-modo-btn-rapido" onclick="ptSetModo('rapido',this)">
+              <span class="pt-modo-title">⚡ Rápido</span>monto total manual
+            </button>
+            <button class="pt-modo-btn" id="pt-modo-btn-calculadora" onclick="ptSetModo('calculadora',this)">
+              <span class="pt-modo-title">🧮 Calculadora</span>sumar de a uno
+            </button>
+          </div>
+
+          <!-- ══ MODO DETALLADO (actual) ══ -->
+          <div id="pt-caja-detallado">
+
           <!-- INFO HINT -->
           <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:8px">Ingresá <span style="color:var(--accent)">cantidad</span> de pacas/bultos. Los valores son fijos.</div>
 
+          <!-- ══ CAJA CHICA: billetes sueltos + pacas lado a lado ══ -->
           <!-- ══ CAJA CHICA: billetes sueltos + pacas lado a lado ══ -->
           <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);overflow:hidden;margin-bottom:10px">
             <div class="pt-caja-col-title">💵 Caja chica — billetes y pacas</div>
@@ -2739,7 +2868,8 @@
             </div><!-- /grid grande -->
           </div><!-- /caja grande -->
 
-          <!-- Subtotales en fila horizontal -->
+
+          <!-- Subtotales modo detallado -->
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
             <div class="pt-total-ef" style="margin-bottom:0">
               <div class="pt-total-ef-lbl">💵 Caja chica</div>
@@ -2754,6 +2884,79 @@
               <div class="pt-total-ef-val" id="pt-total-general">$0</div>
             </div>
           </div>
+          </div><!-- /pt-caja-detallado -->
+
+          <!-- ══ MODO RÁPIDO ══ -->
+          <div id="pt-caja-rapido" style="display:none">
+            <div class="pt-rapido-wrap">
+              <div class="pt-rapido-field">
+                <div class="pt-rapido-lbl">💰 Monto total contado (todo junto)</div>
+                <input type="number" min="0" class="pt-rapido-inp" id="pt-rapido-monto" placeholder="0" oninput="ptRecalcRapido()">
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+              <div class="pt-total-ef" style="margin-bottom:0;border-color:var(--accent)">
+                <div class="pt-total-ef-lbl">💰 Total contado</div>
+                <div class="pt-total-ef-val" id="pt-rapido-total">$0</div>
+              </div>
+              <div class="pt-total-ef" style="margin-bottom:0;border-color:var(--green)">
+                <div class="pt-total-ef-lbl" style="color:var(--green)">📋 Modo</div>
+                <div class="pt-total-ef-val" style="color:var(--green);font-size:13px">Rápido ⚡</div>
+              </div>
+            </div>
+          </div><!-- /pt-caja-rapido -->
+
+          <!-- ══ MODO CALCULADORA ══ -->
+          <div id="pt-caja-calculadora" style="display:none">
+            <div class="pt-calc-wrap">
+              <!-- Display + tape -->
+              <div>
+                <div class="pt-calc-display">
+                  <div class="pt-calc-op" id="ptcalc-op"></div>
+                  <div class="pt-calc-screen" id="ptcalc-screen">0</div>
+                </div>
+                <div class="pt-calc-tape" id="ptcalc-tape">
+                  <div style="color:var(--text3);font-size:10px;text-align:center">— tape vacío —</div>
+                </div>
+              </div>
+              <!-- Botones -->
+              <div class="pt-calc-btns">
+                <button class="pt-calc-btn ac" onclick="ptCalcAC()">AC</button>
+                <button class="pt-calc-btn ac" onclick="ptCalcDel()">⌫</button>
+                <button class="pt-calc-btn op" onclick="ptCalcOp('%')">%</button>
+                <button class="pt-calc-btn op" onclick="ptCalcOp('/')">÷</button>
+
+                <button class="pt-calc-btn" onclick="ptCalcNum('7')">7</button>
+                <button class="pt-calc-btn" onclick="ptCalcNum('8')">8</button>
+                <button class="pt-calc-btn" onclick="ptCalcNum('9')">9</button>
+                <button class="pt-calc-btn op" onclick="ptCalcOp('*')">×</button>
+
+                <button class="pt-calc-btn" onclick="ptCalcNum('4')">4</button>
+                <button class="pt-calc-btn" onclick="ptCalcNum('5')">5</button>
+                <button class="pt-calc-btn" onclick="ptCalcNum('6')">6</button>
+                <button class="pt-calc-btn op" onclick="ptCalcOp('-')">−</button>
+
+                <button class="pt-calc-btn" onclick="ptCalcNum('1')">1</button>
+                <button class="pt-calc-btn" onclick="ptCalcNum('2')">2</button>
+                <button class="pt-calc-btn" onclick="ptCalcNum('3')">3</button>
+                <button class="pt-calc-btn op" onclick="ptCalcOp('+')">+</button>
+
+                <button class="pt-calc-btn wide" onclick="ptCalcNum('0')">0</button>
+                <button class="pt-calc-btn" onclick="ptCalcNum('.')">.</button>
+                <button class="pt-calc-btn eq" onclick="ptCalcEq()">=</button>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+              <div class="pt-total-ef" style="margin-bottom:0;border-color:var(--accent)">
+                <div class="pt-total-ef-lbl">💰 Total acumulado</div>
+                <div class="pt-total-ef-val" id="pt-calc-total">$0</div>
+              </div>
+              <div class="pt-total-ef" style="margin-bottom:0;border-color:var(--green)">
+                <div class="pt-total-ef-lbl" style="color:var(--green)">📋 Modo</div>
+                <div class="pt-total-ef-val" style="color:var(--green);font-size:13px">Calculadora 🧮</div>
+              </div>
+            </div>
+          </div><!-- /pt-caja-calculadora -->
 
           <!-- ══════════════════════════════
                DEUDAS + CAJA NETA + MOVIMIENTOS — fila horizontal
@@ -3154,6 +3357,7 @@ function goTo(screen) {
     'inventario': 'screen-inventario',
     'ordenes': 'screen-ordenes',
     'pagos':   'screen-pagos',
+    'vencimientos': 'screen-vencimientos',
   };
   const id = map[screen] || screen;
   const el = document.getElementById(id);
@@ -6184,6 +6388,7 @@ function ptInitCore() {
   if (sistemaEl) sistemaEl.value = '';
   document.getElementById('pt-obs-cierre').value = '';
   ptRecalc();
+  ptLoadVencimientos();
   ptInitChecks();
 
   // Recargas persistentes — pre-cargar stock_actual del último cierre del mismo turno+local
@@ -6852,6 +7057,130 @@ function ptInitPBConfig() {
   });
 }
 
+// ── MODOS DE CONTEO DE CAJA ──────────────────
+let ptModoConteo = 'detallado'; // 'detallado' | 'rapido' | 'calculadora'
+
+function ptSetModo(modo, btn) {
+  ptModoConteo = modo;
+  document.querySelectorAll('.pt-modo-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('pt-caja-detallado').style.display   = modo === 'detallado'   ? '' : 'none';
+  document.getElementById('pt-caja-rapido').style.display      = modo === 'rapido'      ? '' : 'none';
+  document.getElementById('pt-caja-calculadora').style.display = modo === 'calculadora' ? '' : 'none';
+  ptRecalcCajaNeta();
+}
+
+// ── MODO RÁPIDO ──────────────────────────────
+function ptRecalcRapido() {
+  const v = parseFloat(document.getElementById('pt-rapido-monto')?.value) || 0;
+  const el = document.getElementById('pt-rapido-total');
+  if (el) el.textContent = '$' + v.toLocaleString('es-AR');
+  ptRecalcCajaNeta();
+}
+
+function ptGetTotalRapido() {
+  return parseFloat(document.getElementById('pt-rapido-monto')?.value) || 0;
+}
+
+// ── MODO CALCULADORA ─────────────────────────
+let _calcDisplay = '0';
+let _calcOp = null;
+let _calcPrev = null;
+let _calcNuevoNum = true;
+let _calcTape = []; // {label, val}
+let _calcAcumulado = 0;
+
+function ptCalcRender() {
+  const scr = document.getElementById('ptcalc-screen');
+  const op  = document.getElementById('ptcalc-op');
+  if (scr) scr.textContent = parseFloat(_calcDisplay).toLocaleString('es-AR', {maximumFractionDigits:2});
+  if (op)  op.textContent  = _calcPrev != null ? '$' + _calcPrev.toLocaleString('es-AR') + ' ' + ({'+':'+','-':'−','*':'×','/':'÷','%':'%'}[_calcOp]||'') : '';
+  // tape
+  const tape = document.getElementById('ptcalc-tape');
+  if (!tape) return;
+  if (_calcTape.length === 0) {
+    tape.innerHTML = '<div style="color:var(--text3);font-size:10px;text-align:center">— tape vacío —</div>';
+  } else {
+    tape.innerHTML = _calcTape.map((r,i) =>
+      `<div class="pt-calc-tape-row"><span>${r.label}</span><span>$${r.val.toLocaleString('es-AR')}</span></div>`
+    ).join('') +
+    `<div class="pt-calc-tape-row"><span>TOTAL</span><span>$${_calcAcumulado.toLocaleString('es-AR')}</span></div>`;
+    tape.scrollTop = tape.scrollHeight;
+  }
+  const totEl = document.getElementById('pt-calc-total');
+  if (totEl) totEl.textContent = '$' + _calcAcumulado.toLocaleString('es-AR');
+  ptRecalcCajaNeta();
+}
+
+function ptCalcNum(n) {
+  if (_calcNuevoNum) { _calcDisplay = n === '.' ? '0.' : n; _calcNuevoNum = false; }
+  else {
+    if (n === '.' && _calcDisplay.includes('.')) return;
+    if (_calcDisplay === '0' && n !== '.') _calcDisplay = n;
+    else _calcDisplay += n;
+  }
+  ptCalcRender();
+}
+
+function ptCalcOp(op) {
+  const cur = parseFloat(_calcDisplay) || 0;
+  if (_calcPrev != null && !_calcNuevoNum) {
+    _calcPrev = ptCalcResolver(_calcPrev, cur, _calcOp);
+    _calcDisplay = String(_calcPrev);
+  } else {
+    _calcPrev = cur;
+  }
+  _calcOp = op;
+  _calcNuevoNum = true;
+  ptCalcRender();
+}
+
+function ptCalcResolver(a, b, op) {
+  if (op === '+') return a + b;
+  if (op === '-') return a - b;
+  if (op === '*') return a * b;
+  if (op === '/') return b !== 0 ? a / b : a;
+  if (op === '%') return a * b / 100;
+  return b;
+}
+
+function ptCalcEq() {
+  const cur = parseFloat(_calcDisplay) || 0;
+  let resultado = cur;
+  if (_calcPrev != null && _calcOp) {
+    resultado = ptCalcResolver(_calcPrev, cur, _calcOp);
+  }
+  // Si la operación es suma, agregar al tape
+  if (_calcOp === '+' || _calcOp == null) {
+    const val = _calcOp === '+' ? cur : resultado;
+    if (val !== 0) {
+      _calcAcumulado += val;
+      _calcTape.push({ label: '+$' + val.toLocaleString('es-AR'), val: _calcAcumulado });
+    }
+  } else {
+    // Operación compleja — guardar resultado como nuevo acumulado
+    _calcAcumulado = resultado;
+    _calcTape.push({ label: 'resultado', val: resultado });
+  }
+  _calcDisplay = String(Math.round(resultado * 100) / 100);
+  _calcPrev = null; _calcOp = null; _calcNuevoNum = true;
+  ptCalcRender();
+}
+
+function ptCalcAC() {
+  _calcDisplay = '0'; _calcOp = null; _calcPrev = null;
+  _calcNuevoNum = true; _calcTape = []; _calcAcumulado = 0;
+  ptCalcRender();
+}
+
+function ptCalcDel() {
+  if (_calcNuevoNum) return;
+  _calcDisplay = _calcDisplay.length > 1 ? _calcDisplay.slice(0,-1) : '0';
+  ptCalcRender();
+}
+
+function ptGetTotalCalc() { return _calcAcumulado; }
+
 function ptRecalc() {
   // ── Caja chica: sueltos ──
   let totalEf = 0;
@@ -6989,7 +7318,14 @@ function ptRecalcCajaNeta() {
   for(let i=1;i<=2;i++){
     tPacas += (parseFloat(document.getElementById(`ptcg-cv${i}`)?.value)||0) * (parseInt(document.getElementById(`ptcg-cc${i}`)?.value)||0);
   }
-  const tCaja = tEf + tPacas;
+  let tCaja;
+  if (ptModoConteo === 'rapido') {
+    tCaja = ptGetTotalRapido();
+  } else if (ptModoConteo === 'calculadora') {
+    tCaja = ptGetTotalCalc();
+  } else {
+    tCaja = tEf + tPacas;
+  }
   const deudas = ptData._totalDeudas || 0;
   const neta = tCaja + deudas;
   const netaEl = document.getElementById('pt-caja-neta');
@@ -7046,16 +7382,23 @@ async function ptCerrar() {
     return;
   }
 
-  let totalEf = PT_DENOM.reduce((acc, d) => acc + (parseInt(document.getElementById(d.id)?.value)||0)*d.val, 0);
-  const PACAS_CH_C = [{id:'p100',val:100},{id:'p200',val:200},{id:'p500',val:500},{id:'p1000',val:1000},{id:'p10000',val:10000}];
-  PACAS_CH_C.forEach(p => { totalEf += (parseInt(document.getElementById(`ptpa-${p.id}`)?.value)||0)*p.val; });
-  const PACAS_CG_C = [{id:'pa100',val:100},{id:'pa200',val:200},{id:'pa500',val:500},{id:'pa1000',val:1000},{id:'pa10000',val:10000}];
-  const BULTOS_CG_C = [{id:'bu10000',val:10000},{id:'bu50000',val:50000},{id:'bu100000',val:100000}];
-  let totalGrande = 0;
-  PACAS_CG_C.forEach(p => { totalGrande += (parseInt(document.getElementById(`ptcg-${p.id}`)?.value)||0)*p.val; });
-  BULTOS_CG_C.forEach(b => { totalGrande += (parseInt(document.getElementById(`ptcg-${b.id}`)?.value)||0)*b.val; });
-  for(let i=1;i<=2;i++){totalGrande+=(parseFloat(document.getElementById(`ptcg-cv${i}`)?.value)||0)*(parseInt(document.getElementById(`ptcg-cc${i}`)?.value)||0);}
-  const totalGeneral = totalEf + totalGrande;
+  let totalGeneral = 0;
+  if (ptModoConteo === 'rapido') {
+    totalGeneral = ptGetTotalRapido();
+  } else if (ptModoConteo === 'calculadora') {
+    totalGeneral = ptGetTotalCalc();
+  } else {
+    let totalEf = PT_DENOM.reduce((acc, d) => acc + (parseInt(document.getElementById(d.id)?.value)||0)*d.val, 0);
+    const PACAS_CH_C = [{id:'p100',val:100},{id:'p200',val:200},{id:'p500',val:500},{id:'p1000',val:1000},{id:'p10000',val:10000}];
+    PACAS_CH_C.forEach(p => { totalEf += (parseInt(document.getElementById(`ptpa-${p.id}`)?.value)||0)*p.val; });
+    const PACAS_CG_C = [{id:'pa100',val:100},{id:'pa200',val:200},{id:'pa500',val:500},{id:'pa1000',val:1000},{id:'pa10000',val:10000}];
+    const BULTOS_CG_C = [{id:'bu10000',val:10000},{id:'bu50000',val:50000},{id:'bu100000',val:100000}];
+    let totalGrande = 0;
+    PACAS_CG_C.forEach(p => { totalGrande += (parseInt(document.getElementById(`ptcg-${p.id}`)?.value)||0)*p.val; });
+    BULTOS_CG_C.forEach(b => { totalGrande += (parseInt(document.getElementById(`ptcg-${b.id}`)?.value)||0)*b.val; });
+    for(let i=1;i<=2;i++){totalGrande+=(parseFloat(document.getElementById(`ptcg-cv${i}`)?.value)||0)*(parseInt(document.getElementById(`ptcg-cc${i}`)?.value)||0);}
+    totalGeneral = totalEf + totalGrande;
+  }
   const totalSis = parseFloat(document.getElementById('ptmed-sistema')?.value)||null;
 
   const checksJson = {
@@ -7101,6 +7444,7 @@ async function ptCerrar() {
     total_sistema:   totalSis,
     diferencia:      totalSis ? (totalGeneral + (ptData._totalDeudas||0)) - totalSis : null,
     observaciones:    document.getElementById('pt-obs-cierre')?.value.trim()||null,
+    modo_conteo:     ptModoConteo,
     checks_json:      JSON.stringify(checksJson),
   };
 
@@ -7141,9 +7485,240 @@ async function ptCerrar() {
 }
 
 // ── COLAPSABLES ───────────────────────────
+// ════════════════════════════════════════
+// MÓDULO VENCIMIENTOS
+// ════════════════════════════════════════
+
+// ── Helpers ──────────────────────────────
+function vencDias(fechaStr) {
+  if (!fechaStr) return null;
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const venc = new Date(fechaStr + 'T00:00:00');
+  return Math.round((venc - hoy) / 86400000);
+}
+function vencClase(dias) {
+  if (dias === null) return '';
+  if (dias <= 7)  return 'rojo';
+  if (dias <= 30) return 'amarillo';
+  return 'verde';
+}
+function vencEtiqueta(dias) {
+  if (dias === null) return '—';
+  if (dias < 0)   return 'Vencido';
+  if (dias === 0) return 'Hoy';
+  if (dias === 1) return '1 día';
+  return `${dias} días`;
+}
+function vencFechaFmt(str) {
+  if (!str) return '—';
+  return new Date(str + 'T00:00:00').toLocaleDateString('es-AR', {day:'2-digit',month:'2-digit',year:'2-digit'});
+}
+
+// ── Carga desde Supabase ──────────────────
+async function vencCargar(soloActivos = true) {
+  if (!state.local) return [];
+  try {
+    const q = soloActivos
+      ? `productos_vencimiento?local=eq.${state.local}&estado=eq.activo&order=fecha_vencimiento.asc`
+      : `productos_vencimiento?local=eq.${state.local}&order=fecha_vencimiento.asc`;
+    return await sbFetch(q) || [];
+  } catch(e) { console.warn('[venc] Error:', e); return []; }
+}
+
+// ── Semáforo en panel de turno ────────────
+async function ptLoadVencimientos() {
+  if (!state.local) return;
+  const items = await vencCargar(true);
+  ptRenderVencimientos(items);
+}
+
+function ptRenderVencimientos(items) {
+  const grid     = document.getElementById('pt-venc-grid');
+  const alertas  = document.getElementById('pt-venc-alertas');
+  const dot      = document.getElementById('pt-venc-dot');
+  const badgeCnt = document.getElementById('pt-venc-badge-count');
+  if (!grid) return;
+
+  if (!items.length) {
+    grid.innerHTML = '<div style="font-family:var(--mono);font-size:11px;color:var(--text3);">Sin productos registrados.</div>';
+    if (alertas) alertas.innerHTML = '';
+    if (dot) dot.style.background = 'var(--text3)';
+    if (badgeCnt) badgeCnt.textContent = '';
+    return;
+  }
+
+  const criticos = items.filter(i => vencDias(i.fecha_vencimiento) <= 7);
+  const proximos = items.filter(i => { const d = vencDias(i.fecha_vencimiento); return d > 7 && d <= 30; });
+
+  if (dot) dot.style.background = criticos.length ? 'var(--red)' : proximos.length ? 'var(--accent)' : 'var(--green)';
+  if (badgeCnt) badgeCnt.textContent = `${items.length} producto${items.length !== 1 ? 's' : ''}`;
+
+  if (alertas) {
+    if (criticos.length) {
+      alertas.innerHTML = `<div class="pt-venc-alerta">⚠ ${criticos.length} producto${criticos.length>1?'s':''} vence${criticos.length>1?'n':''} en menos de 7 días — considerá promoción 2x1 o traspaso de stock.</div>`;
+    } else if (proximos.length) {
+      alertas.innerHTML = `<div style="background:rgba(232,200,122,0.08);border:0.5px solid rgba(232,200,122,0.3);border-radius:var(--radius);padding:10px 14px;margin-bottom:8px;font-family:var(--mono);font-size:11px;color:var(--accent);line-height:1.5;">📅 ${proximos.length} producto${proximos.length>1?'s':''} próximo${proximos.length>1?'s':''} a vencer — revisá la rotación.</div>`;
+    } else {
+      alertas.innerHTML = '';
+    }
+  }
+
+  grid.innerHTML = items.map(item => {
+    const dias = vencDias(item.fecha_vencimiento);
+    const col  = dias <= 7 ? 'var(--red)' : dias <= 30 ? 'var(--accent)' : 'var(--green)';
+    return `<div class="pt-venc-item" style="border-left-color:${col}">
+      <div class="pt-venc-dot" style="background:${col};box-shadow:0 0 5px ${col}"></div>
+      <div class="pt-venc-info">
+        <div class="pt-venc-nombre">${item.nombre}${item.presentacion ? ' · '+item.presentacion : ''}</div>
+        <div class="pt-venc-meta">Vence: ${vencFechaFmt(item.fecha_vencimiento)}${item.proveedor ? ' · '+item.proveedor : ''}</div>
+      </div>
+      <div class="pt-venc-badge" style="color:${col}">${vencEtiqueta(dias)}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── Pantalla standalone ───────────────────
+let _vencTabActual = 'lista';
+
+function vencOpen() {
+  goTo('vencimientos');
+  const badge = document.getElementById('badge-venc-local');
+  if (badge) badge.textContent = (state.local ? (state.local.charAt(0).toUpperCase() + state.local.slice(1)) : '--');
+  vencSwitchTab('lista');
+}
+
+function vencSwitchTab(tab) {
+  _vencTabActual = tab;
+  ['lista','agregar','todos'].forEach(t => {
+    const btn = document.getElementById(`venc-tab-${t}`);
+    const pan = document.getElementById(`venc-panel-${t}`);
+    if (btn) btn.classList.toggle('active', t === tab);
+    if (pan) pan.style.display = t === tab ? '' : 'none';
+  });
+  if (tab === 'lista')   vencRenderLista();
+  if (tab === 'todos')   vencRenderTodos();
+  if (tab === 'agregar') {
+    document.getElementById('vnew-nombre')?.focus();
+  }
+}
+
+async function vencRenderLista() {
+  const wrap = document.getElementById('venc-lista-screen');
+  const alertasEl = document.getElementById('venc-alertas-screen');
+  if (!wrap) return;
+  wrap.innerHTML = '<div style="font-family:var(--mono);font-size:12px;color:var(--text3);text-align:center;padding:20px;">Cargando...</div>';
+  const items = await vencCargar(true);
+
+  const criticos = items.filter(i => vencDias(i.fecha_vencimiento) <= 7);
+  const proximos = items.filter(i => { const d = vencDias(i.fecha_vencimiento); return d > 7 && d <= 30; });
+  if (alertasEl) {
+    if (criticos.length) {
+      alertasEl.innerHTML = `<div class="pt-venc-alerta" style="margin-bottom:10px;">⚠ ${criticos.length} producto${criticos.length>1?'s':''} vence${criticos.length>1?'n':''} en menos de 7 días</div>`;
+    } else if (proximos.length) {
+      alertasEl.innerHTML = `<div style="background:rgba(232,200,122,0.08);border:0.5px solid rgba(232,200,122,0.3);border-radius:var(--radius);padding:10px 14px;margin-bottom:10px;font-family:var(--mono);font-size:11px;color:var(--accent);">📅 ${proximos.length} producto${proximos.length>1?'s':''} próximo${proximos.length>1?'s':''} a vencer</div>`;
+    } else {
+      alertasEl.innerHTML = '';
+    }
+  }
+
+  if (!items.length) {
+    wrap.innerHTML = '<div style="font-family:var(--mono);font-size:12px;color:var(--text3);text-align:center;padding:20px;">Sin productos activos registrados.</div>';
+    return;
+  }
+  wrap.innerHTML = items.map(item => {
+    const dias = vencDias(item.fecha_vencimiento);
+    const cls  = vencClase(dias);
+    const col  = cls === 'rojo' ? 'var(--red)' : cls === 'amarillo' ? 'var(--accent)' : 'var(--green)';
+    return `<div class="venc-list-item" style="border-left:2px solid ${col}">
+      <div class="vli-info">
+        <div class="vli-nombre">${item.nombre}${item.presentacion ? ' <span style="color:var(--text3);font-weight:400;font-size:11px">'+item.presentacion+'</span>' : ''}</div>
+        <div class="vli-meta">Vence: ${vencFechaFmt(item.fecha_vencimiento)}${item.proveedor ? ' · '+item.proveedor : ''}</div>
+      </div>
+      <span class="venc-badge-pill venc-${cls}">${vencEtiqueta(dias)}</span>
+      <button class="vli-del" onclick="vencDarBaja('${item.id}')" title="Dar de baja">✕</button>
+    </div>`;
+  }).join('');
+}
+
+async function vencRenderTodos() {
+  const wrap = document.getElementById('venc-lista-todos');
+  if (!wrap) return;
+  wrap.innerHTML = '<div style="font-family:var(--mono);font-size:12px;color:var(--text3);text-align:center;padding:20px;">Cargando...</div>';
+  const items = await vencCargar(false);
+  if (!items.length) {
+    wrap.innerHTML = '<div style="font-family:var(--mono);font-size:12px;color:var(--text3);text-align:center;padding:20px;">Sin registros.</div>';
+    return;
+  }
+  wrap.innerHTML = items.map(item => {
+    const dias = vencDias(item.fecha_vencimiento);
+    const cls  = item.estado === 'dado_de_baja' ? 'verde' : vencClase(dias);
+    const col  = item.estado === 'dado_de_baja' ? 'var(--text3)' : cls === 'rojo' ? 'var(--red)' : cls === 'amarillo' ? 'var(--accent)' : 'var(--green)';
+    const etq  = item.estado === 'dado_de_baja' ? 'Baja' : vencEtiqueta(dias);
+    return `<div class="venc-list-item" style="border-left:2px solid ${col};opacity:${item.estado==='dado_de_baja'?'0.5':'1'}">
+      <div class="vli-info">
+        <div class="vli-nombre">${item.nombre}${item.presentacion ? ' <span style="color:var(--text3);font-weight:400;font-size:11px">'+item.presentacion+'</span>' : ''}</div>
+        <div class="vli-meta">Vence: ${vencFechaFmt(item.fecha_vencimiento)}${item.proveedor ? ' · '+item.proveedor : ''}</div>
+      </div>
+      <span class="venc-badge-pill venc-${cls}">${etq}</span>
+      ${item.estado === 'activo' ? `<button class="vli-del" onclick="vencDarBaja('${item.id}')" title="Dar de baja">✕</button>` : ''}
+    </div>`;
+  }).join('');
+}
+
+async function vencGuardarNuevo() {
+  const nombre  = document.getElementById('vnew-nombre')?.value.trim();
+  const fecha   = document.getElementById('vnew-fecha')?.value;
+  const pres    = document.getElementById('vnew-presentacion')?.value.trim() || null;
+  const prov    = document.getElementById('vnew-proveedor')?.value.trim() || null;
+
+  if (!nombre) { showToast('Ingresá el nombre del producto', 'error'); return; }
+  if (!fecha)  { showToast('Ingresá la fecha de vencimiento', 'error'); return; }
+
+  try {
+    await sbFetch('productos_vencimiento', {
+      method: 'POST',
+      body: JSON.stringify([{
+        local: state.local,
+        nombre, presentacion: pres,
+        fecha_vencimiento: fecha,
+        proveedor: prov,
+        estado: 'activo',
+        created_at: new Date().toISOString()
+      }])
+    });
+    showToast('Producto guardado ✓', 'success');
+    // Limpiar form
+    ['vnew-nombre','vnew-fecha','vnew-presentacion','vnew-proveedor'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.value = '';
+    });
+    // Refrescar semáforo del turno si está activo
+    ptLoadVencimientos();
+    // Ir a lista
+    vencSwitchTab('lista');
+  } catch(e) {
+    showToast('Error al guardar: ' + e.message, 'error');
+  }
+}
+
+async function vencDarBaja(id) {
+  if (!confirm('¿Marcar este producto como dado de baja? No aparecerá más en el semáforo.')) return;
+  try {
+    await sbFetch(`productos_vencimiento?id=eq.${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ estado: 'dado_de_baja' })
+    });
+    showToast('Producto dado de baja ✓', 'success');
+    ptLoadVencimientos();
+    if (_vencTabActual === 'lista') vencRenderLista();
+    else vencRenderTodos();
+  } catch(e) {
+    showToast('Error: ' + e.message, 'error');
+  }
+}
+
 function ptToggleSection(bodyId, headerEl) {
   const body = document.getElementById(bodyId);
-  const arrId = bodyId === 'pt-body-semaforo' ? 'pt-arr-semaforo' : 'pt-arr-ventas';
+  const arrId = bodyId === 'pt-body-semaforo' ? 'pt-arr-semaforo' : bodyId === 'pt-body-venc' ? 'pt-arr-venc' : 'pt-arr-ventas';
   const arr = document.getElementById(arrId);
   if (body.classList.contains('collapsed')) {
     body.classList.remove('collapsed');
@@ -7457,7 +8032,9 @@ function deudasOpen() {
     local: state.local,
     localName: LOCALES[state.local] || '',
     turno: state.turno,
-    rol: state.rol
+    rol: state.rol,
+    empleadoId:     state.empleado_id     || null,
+    empleadoNombre: state.empleado_nombre || null
   };
   iframe.src = '';
   setTimeout(() => {
@@ -7976,6 +8553,59 @@ async function ptConfirmarApertura() {
     style="flex:1;border:none;width:100%;min-height:0"
     allow="clipboard-write"
   ></iframe>
+</div>
+
+<!-- ════════════════════════════════════════
+     MÓDULO: VENCIMIENTOS (standalone)
+════════════════════════════════════════ -->
+<div class="screen" id="screen-vencimientos" style="flex-direction:column">
+  <div class="topbar">
+    <div class="topbar-back" onclick="goTo('hub')">&#8592;</div>
+    <span class="topbar-title">📅 Vencimientos</span>
+    <span class="topbar-badge" id="badge-venc-local">--</span>
+  </div>
+  <div class="venc-screen-wrap" style="flex:1;overflow-y:auto;padding:16px;">
+
+    <!-- Tabs: Activos / Agregar -->
+    <div class="venc-tabs">
+      <button class="venc-tab active" id="venc-tab-lista"   onclick="vencSwitchTab('lista')">📋 Activos</button>
+      <button class="venc-tab"        id="venc-tab-agregar" onclick="vencSwitchTab('agregar')">＋ Agregar</button>
+      <button class="venc-tab"        id="venc-tab-todos"   onclick="vencSwitchTab('todos')">📁 Historial</button>
+    </div>
+
+    <!-- TAB: LISTA ACTIVOS -->
+    <div id="venc-panel-lista">
+      <div id="venc-alertas-screen"></div>
+      <div id="venc-lista-screen" class="venc-list">
+        <div style="font-family:var(--mono);font-size:12px;color:var(--text3);text-align:center;padding:20px;">Cargando...</div>
+      </div>
+    </div>
+
+    <!-- TAB: AGREGAR -->
+    <div id="venc-panel-agregar" style="display:none">
+      <div class="venc-form-card">
+        <div class="vc-title">Nuevo producto a vencer</div>
+        <div class="venc-form-grid">
+          <input class="venc-inp full" type="text" id="vnew-nombre" placeholder="Nombre del producto...">
+          <input class="venc-inp" type="date" id="vnew-fecha" placeholder="Fecha de vencimiento">
+          <input class="venc-inp" type="text" id="vnew-presentacion" placeholder="Presentación (ej: 500ml)">
+          <input class="venc-inp" type="text" id="vnew-proveedor" placeholder="Proveedor (opcional)">
+        </div>
+        <button onclick="vencGuardarNuevo()"
+          style="margin-top:12px;width:100%;padding:12px;background:var(--accent);border:none;border-radius:var(--r2);color:#0e0e0f;font-family:var(--mono);font-size:13px;font-weight:700;cursor:pointer;">
+          Guardar producto →
+        </button>
+      </div>
+    </div>
+
+    <!-- TAB: HISTORIAL (dados de baja) -->
+    <div id="venc-panel-todos" style="display:none">
+      <div id="venc-lista-todos" class="venc-list">
+        <div style="font-family:var(--mono);font-size:12px;color:var(--text3);text-align:center;padding:20px;">Cargando...</div>
+      </div>
+    </div>
+
+  </div>
 </div>
 
 <!-- ── Drive Auth Overlay ─────────────────────────────────── -->
