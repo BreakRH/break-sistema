@@ -474,35 +474,17 @@ window.addEventListener('message', function(e) {
   if (!e.data || e.data.type !== 'break-context') return;
   const ctx = e.data;
   if (ctx.local) { currentLocal = ctx.local; applyLocalContext(); }
-
-  const waitReady = (fn) => {
-    const overlay = document.getElementById('loading-overlay');
-    if (overlay && !overlay.classList.contains('hidden')) {
-      setTimeout(() => waitReady(fn), 150); return;
-    }
-    fn();
-  };
-
-  // Admin — entra directo a vista admin (comportamiento original)
+  // Solo admin hace auto-login — empleado/encargado ven el splash limpio y eligen ellos
   if (ctx.rol === 'admin') {
-    waitReady(() => {
+    const tryAutoLogin = () => {
+      if (document.getElementById('loading-overlay') &&
+          document.getElementById('loading-overlay').style.display !== 'none') {
+        setTimeout(tryAutoLogin, 150); return;
+      }
       currentUser = 'Administración'; currentRole = 'admin'; adminVerTodo = false;
       enterApp();
-    });
-    return;
-  }
-
-  // Empleado / encargado — solo pre-selecciona su nombre en el splash
-  // No hace auto-login: el usuario puede cambiar el empleado antes de confirmar
-  if ((ctx.rol === 'empleado' || ctx.rol === 'encargado') && ctx.empleadoId) {
-    waitReady(() => {
-      const preselect = () => {
-        const sel = document.getElementById('emp-select');
-        if (!sel || sel.options.length <= 1) { setTimeout(preselect, 200); return; }
-        sel.value = ctx.empleadoId;
-      };
-      preselect();
-    });
+    };
+    tryAutoLogin();
   }
 });
 

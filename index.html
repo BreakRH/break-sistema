@@ -7457,9 +7457,7 @@ function deudasOpen() {
     local: state.local,
     localName: LOCALES[state.local] || '',
     turno: state.turno,
-    rol: state.rol,
-    empleadoId:     state.empleado_id     || null,
-    empleadoNombre: state.empleado_nombre || null
+    rol: state.rol
   };
   iframe.src = '';
   setTimeout(() => {
