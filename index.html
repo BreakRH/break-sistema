@@ -3923,7 +3923,7 @@ async function admLoadResumen() {
       return `<div class="adm-local-card" style="--lcard-accent:${loc.color}">
         <div class="adm-local-name">${loc.nombre}</div>
         <div class="adm-local-cierre">${tieneCierre
-          ? `Cierre: <span>$${(ultimo.total_efectivo||0).toLocaleString('es-AR')}</span>`
+          ? `Caja neta: <span>$${(ultimo.total_efectivo||0).toLocaleString('es-AR')}</span>`
           : '<span style="color:var(--text3)">Sin cierre registrado</span>'}</div>
         <div class="adm-kpi-row">
           <span class="adm-kpi-badge adm-kpi-${difClass}">${difTxt}</span>
@@ -7181,6 +7181,29 @@ function ptCalcDel() {
 
 function ptGetTotalCalc() { return _calcAcumulado; }
 
+// ── Teclado para calculadora (numpad + fila de numeros) ───────
+function _ptCalcKeyHandler(e) {
+  // Solo actuar si la calculadora esta visible
+  const calcWrap = document.getElementById('pt-caja-calculadora');
+  if (!calcWrap || calcWrap.style.display === 'none') return;
+  // No interceptar si el foco esta en un input/textarea/select
+  const tag = document.activeElement?.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+
+  const k = e.key;
+  if (k >= '0' && k <= '9') { e.preventDefault(); ptCalcNum(k); return; }
+  if (k === '.') { e.preventDefault(); ptCalcNum('.'); return; }
+  if (k === '+') { e.preventDefault(); ptCalcOp('+'); return; }
+  if (k === '-') { e.preventDefault(); ptCalcOp('-'); return; }
+  if (k === '*') { e.preventDefault(); ptCalcOp('*'); return; }
+  if (k === '/') { e.preventDefault(); ptCalcOp('/'); return; }
+  if (k === '%') { e.preventDefault(); ptCalcOp('%'); return; }
+  if (k === 'Enter' || k === '=') { e.preventDefault(); ptCalcEq(); return; }
+  if (k === 'Backspace') { e.preventDefault(); ptCalcDel(); return; }
+  if (k === 'Escape' || k === 'Delete') { e.preventDefault(); ptCalcAC(); return; }
+}
+document.addEventListener('keydown', _ptCalcKeyHandler);
+
 function ptRecalc() {
   // ── Caja chica: sueltos ──
   let totalEf = 0;
@@ -7440,7 +7463,7 @@ async function ptCerrar() {
     total_qr:      parseFloat(document.getElementById('ptven-mp')?.value)||0,
     total_rappi: 0, total_pya: 0, total_mp: 0,
     ventas_efectivo: parseFloat(document.getElementById('ptven-efectivo')?.value)||0,
-    total_efectivo:  totalGeneral,
+    total_efectivo:  totalGeneral + (ptData._totalDeudas||0),
     total_sistema:   totalSis,
     diferencia:      totalSis ? (totalGeneral + (ptData._totalDeudas||0)) - totalSis : null,
     observaciones:    document.getElementById('pt-obs-cierre')?.value.trim()||null,
