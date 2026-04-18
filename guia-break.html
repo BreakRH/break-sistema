@@ -594,6 +594,14 @@
       <div class="nav-icon">📝</div>
       Reportes
     </button>
+    <button class="nav-item" onclick="goTo('vencimientos')">
+      <div class="nav-icon">📅</div>
+      Vencimientos
+    </button>
+    <button class="nav-item" onclick="goTo('ordenes-extras')">
+      <div class="nav-icon">🧾</div>
+      OT — funciones extra
+    </button>
   </div>
 </nav>
 
@@ -641,6 +649,20 @@
         <div class="hc-num">Módulo 05</div>
         <h3>Reportes</h3>
         <p>Cómo reportar problemas en la tienda: productos rotos, fallas edilicias, órdenes de delivery y más.</p>
+        <div class="hc-arrow">Ver guía →</div>
+      </div>
+      <div class="home-card" onclick="goTo('vencimientos')">
+        <div class="hc-icon">📅</div>
+        <div class="hc-num">Módulo 06</div>
+        <h3>Vencimientos</h3>
+        <p>Cómo registrar productos con fecha de vencimiento y entender el semáforo de alertas del turno.</p>
+        <div class="hc-arrow">Ver guía →</div>
+      </div>
+      <div class="home-card" onclick="goTo('ordenes-extras')">
+        <div class="hc-icon">🧾</div>
+        <div class="hc-num">Extra</div>
+        <h3>OT — funciones extra</h3>
+        <p>Modos de conteo de caja, completar OT y moverla al historial.</p>
         <div class="hc-arrow">Ver guía →</div>
       </div>
     </div>
@@ -716,13 +738,30 @@
         <div class="step">
           <div class="step-num">4</div>
           <div class="step-body">
-            <div class="step-title">Contá la caja chica</div>
+            <div class="step-title">Elegí el modo de conteo de caja</div>
             <div class="step-desc">
-              Ingresá cuántos billetes sueltos tenés de cada denominación. El sistema suma todo automáticamente. Usá los botones de pacas si tenés billetes en paquetes de banco. Si cometés un error, usá el botón <em style="color:var(--accent)">↺ reset</em> para limpiar y empezar de nuevo.
+              Antes de contar, el sistema te pide que elijas cómo querés contar. Hay tres opciones:
+            </div>
+            <div class="info-cards" style="margin-top:10px;">
+              <div class="info-card" style="border-left:2px solid var(--accent)">
+                <div class="ic-label">Modo 1</div>
+                <div class="ic-val" style="color:var(--accent);margin-bottom:4px;">📊 Detallado</div>
+                <p style="font-family:var(--mono);font-size:11.5px;color:var(--text3);line-height:1.5;">Ingresás cantidad de billetes sueltos, pacas y bultos por denominación. El sistema suma todo. Más lento pero más preciso.</p>
+              </div>
+              <div class="info-card" style="border-left:2px solid var(--green)">
+                <div class="ic-label">Modo 2</div>
+                <div class="ic-val" style="color:var(--green);margin-bottom:4px;">⚡ Rápido</div>
+                <p style="font-family:var(--mono);font-size:11.5px;color:var(--text3);line-height:1.5;">Contás el total manualmente y escribís un solo número. El sistema suma las deudas y calcula la diferencia. Ideal para noches con mucho movimiento.</p>
+              </div>
+              <div class="info-card" style="border-left:2px solid var(--blue)">
+                <div class="ic-label">Modo 3</div>
+                <div class="ic-val" style="color:var(--blue);margin-bottom:4px;">🧮 Calculadora</div>
+                <p style="font-family:var(--mono);font-size:11.5px;color:var(--text3);line-height:1.5;">Una calculadora integrada donde sumás de a un grupo de billetes. Cada suma queda registrada en el tape para que puedas revisar. El total acumulado es el que se usa.</p>
+              </div>
             </div>
             <div class="step-tip">
               <span class="tip-ico">◈</span>
-              Hacé clic en cualquier campo de billete y escribí directo — el número anterior se borra solo.
+              El modo que usaste queda registrado en el cierre. Podés cambiar de modo en cada turno según la situación.
             </div>
           </div>
         </div>
@@ -730,15 +769,17 @@
         <div class="step">
           <div class="step-num">5</div>
           <div class="step-body">
-            <div class="step-title">Contá la caja grande</div>
+            <div class="step-title">Contá la caja (según el modo elegido)</div>
             <div class="step-desc">
-              La caja grande usa pacas y bultos. Completá las pacas de cada denominación ($100 a $10.000) y los bultos de $10.000, $50.000 y $100.000. El total se calcula solo.
+              <strong style="color:var(--text)">Detallado:</strong> ingresá cantidad de billetes sueltos por denominación, luego pacas y bultos. El sistema calcula subtotales en tiempo real.<br><br>
+              <strong style="color:var(--text)">Rápido:</strong> escribí el monto total que contaste en el campo grande. Un solo número, listo.<br><br>
+              <strong style="color:var(--text)">Calculadora:</strong> usá los botones numéricos para ir sumando grupos de billetes. Cada vez que presionás <em style="color:var(--accent)">=</em> el resultado se acumula en el tape. Usá <em style="color:var(--red)">AC</em> para limpiar todo si te equivocás.
             </div>
           </div>
         </div>
 
         <div class="step">
-          <div class="step-num">6</div>
+          <div class="step-num">7</div>
           <div class="step-body">
             <div class="step-title">Ingresá los movimientos del FacilVirtual</div>
             <div class="step-desc">
@@ -753,7 +794,7 @@
         </div>
 
         <div class="step">
-          <div class="step-num">7</div>
+          <div class="step-num">8</div>
           <div class="step-body">
             <div class="step-title">Cerrá el turno</div>
             <div class="step-desc">
@@ -1057,6 +1098,39 @@
         Si cometiste un error en el pago (monto o método), se puede corregir después desde el detalle de la OT — no necesitás eliminarla y volver a cargarla.
       </div>
 
+      <div class="section-title">Registrar productos con fecha de vencimiento</div>
+      <p style="font-family:var(--mono);font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:12px;">
+        Al final del formulario de nueva OT hay una sección <strong style="color:var(--text)">📅 Productos por vencer</strong>. Si el proveedor trajo productos con fecha de vencimiento próxima, registrálos ahí.
+      </p>
+      <div class="steps" style="margin-top:0">
+        <div class="step">
+          <div class="step-num">→</div>
+          <div class="step-body">
+            <div class="step-title">Tocá "+ Agregar producto"</div>
+            <div class="step-desc">Aparece una fila con dos campos: nombre del producto y fecha de vencimiento. Al escribir la fecha el sistema te muestra automáticamente cuántos días faltan con el color correspondiente (verde/amarillo/rojo).</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">→</div>
+          <div class="step-body">
+            <div class="step-title">Guardá la OT normalmente</div>
+            <div class="step-desc">Los productos con vencimiento se guardan solos junto con la OT y aparecen en el semáforo del panel de turno desde ese momento.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title">Completar una OT y moverla al historial</div>
+      <p style="font-family:var(--mono);font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:12px;">
+        Cuando terminás de recibir la mercadería, la OT se puede cerrar definitivamente. La foto de la factura es obligatoria para poder completarla.
+      </p>
+      <div class="checklist">
+        <div class="check-row"><span class="ck">→</span> <span>Abrí el detalle de la OT tocando en la fila de la lista.</span></div>
+        <div class="check-row"><span class="ck">→</span> <span>Adjuntá la foto de la factura con 📷 Cámara o 🖼 Galería — <strong style="color:var(--text)">sin foto no se puede completar</strong>.</span></div>
+        <div class="check-row"><span class="ck">→</span> <span>Marcá los checks de activación que correspondan.</span></div>
+        <div class="check-row"><span class="ck">→</span> <span>Confirmá el pago con el método y monto correcto.</span></div>
+        <div class="check-row"><span class="ck">→</span> <span>Tocá <strong style="color:var(--green)">✓ Completar OT</strong> en el footer del modal — la OT pasa al historial y desaparece de la lista activa.</span></div>
+      </div>
+
       <div class="section-title">Supervisores — aviso de llegada</div>
       <p style="font-family:var(--mono);font-size:13px;color:var(--text2);line-height:1.7;">
         Los supervisores tienen un formulario más simple: solo cargan el proveedor, la fecha estimada, el método de pago y el monto aproximado. Sirve para avisar que está por llegar un proveedor antes de que llegue la factura formal.
@@ -1166,13 +1240,173 @@
     </div>
   </div>
 
+
+  <!-- VENCIMIENTOS -->
+  <div class="page" id="page-vencimientos">
+    <div class="page-hero">
+      <div class="tag">Módulo 06</div>
+      <h2>Vencimientos</h2>
+      <p class="desc">Controlá los productos que están por vencer. El sistema te avisa antes de que sea tarde.</p>
+      <div class="hero-badge" style="background:rgba(93,191,138,0.10);border-color:rgba(93,191,138,0.3);color:var(--green)">
+        ● Todos los roles
+      </div>
+    </div>
+    <div class="page-body">
+
+      <div class="section-title">Para qué sirve</div>
+      <p style="font-family:var(--mono);font-size:13px;color:var(--text2);line-height:1.7;">
+        Cada producto que ingresa con una fecha de vencimiento cercana queda registrado en el sistema. El panel de turno te muestra un semáforo de colores para que sepas de un vistazo si hay algo que atender. También podés agregar productos manualmente, sin necesidad de crear una OT.
+      </p>
+
+      <div class="section-title">El semáforo en el panel de turno</div>
+      <p style="font-family:var(--mono);font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:12px;">
+        Al abrir tu turno, la sección <strong style="color:var(--text)">📅 Vencimientos</strong> carga automáticamente los productos registrados para tu tienda. Los colores significan:
+      </p>
+      <div class="info-cards">
+        <div class="info-card" style="border-left:2px solid var(--green)">
+          <div class="ic-val" style="color:var(--green);margin-bottom:4px;">🟢 Verde</div>
+          <p style="font-family:var(--mono);font-size:11.5px;color:var(--text3);">Más de 30 días. Sin urgencia, solo mantené el registro.</p>
+        </div>
+        <div class="info-card" style="border-left:2px solid var(--accent)">
+          <div class="ic-val" style="color:var(--accent);margin-bottom:4px;">🟡 Amarillo</div>
+          <p style="font-family:var(--mono);font-size:11.5px;color:var(--text3);">Entre 7 y 30 días. Revisá la rotación, empezá a priorizar su venta.</p>
+        </div>
+        <div class="info-card" style="border-left:2px solid var(--red)">
+          <div class="ic-val" style="color:var(--red);margin-bottom:4px;">🔴 Rojo</div>
+          <p style="font-family:var(--mono);font-size:11.5px;color:var(--text3);">Menos de 7 días. Alerta crítica — el sistema sugiere promoción 2x1 o traspaso a otra tienda.</p>
+        </div>
+      </div>
+
+      <div class="section-title">Cómo agregar un producto manualmente</div>
+      <p style="font-family:var(--mono);font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:4px;">
+        Desde el hub principal tocá la card <strong style="color:var(--text)">📅 Vencimientos</strong>, o desde el panel de turno tocá el botón al pie del semáforo.
+      </p>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <div class="step-title">Tocá la pestaña "＋ Agregar"</div>
+            <div class="step-desc">Aparece un formulario con cuatro campos: nombre del producto, fecha de vencimiento, presentación (opcional) y proveedor (opcional).</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <div class="step-title">Completá nombre y fecha — mínimo indispensable</div>
+            <div class="step-desc">El nombre tiene que ser claro para que cualquier empleado del turno siguiente lo identifique. La fecha es la que figura en el envase del producto.</div>
+            <div class="step-tip">
+              <span class="tip-ico">◈</span>
+              Si el producto vino con un proveedor, agregá el nombre del proveedor — así el semáforo muestra de dónde viene cuando hay un problema.
+            </div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <div class="step-title">Tocá "Guardar producto →"</div>
+            <div class="step-desc">El producto aparece de inmediato en la pestaña "📋 Activos" y en el semáforo del panel de turno.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title">Dar de baja un producto</div>
+      <p style="font-family:var(--mono);font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:12px;">
+        Cuando un producto se vendió, se trasvasó o se descartó, hay que darlo de baja para que no siga apareciendo en el semáforo.
+      </p>
+      <div class="checklist">
+        <div class="check-row"><span class="ck">→</span> <span>Entrá a <strong style="color:var(--text)">📅 Vencimientos</strong> desde el hub o el panel de turno.</span></div>
+        <div class="check-row"><span class="ck">→</span> <span>En la pestaña <strong style="color:var(--text)">📋 Activos</strong>, buscá el producto y tocá el botón <strong style="color:var(--red)">✕</strong> a la derecha.</span></div>
+        <div class="check-row"><span class="ck">→</span> <span>Confirmá la baja. El producto pasa al <strong style="color:var(--text)">📁 Historial</strong> y desaparece del semáforo.</span></div>
+      </div>
+
+      <div class="highlight ok">
+        Los productos dados de baja no se eliminan — quedan en el historial para que el admin pueda ver el historial completo de vencimientos de la tienda.
+      </div>
+
+    </div>
+  </div>
+
+  <!-- OT EXTRAS -->
+  <div class="page" id="page-ordenes-extras">
+    <div class="page-hero">
+      <div class="tag">Extra — Órdenes de Trabajo</div>
+      <h2>OT — funciones extra</h2>
+      <p class="desc">Cosas que podés hacer en OT que no son obvias a primera vista.</p>
+      <div class="hero-badge" style="background:var(--green-dim);border-color:rgba(93,191,138,0.3);color:var(--green)">
+        ● Empleado · Admin
+      </div>
+    </div>
+    <div class="page-body">
+
+      <div class="section-title">Corregir el método de pago después de guardar</div>
+      <p style="font-family:var(--mono);font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:12px;">
+        Si cargaste mal el método o el monto de pago, no hace falta borrar la OT. Podés corregirlo directo desde el detalle.
+      </p>
+      <div class="checklist">
+        <div class="check-row"><span class="ck">→</span> <span>Tocá la OT en la lista para abrir el detalle.</span></div>
+        <div class="check-row"><span class="ck">→</span> <span>En la sección de pago, cambiá el método y/o el monto.</span></div>
+        <div class="check-row"><span class="ck">→</span> <span>Tocá <strong style="color:var(--text)">↻ Actualizar pago</strong>. El modal se refresca con el nuevo estado.</span></div>
+      </div>
+
+      <div class="section-title">Filtrar por tienda (admin y supervisor)</div>
+      <p style="font-family:var(--mono);font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:12px;">
+        Cuando entrás como admin o supervisor, aparece una segunda fila de chips debajo de los filtros de estado. Podés ver solo las OT de una tienda específica.
+      </p>
+      <div class="checklist">
+        <div class="check-row"><span class="ck">→</span> <span>Los chips son: <strong style="color:var(--text)">Todas · Thames · Belgrano · B. Chino · San Telmo</strong>.</span></div>
+        <div class="check-row"><span class="ck">→</span> <span>Se combinan con los filtros de estado (Por pagar, Pagadas, etc.) y el buscador.</span></div>
+      </div>
+
+      <div class="section-title">Completar una OT y moverla al historial</div>
+      <p style="font-family:var(--mono);font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:12px;">
+        Las OT terminadas van al <strong style="color:var(--text)">Historial</strong> (pestaña aparte). Para poder completar una OT necesitás tener la foto de la factura adjunta — es obligatorio para el control contable.
+      </p>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <div class="step-title">Abrí el detalle de la OT</div>
+            <div class="step-desc">Tocá la fila en la lista de OT activas.</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <div class="step-title">Adjuntá la foto de la factura</div>
+            <div class="step-desc">En la sección <strong style="color:var(--text)">📎 Foto de factura</strong>, tocá <em style="color:var(--accent)">📷 Cámara</em> o <em style="color:var(--accent)">🖼 Galería</em> y subí la imagen. Sin foto no se puede completar la OT.</div>
+            <div class="step-tip">
+              <span class="tip-ico">◈</span>
+              Si el botón dice <strong style="color:var(--text)">📷 Falta foto para completar</strong> y está atenuado, significa que todavía no adjuntaste ninguna imagen.
+            </div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <div class="step-title">Confirmá el pago</div>
+            <div class="step-desc">Elegí el método de pago real (Efectivo, Transferencia, MP, QR, o Ya pagado) y el monto. Tocá <em style="color:var(--green)">✓ Confirmar pago</em> o <em style="color:var(--accent)">↻ Actualizar pago</em>.</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <div class="step-title">Tocá "✓ Completar OT"</div>
+            <div class="step-desc">El botón aparece en el footer del modal. Al tocarlo, el sistema marca todos los checks, la OT desaparece de la lista activa y te lleva directo al Historial donde quedó archivada.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
 </main>
 
 <script>
   function goTo(id) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    document.getElementById('page-' + id).classList.add('active');
+    const pg = document.getElementById('page-' + id);
+    if (pg) pg.classList.add('active');
     const btns = document.querySelectorAll('.nav-item');
     btns.forEach(b => {
       if (b.getAttribute('onclick') && b.getAttribute('onclick').includes("'" + id + "'")) {

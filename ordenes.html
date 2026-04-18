@@ -1007,6 +1007,10 @@ window.addEventListener('message', e => {
   }
 });
 
+// Init — SOLO cargar desde URL params (dev/debug).
+// En producción (iframe desde index.html), el postMessage con localKey y rol
+// llega en ~150ms y dispara loadOrdenes(). NUNCA usar localStorage como fuente
+// de rol/local: puede tener contexto de una sesión de admin anterior.
 const urlParams = new URLSearchParams(window.location.search);
 if (urlParams.get('local')) {
   localKey = urlParams.get('local');
@@ -1014,17 +1018,10 @@ if (urlParams.get('local')) {
   updateHeader();
   loadOrdenes();
 } else {
-  // fallback: esperar postMessage o usar localStorage
-  const stored = localStorage.getItem('break_local');
-  if (stored) {
-    localKey = stored;
-    localName = capitalizeLocal(localKey);
-    updateHeader();
-    loadOrdenes();
-  } else {
-    updateHeader();
-    loadOrdenes();
-  }
+  // Esperar postMessage — no llamar loadOrdenes() con localStorage
+  updateHeader();
+  document.getElementById('tabla-body').innerHTML =
+    '<tr><td colspan="9"><div class="loading"><div class="spinner"></div>Esperando contexto...</div></td></tr>';
 }
 
 // Fecha/hora inicial en form
@@ -1253,10 +1250,18 @@ function openDetalle(id) {
   if (btnEditar) btnEditar.style.display = (rolActual === 'admin' || rolActual === 'supervisor') ? '' : 'none';
   const btnCompletar = document.getElementById('btn-modal-completar');
   if (btnCompletar) {
-    const pagado = o.estado_pago && o.estado_pago !== 'por_pagar';
     const completo = isComplete(o);
-    btnCompletar.style.display = (pagado && !completo) || (!isComplete(o)) ? '' : 'none';
-    btnCompletar.textContent = isComplete(o) ? '✓ Ver en historial' : '✓ Completar OT';
+    const tieneFoto = o.foto_factura_urls && o.foto_factura_urls.length > 0;
+    btnCompletar.style.display = completo ? 'none' : '';
+    if (!tieneFoto) {
+      btnCompletar.textContent = '📷 Falta foto para completar';
+      btnCompletar.style.opacity = '0.5';
+      btnCompletar.title = 'Adjuntá al menos una foto de la factura';
+    } else {
+      btnCompletar.textContent = '✓ Completar OT';
+      btnCompletar.style.opacity = '1';
+      btnCompletar.title = '';
+    }
   }
   const btnEliminar = document.getElementById('btn-modal-eliminar');
   if (btnEliminar) btnEliminar.style.display = (rolActual === 'admin' && !o.pedido_id) ? '' : 'none';
@@ -1380,6 +1385,11 @@ async function completarOT() {
     loadHistorialOT();
     return;
   }
+  // Validar que haya al menos una foto adjunta
+  if (!o.foto_factura_urls || o.foto_factura_urls.length === 0) {
+    showToast('⚠ Adjuntá al menos una foto de la factura antes de completar', 'error');
+    return;
+  }
   // Marcar todos los campos de activación como true
   const campos = ['repuesto','registrado','activo_pya','activo_mp','activo_rappi','check_factura','check_nocturno','revision_precios'];
   const patch = {};
@@ -1387,6 +1397,8 @@ async function completarOT() {
   try {
     await sbFetch(`ordenes_trabajo?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify(patch) });
     campos.forEach(c => { o[c] = true; });
+    // Eliminar del array local para que desaparezca de Lista
+    ordenes = ordenes.filter(x => x.id !== id);
     renderTabla();
     renderStats();
     showToast('OT completada ✓', 'success');
