@@ -6432,8 +6432,16 @@ function ptInitCore() {
         sbFetch(`entradas?store=eq.${localKey}&select=cid,monto`),
         sbFetch(`cuentas?select=id,nombre,tipo`)
       ]);
+      // También incluir entradas sin store asignado (legacy), igual que deudas.html
+      let entradasSinStore = [];
+      try {
+        const haySinStore = await sbFetch(`entradas?store=is.null&select=cid,monto`);
+        const hayVacio    = await sbFetch(`entradas?store=eq.&select=cid,monto`);
+        entradasSinStore = [...(haySinStore||[]), ...(hayVacio||[])];
+      } catch(e) { /* ignorar si falla */ }
+      const todasEntradas = [...(entradas||[]), ...entradasSinStore];
       const saldos = {};
-      (entradas||[]).forEach(e => { saldos[e.cid] = (saldos[e.cid]||0) + e.monto; });
+      todasEntradas.forEach(e => { saldos[e.cid] = (saldos[e.cid]||0) + e.monto; });
       const total = (cuentas||[]).reduce((a,c) => a + (saldos[c.id]||0), 0);
       const fmt2 = n => '$' + Math.abs(n).toLocaleString('es-AR');
       if (total <= 0) {
@@ -7186,9 +7194,12 @@ function _ptCalcKeyHandler(e) {
   // Solo actuar si la calculadora esta visible
   const calcWrap = document.getElementById('pt-caja-calculadora');
   if (!calcWrap || calcWrap.style.display === 'none') return;
-  // No interceptar si el foco esta en un input/textarea/select
-  const tag = document.activeElement?.tagName;
-  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+  // No interceptar si el foco esta en un input/textarea/select FUERA de la calculadora
+  const active = document.activeElement;
+  if (active) {
+    const tag = active.tagName;
+    if ((tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') && !calcWrap.contains(active)) return;
+  }
 
   const k = e.key;
   if (k >= '0' && k <= '9') { e.preventDefault(); ptCalcNum(k); return; }
