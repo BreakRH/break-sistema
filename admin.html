@@ -1,0 +1,3804 @@
+<!DOCTYPE html>
+<!-- Break Sistema — admin.html v1.0 (extraído de index.html v32) -->
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Break — Administración</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f0f; --bg2: #161616; --bg3: #1e1e1e; --bg4: #262626;
+    --border: rgba(255,255,255,0.08); --border2: rgba(255,255,255,0.14);
+    --text: #f0ede8; --text2: #b0ada8; --text3: #848180;
+    --accent: #e8c547; --accent2: #b89b2e;
+    --red: #e85d4a; --red-bg: rgba(232,93,74,0.12);
+    --green: #4caf82; --green-bg: rgba(76,175,130,0.12);
+    --blue: #5b9cf6; --blue-bg: rgba(91,156,246,0.12);
+    --orange: #f0884a; --orange-bg: rgba(240,136,74,0.12);
+    --purple: #a78bfa; --purple-bg: rgba(167,139,250,0.12);
+    --radius: 10px; --radius-lg: 16px;
+    --mono: 'DM Mono', monospace; --sans: 'Syne', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 15px; min-height: 100vh; overflow-x: hidden; }
+
+  /* ── LOADING ── */
+  #loading-overlay { position: fixed; inset: 0; z-index: 999; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
+  #loading-overlay.hidden { display: none; }
+  .spinner { width: 24px; height: 24px; border: 1.5px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-family: var(--mono); font-size: 12px; color: var(--text3); }
+
+  /* ── TOAST ── */
+  #toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(100px); background: #2a2a2a; border: 1px solid rgba(255,255,255,0.18); border-radius: 14px; padding: 13px 22px; font-size: 14px; font-family: var(--sans); font-weight: 500; box-shadow: 0 8px 32px rgba(0,0,0,0.55); transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1), opacity 0.35s ease; z-index: 998; white-space: nowrap; opacity: 0; display: flex; align-items: center; gap: 10px; }
+  #toast .toast-icon { font-size: 16px; flex-shrink: 0; }
+  #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+  #toast.success { border-color: rgba(76,175,130,0.5); background: #1e2e26; }
+  #toast.success .toast-icon::before { content: '✓'; color: var(--green); }
+  #toast.error { border-color: rgba(232,93,74,0.5); background: #2e1e1b; }
+  #toast.error .toast-icon::before { content: '!'; color: var(--red); font-weight: 700; }
+  #toast:not(.success):not(.error) .toast-icon::before { content: 'ℹ'; color: var(--text3); }
+
+  /* ── SCREENS ── */
+  .screen { display: none; min-height: 100vh; flex-direction: column; }
+  .screen.active { display: flex; }
+
+  /* ── TOPBAR ── */
+  .topbar { position: sticky; top: 0; z-index: 100; background: var(--bg); border-bottom: 0.5px solid var(--border); padding: 14px 20px; display: flex; align-items: center; gap: 12px; }
+  .topbar-back { width: 44px; height: 44px; border: 0.5px solid var(--border2); border-radius: 10px; background: var(--bg3); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; font-size: 18px; color: var(--text2); transition: background 0.15s; }
+  .topbar-back:hover { background: var(--bg4); }
+  .topbar-title { font-size: 14px; font-weight: 500; flex: 1; color: var(--text); }
+  .topbar-badge { font-family: var(--mono); font-size: 11px; color: var(--text3); background: var(--bg3); border: 0.5px solid var(--border); padding: 3px 8px; border-radius: 6px; }
+
+  /* ── PIN ── */
+  .pin-screen { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 32px; }
+  .pin-title { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+  .pin-sub { font-size: 13px; color: var(--text3); font-family: var(--mono); margin-bottom: 32px; }
+  .pin-dots { display: flex; gap: 12px; margin-bottom: 28px; }
+  .pin-dot { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid var(--border2); background: transparent; transition: all 0.15s; }
+  .pin-dot.filled { background: var(--accent); border-color: var(--accent); }
+  .pin-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; max-width: 280px; }
+  .pin-key { aspect-ratio: 1; border-radius: var(--radius); background: var(--bg2); border: 0.5px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 500; cursor: pointer; transition: all 0.1s; }
+  .pin-key:hover { background: var(--bg3); border-color: var(--border2); }
+  .pin-key:active { transform: scale(0.95); }
+  .pin-key.del { font-size: 16px; color: var(--text2); }
+  .pin-error { color: var(--red); font-family: var(--mono); font-size: 12px; margin-top: 16px; height: 16px; }
+
+  select, input, textarea {
+    width: 100%; background: var(--bg2); border: 0.5px solid var(--border2); border-radius: var(--radius);
+    color: var(--text); font-family: var(--sans); font-size: 15px; padding: 13px 14px; outline: none;
+    appearance: none; -webkit-appearance: none; transition: border-color 0.15s;
+  }
+  select:focus, input:focus, textarea:focus { border-color: var(--accent); background: var(--bg3); }
+  select option { background: var(--bg3); }
+  textarea { resize: none; }
+
+  .filter-chip { background: var(--bg3); border: 0.5px solid var(--border); border-radius: 20px; padding: 5px 12px; font-size: 12px; color: var(--text2); cursor: pointer; white-space: nowrap; transition: all 0.12s; flex-shrink: 0; }
+  .filter-chip.active { background: rgba(232,197,71,0.1); border-color: var(--accent); color: var(--accent); }
+
+  .stat-card { background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 14px; }
+  .stat-label { font-family: var(--mono); font-size: 11px; color: var(--text3); margin-bottom: 6px; }
+  .stat-value { font-size: 22px; font-weight: 700; color: var(--text); font-family: var(--mono); }
+  .stat-sub { font-size: 11px; color: var(--text3); font-family: var(--mono); margin-top: 2px; }
+
+  .report-item { background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 8px; cursor: pointer; transition: border-color 0.15s; }
+  .report-item:hover { border-color: var(--border2); }
+  .report-item-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+  .report-type-badge { font-family: var(--mono); font-size: 10px; padding: 2px 8px; border-radius: 4px; flex-shrink: 0; }
+  .report-item-desc { font-size: 13px; color: var(--text); flex: 1; line-height: 1.4; }
+  .report-item-meta { display: flex; gap: 10px; font-family: var(--mono); font-size: 11px; color: var(--text3); }
+  .resolve-btn { margin-top: 10px; padding: 7px 14px; background: var(--green-bg); border: 0.5px solid var(--green); border-radius: 6px; color: var(--green); font-family: var(--mono); font-size: 11px; cursor: pointer; }
+  .resolved-tag { font-family: var(--mono); font-size: 10px; color: var(--text3); margin-top: 8px; }
+
+  .rep-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 500; display: flex; align-items: flex-end; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+  .rep-modal-overlay.open { opacity: 1; pointer-events: all; }
+  .rep-modal { background: var(--bg2); border: 0.5px solid var(--border2); border-radius: 16px 16px 0 0; width: 100%; max-width: 620px; transform: translateY(20px); transition: transform 0.2s; max-height: 85vh; overflow-y: auto; padding: 20px 20px 32px; }
+  .rep-modal-overlay.open .rep-modal { transform: translateY(0); }
+  .rep-modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; position: sticky; top: 0; background: var(--bg2); padding-bottom: 12px; border-bottom: 0.5px solid var(--border); }
+  .rep-modal-tipo { font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 10px; border-radius: 5px; }
+  .rep-modal-close { background: var(--bg3); border: 0.5px solid var(--border); border-radius: 6px; color: var(--text2); font-size: 16px; cursor: pointer; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; }
+  .rep-det-row { display: flex; flex-direction: column; gap: 3px; padding: 10px 0; border-bottom: 0.5px solid var(--border); }
+  .rep-det-row:last-child { border-bottom: none; }
+  .rep-det-label { font-family: var(--mono); font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; }
+  .rep-det-value { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .rep-item-card { background: var(--bg3); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; }
+  .rep-item-name { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 6px; }
+  .rep-item-tags { display: flex; flex-wrap: wrap; gap: 8px; font-family: var(--mono); font-size: 11px; color: var(--text2); }
+
+  .section-head { font-family: var(--mono); font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; margin-top: 4px; }
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; }
+  .filter-row { display: flex; gap: 6px; margin-bottom: 14px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+  .filter-row::-webkit-scrollbar { display: none; }
+
+  .accesos-row { background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 11px 13px; display: flex; align-items: center; gap: 11px; margin-bottom: 6px; }
+  .accesos-row.sin-clave { border-color: rgba(232,93,74,0.25); }
+  .accesos-row-info { flex: 1; min-width: 0; }
+  .accesos-row-name { font-size: 13px; font-weight: 500; color: var(--text); }
+  .accesos-row-desc { font-family: var(--mono); font-size: 10px; color: var(--text3); margin-top: 2px; }
+  .accesos-status { font-family: var(--mono); font-size: 10px; padding: 2px 8px; border-radius: 4px; flex-shrink: 0; }
+  .accesos-status.ok { background: var(--green-bg); color: var(--green); }
+  .accesos-status.err { background: var(--red-bg); color: var(--red); }
+
+  .admin-scroll { flex: 1; overflow-y: auto; padding: 16px 16px 100px; }
+</style>
+
+<!-- CSS adicional del panel admin (extraído de index.html) -->
+<style>
+     NUEVO PANEL ADMIN
+  ══════════════════════════════════════ */
+
+  /* Nav tabs sticky */
+  .adm-nav {
+    display: flex; flex-direction: row; flex-wrap: nowrap; gap: 0;
+    border-bottom: 0.5px solid var(--border);
+    position: sticky; top: 53px; z-index: 90;
+    background: var(--bg);
+    overflow-x: auto; scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .adm-nav::-webkit-scrollbar { display: none; }
+  .adm-tab {
+    padding: 11px 16px; font-size: 12px; font-family: var(--mono);
+    color: var(--text3); cursor: pointer; white-space: nowrap;
+    border-bottom: 2px solid transparent; transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .adm-tab:hover { color: var(--text2); }
+  .adm-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .adm-panel { display: none; padding: 16px 16px 100px; }
+  .adm-panel.active { display: block; }
+
+  /* KPI cards por local */
+  .adm-local-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    margin-bottom: 20px;
+  }
+  .adm-local-card {
+    background: var(--bg2); border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg); padding: 14px;
+    position: relative; overflow: hidden;
+  }
+  .adm-local-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 2px; background: var(--lcard-accent, transparent);
+  }
+  .adm-local-name {
+    font-family: var(--mono); font-size: 10px; font-weight: 500;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--text3); margin-bottom: 10px;
+  }
+  .adm-local-cierre {
+    font-size: 12px; margin-bottom: 6px;
+  }
+  .adm-local-cierre span { font-weight: 500; }
+  .adm-kpi-row {
+    display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap;
+  }
+  .adm-kpi-badge {
+    font-family: var(--mono); font-size: 9px; padding: 2px 7px;
+    border-radius: 4px; font-weight: 500;
+  }
+  .adm-kpi-ok      { background: var(--green-bg);  color: var(--green); }
+  .adm-kpi-warn    { background: var(--orange-bg); color: var(--orange); }
+  .adm-kpi-alert   { background: var(--red-bg);    color: var(--red); }
+  .adm-kpi-neutral { background: var(--bg4);       color: var(--text3); }
+
+  /* Alertas */
+  .adm-alert-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 20px; }
+  .adm-alert-item {
+    background: var(--bg2); border: 0.5px solid var(--border);
+    border-radius: var(--radius); padding: 10px 13px;
+    display: flex; align-items: center; gap: 10px;
+    font-size: 12px;
+  }
+  .adm-alert-item.warn  { border-color: var(--orange); background: var(--orange-bg); }
+  .adm-alert-item.alert { border-color: var(--red);    background: var(--red-bg); }
+  .adm-alert-ico { font-size: 14px; flex-shrink: 0; }
+  .adm-alert-txt { flex: 1; color: var(--text2); }
+  .adm-alert-loc { font-family: var(--mono); font-size: 10px; color: var(--text3); }
+
+  /* Cierres de turno */
+  .adm-cierre-item {
+    background: var(--bg2); border: 0.5px solid var(--border);
+    border-radius: var(--radius); margin-bottom: 8px; overflow: hidden;
+    cursor: pointer; transition: border-color 0.15s;
+  }
+  .adm-cierre-item:hover { border-color: var(--border2); }
+  .adm-cierre-item.dif-ok      { border-left: 3px solid var(--green); }
+  .adm-cierre-item.dif-alert   { border-left: 3px solid var(--red); }
+  .adm-cierre-item.dif-neutral { border-left: 3px solid var(--border2); }
+  .adm-cierre-head {
+    padding: 11px 14px; display: flex;
+    align-items: center; justify-content: space-between; gap: 8px;
+  }
+  .adm-cierre-who {
+    font-size: 13px; font-weight: 500; color: var(--text);
+  }
+  .adm-cierre-meta {
+    font-family: var(--mono); font-size: 10px; color: var(--text3); margin-top: 2px;
+  }
+  .adm-cierre-right { text-align: right; flex-shrink: 0; }
+  .adm-cierre-ef {
+    font-family: var(--mono); font-size: 14px; font-weight: 500; color: var(--text);
+  }
+  .adm-cierre-dif {
+    font-family: var(--mono); font-size: 11px; margin-top: 2px;
+  }
+  .adm-cierre-dif.ok      { color: var(--green); }
+  .adm-cierre-dif.faltante{ color: var(--red); }
+  .adm-cierre-dif.sobrante{ color: var(--blue); }
+
+  .adm-cierre-detail {
+    padding: 0 14px; max-height: 0; overflow: hidden;
+    transition: max-height 0.3s ease, padding 0.3s;
+  }
+  .adm-cierre-detail.open {
+    max-height: 600px; padding: 0 14px 14px;
+  }
+  .adm-checks-grid {
+    display: grid; grid-template-columns: repeat(2,1fr); gap: 5px; margin-top: 10px;
+  }
+  .adm-check-pill {
+    font-family: var(--mono); font-size: 9px; padding: 4px 8px;
+    border-radius: 5px; display: flex; align-items: center; gap: 4px;
+  }
+  .adm-check-pill.ok   { background: var(--green-bg); color: var(--green); }
+  .adm-check-pill.miss { background: var(--red-bg);   color: var(--red); }
+  .adm-hielo-detail {
+    margin-top: 8px; padding-top: 8px;
+    border-top: 0.5px solid var(--border);
+  }
+  .adm-hielo-row {
+    display: flex; justify-content: space-between;
+    font-family: var(--mono); font-size: 11px;
+    color: var(--text2); padding: 3px 0;
+    border-bottom: 0.5px solid var(--border);
+  }
+  .adm-hielo-row:last-child { border-bottom: none; }
+
+  /* Filtros admin */
+  .adm-filter-bar {
+    display: flex; gap: 6px; margin-bottom: 14px;
+    overflow-x: auto; scrollbar-width: none; padding-bottom: 2px;
+  }
+  .adm-filter-bar::-webkit-scrollbar { display: none; }
+
+  /* Tareas ABM */
+  .adm-tarea-row {
+    background: var(--bg2); border: 0.5px solid var(--border);
+    border-radius: var(--radius); padding: 11px 14px;
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 7px; transition: border-color 0.15s;
+  }
+  .adm-tarea-row:hover { border-color: var(--border2); }
+  .adm-tarea-row.inactiva { opacity: 0.4; }
+  .adm-tarea-info { flex: 1; min-width: 0; }
+  .adm-tarea-nombre { font-size: 13px; font-weight: 500; color: var(--text); }
+  .adm-tarea-meta {
+    display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px;
+  }
+  .adm-tarea-pill {
+    font-family: var(--mono); font-size: 9px; padding: 2px 6px;
+    border-radius: 4px; background: var(--bg4); color: var(--text3);
+  }
+  .adm-tarea-btns { display: flex; gap: 5px; flex-shrink: 0; }
+  .adm-btn-sm {
+    background: var(--bg4); border: 0.5px solid var(--border2);
+    color: var(--text3); padding: 4px 9px; border-radius: 5px;
+    cursor: pointer; font-size: 10px; font-family: var(--mono);
+    transition: all 0.12s; white-space: nowrap;
+  }
+  .adm-btn-sm:hover { border-color: var(--accent); color: var(--accent); }
+  .adm-btn-sm.danger:hover { border-color: var(--red); color: var(--red); }
+  .adm-btn-sm.success:hover { border-color: var(--green); color: var(--green); }
+
+  /* Empleados */
+  .adm-emp-row {
+    background: var(--bg2); border: 0.5px solid var(--border);
+    border-radius: var(--radius); padding: 12px 14px;
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 7px; transition: border-color 0.15s;
+  }
+  .adm-emp-row:hover { border-color: var(--border2); }
+  .adm-emp-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--bg4); display: flex; align-items: center;
+    justify-content: center; font-size: 13px; font-weight: 700;
+    color: var(--text2); flex-shrink: 0; font-family: var(--mono);
+  }
+  .adm-emp-info { flex: 1; }
+  .adm-emp-nombre { font-size: 13px; font-weight: 500; color: var(--text); }
+  .adm-emp-sub { font-family: var(--mono); font-size: 10px; color: var(--text3); margin-top: 2px; }
+  .adm-rol-badge {
+    font-family: var(--mono); font-size: 9px; padding: 3px 8px;
+    border-radius: 20px; font-weight: 500; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .adm-rol-empleado  { background: var(--bg4);        color: var(--text3);  border: 0.5px solid var(--border2); }
+  .adm-rol-encargado { background: var(--blue-bg);    color: var(--blue);   border: 0.5px solid var(--blue); }
+  .adm-rol-admin     { background: rgba(232,197,71,0.1); color: var(--accent); border: 0.5px solid var(--accent); }
+
+  /* Nuevo botón FAB */
+  .adm-fab {
+    position: fixed; bottom: 24px; right: 20px; z-index: 80;
+    width: 48px; height: 48px; border-radius: 50%;
+    background: var(--accent); color: var(--bg);
+    border: none; font-size: 22px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 12px rgba(232,197,71,0.3);
+    transition: all 0.15s;
+  }
+  .adm-fab:hover { transform: scale(1.08); }
+  .adm-fab.hidden { display: none; }
+
+  /* Hielo mejorado — ciclos con bolsas */
+  .pt-hielo-ciclos { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+  .pt-hielo-ciclo-row {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--bg4); border: 0.5px solid var(--border);
+    border-radius: var(--radius); padding: 7px 10px;
+  }
+  .pt-hielo-ciclo-num {
+    font-family: var(--mono); font-size: 10px; color: var(--text3);
+    width: 52px; flex-shrink: 0;
+  }
+  .pt-hielo-ciclo-inp {
+    background: var(--bg3); border: 0.5px solid var(--border2);
+    color: var(--text); border-radius: 5px; padding: 4px 8px;
+    font-family: var(--mono); font-size: 13px; width: 70px;
+    text-align: center; outline: none; transition: border-color 0.15s;
+  }
+  .pt-hielo-ciclo-inp:focus { border-color: var(--accent); }
+  .pt-hielo-ciclo-hora {
+    font-family: var(--mono); font-size: 10px; color: var(--text3); flex: 1;
+  }
+  .pt-hielo-ciclo-del {
+    background: transparent; border: none; color: var(--text3);
+    cursor: pointer; font-size: 13px; padding: 2px 4px;
+    transition: color 0.12s;
+  }
+  .pt-hielo-ciclo-del:hover { color: var(--red); }
+
+  /* ── ROL CHIPS en hub ── */
+  .rol-selector {
+    display: flex; gap: 6px; margin-bottom: 14px;
+  }
+  .rol-chip {
+    flex: 1; padding: 9px 8px; text-align: center;
+    background: var(--bg2); border: 0.5px solid var(--border);
+    border-radius: var(--radius); font-size: 12px;
+    color: var(--text2); cursor: pointer; transition: all 0.15s;
+    font-family: var(--mono);
+  }
+  .rol-chip:hover { border-color: var(--border2); color: var(--text); }
+  .rol-chip.selected-emp  { background: rgba(76,175,130,0.1);  border-color: var(--green);  color: var(--green); }
+  .rol-chip.selected-enc  { background: rgba(91,156,246,0.1);  border-color: var(--blue);   color: var(--blue); }
+  .rol-chip.selected-adm  { background: rgba(232,197,71,0.1);  border-color: var(--accent); color: var(--accent); }
+
+  /* Sección que se muestra/oculta según rol */
+  .rol-section { display: none; }
+  .rol-section.visible { display: block; }
+
+  /* PIN encargado — reutiliza estilos pin existentes */
+  .enc-pin-wrap {
+    margin-top: 12px;
+  }
+  .enc-pin-label {
+    font-family: var(--mono); font-size: 11px; color: var(--text3);
+    text-transform: uppercase; letter-spacing: 0.1em;
+    margin-bottom: 8px; display: block;
+  }
+  .enc-pin-note {
+    font-family: var(--mono); font-size: 11px; color: var(--orange);
+    background: var(--orange-bg); border: 0.5px solid rgba(240,136,74,0.3);
+    border-radius: var(--radius); padding: 8px 12px; margin-top: 8px;
+    display: none;
+  }
+  .enc-pin-note.visible { display: block; }
+
+  /* ══════════════════════════════════════
+     PANEL DE TURNO
+  ══════════════════════════════════════ */
+  #screen-panel-turno { background: var(--bg); }
+
+  .pt-content {
+    flex: 1; overflow-y: auto;
+    padding: 16px 16px 100px;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+
+  /* Header info row */
+  .pt-info-row {
+    display: flex; align-items: center;
+    justify-content: space-between;
+    padding: 0 4px;
+  }
+  .pt-clock-big {
+    font-family: var(--mono); font-size: 28px;
+    font-weight: 500; color: var(--accent); letter-spacing: 0.04em;
+    line-height: 1;
+  }
+  .pt-info-right { text-align: right; }
+  .pt-turno-pill {
+    display: inline-block; padding: 3px 10px;
+    border-radius: 20px; font-family: var(--mono);
+    font-size: 10px; font-weight: 500; text-transform: uppercase;
+    letter-spacing: 0.1em; margin-bottom: 3px;
+  }
+  .pt-turno-pill.manana { background: rgba(240,136,74,0.12); color: var(--orange); border: 0.5px solid var(--orange); }
+  .pt-turno-pill.tarde  { background: rgba(91,156,246,0.12);  color: var(--blue);   border: 0.5px solid var(--blue); }
+  .pt-turno-pill.noche  { background: rgba(167,139,250,0.12); color: var(--purple); border: 0.5px solid var(--purple); }
+  .pt-tiempo-label {
+    font-family: var(--mono); font-size: 11px; color: var(--text3);
+  }
+
+  /* Sección genérica */
+  .pt-section {
+    background: var(--bg2);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg); overflow: hidden;
+  }
+  .pt-section-header {
+    padding: 12px 16px;
+    border-bottom: 0.5px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .pt-section-title {
+    font-family: var(--mono); font-size: 10px; font-weight: 500;
+    text-transform: uppercase; letter-spacing: 0.1em; color: var(--text3);
+    display: flex; align-items: center; gap: 7px;
+  }
+  .pt-section-title .pt-dot {
+    width: 5px; height: 5px; border-radius: 50%; background: var(--accent); flex-shrink: 0;
+  }
+  .pt-section-body { padding: 14px 16px; }
+
+  /* Stats */
+  .pt-stats-row {
+    display: grid; grid-template-columns: repeat(3,1fr); gap: 8px;
+  }
+  .pt-stat {
+    background: var(--bg3); border: 0.5px solid var(--border);
+    border-radius: var(--radius); padding: 12px; text-align: center;
+  }
+  .pt-stat-val {
+    font-family: var(--mono); font-size: 22px; font-weight: 500;
+    color: var(--accent); line-height: 1;
+  }
+  .pt-stat-lbl {
+    font-family: var(--mono); font-size: 9px; color: var(--text3);
+    text-transform: uppercase; letter-spacing: 0.08em; margin-top: 4px;
+  }
+
+  /* Tareas */
+  .pt-tarea-item {
+    background: var(--bg3); border: 0.5px solid var(--border);
+    border-radius: var(--radius); padding: 11px 13px;
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 7px; transition: border-color 0.15s;
+  }
+  .pt-tarea-item:last-child { margin-bottom: 0; }
+  .pt-tarea-item.pt-completada {
+    opacity: 0.45; border-color: var(--green);
+    background: var(--green-bg);
+  }
+  .pt-tarea-item.pt-vencida { border-color: var(--red); background: var(--red-bg); }
+  .pt-tarea-item.pt-activa-ahora { border-color: var(--accent); }
+
+  .pt-check-btn {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 1.5px solid var(--border2); background: transparent;
+    cursor: pointer; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s; font-size: 11px; color: transparent;
+  }
+  .pt-check-btn:hover { border-color: var(--green); }
+  .pt-tarea-item.pt-completada .pt-check-btn {
+    background: var(--green); border-color: var(--green); color: #0f0f0f;
+  }
+
+  .pt-tarea-info { flex: 1; min-width: 0; }
+  .pt-tarea-nombre {
+    font-size: 13px; font-weight: 500; color: var(--text);
+  }
+  .pt-tarea-item.pt-completada .pt-tarea-nombre {
+    text-decoration: line-through; color: var(--text3);
+  }
+  .pt-tarea-meta {
+    display: flex; align-items: center; gap: 6px; margin-top: 3px;
+  }
+  .pt-tarea-hora { font-family: var(--mono); font-size: 10px; color: var(--text3); }
+
+  .pt-badge {
+    font-size: 9px; padding: 2px 6px; border-radius: 4px;
+    font-family: var(--mono); text-transform: uppercase;
+    letter-spacing: 0.05em; font-weight: 500;
+  }
+  .pt-badge-ahora    { background: var(--accent); color: var(--bg); }
+  .pt-badge-ok       { background: var(--green-bg); color: var(--green); }
+  .pt-badge-vencida  { background: var(--red-bg); color: var(--red); }
+  .pt-badge-next     { background: var(--bg4); color: var(--text3); }
+
+  .pt-tarea-btns { display: flex; gap: 5px; flex-shrink: 0; }
+  .pt-tarea-btn {
+    background: var(--bg4); border: 0.5px solid var(--border2);
+    color: var(--text3); padding: 3px 8px; border-radius: 5px;
+    cursor: pointer; font-size: 10px; font-family: var(--mono);
+    transition: all 0.12s; white-space: nowrap;
+  }
+  .pt-tarea-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .pt-tarea-btn.danger:hover { border-color: var(--red); color: var(--red); }
+
+  .pt-tareas-empty {
+    text-align: center; padding: 24px;
+    font-family: var(--mono); font-size: 11px; color: var(--text3);
+  }
+  .pt-tareas-loading {
+    display: flex; align-items: center; justify-content: center;
+    gap: 8px; padding: 20px;
+    font-family: var(--mono); font-size: 11px; color: var(--text3);
+  }
+  .pt-mini-spin {
+    width: 13px; height: 13px; border-radius: 50%;
+    border: 1.5px solid var(--border2); border-top-color: var(--accent);
+    animation: spin 0.7s linear infinite; flex-shrink: 0;
+  }
+
+  /* Admin tarea ad-hoc */
+  .pt-admin-strip {
+    margin: 0 16px 14px;
+    border: 0.5px dashed rgba(232,197,71,0.2);
+    border-radius: var(--radius); padding: 10px 12px;
+    background: rgba(232,197,71,0.04);
+  }
+  .pt-admin-strip-label {
+    font-family: var(--mono); font-size: 9px; color: rgba(232,197,71,0.35);
+    text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 7px;
+  }
+  .pt-adhoc-row { display: flex; gap: 7px; }
+  .pt-adhoc-input {
+    flex: 1; background: var(--bg3);
+    border: 0.5px solid var(--border2);
+    color: var(--text); border-radius: var(--radius);
+    padding: 8px 11px; font-family: var(--sans); font-size: 13px;
+    outline: none; transition: border-color 0.15s;
+  }
+  .pt-adhoc-input:focus { border-color: var(--accent); }
+  .pt-adhoc-add-btn {
+    background: var(--accent); color: var(--bg);
+    border: none; border-radius: var(--radius);
+    padding: 8px 14px; font-family: var(--mono);
+    font-size: 11px; font-weight: 500; cursor: pointer;
+    transition: background 0.15s; white-space: nowrap;
+  }
+  .pt-adhoc-add-btn:hover { background: #f0d050; }
+
+  /* Future badge */
+  .pt-future-tag {
+    font-family: var(--mono); font-size: 9px; color: var(--text3);
+    background: var(--bg4); border: 0.5px dashed var(--border2);
+    padding: 2px 8px; border-radius: 4px;
+  }
+
+  /* Semáforo */
+  .pt-semaforo-grid {
+    display: grid; grid-template-columns: repeat(3,1fr); gap: 7px;
+  }
+  .pt-sem-item {
+    background: var(--bg3); border: 0.5px solid var(--border);
+    border-radius: var(--radius); padding: 10px; text-align: center;
+  }
+  .pt-sem-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    margin: 0 auto 6px;
+  }
+  .sem-verde    { background: var(--green);  box-shadow: 0 0 6px var(--green); }
+  .sem-amarillo { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+  .sem-rojo     { background: var(--red);    box-shadow: 0 0 6px var(--red); }
+  .pt-sem-nombre { font-size: 10px; color: var(--text3); font-family: var(--mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pt-sem-stock  { font-family: var(--mono); font-size: 12px; font-weight: 500; margin-top: 2px; }
+  .sem-verde    .pt-sem-stock { color: var(--green); }
+  .sem-amarillo .pt-sem-stock { color: var(--accent); }
+  .sem-rojo     .pt-sem-stock { color: var(--red); }
+
+  /* Ventas placeholder */
+  .pt-ventas-grid {
+    display: grid; grid-template-columns: repeat(2,1fr); gap: 7px;
+    opacity: 0.35; pointer-events: none;
+  }
+  .pt-venta-card {
+    background: var(--bg3); border: 0.5px solid var(--border);
+    border-radius: var(--radius); padding: 11px;
+  }
+  .pt-venta-medio { font-family: var(--mono); font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+  .pt-venta-valor { font-family: var(--mono); font-size: 15px; font-weight: 500; color: var(--text2); }
+
+  /* Cierre — billetes */
+  /* ── LAYOUT 2 COLUMNAS: CAJA CHICA | CAJA GRANDE ── */
+  .pt-caja-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 10px;
+    align-items: start;
+  }
+  .pt-caja-col-title {
+    font-family: var(--mono); font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .08em;
+    padding: 5px 10px 5px 10px;
+    background: var(--bg4); border-bottom: 1px solid var(--border2);
+    color: var(--text2);
+  }
+
+  /* ── CAJA CHICA — tabla compacta de billetes ── */
+  .pt-caja-table {
+    width: 100%; border-collapse: collapse;
+    background: var(--bg3); border: 1px solid var(--border2);
+    border-radius: var(--radius); overflow: hidden;
+    margin-bottom: 0;
+  }
+  .pt-caja-table thead th {
+    font-family: var(--mono); font-size: 9px; font-weight: 600;
+    color: var(--text2); text-transform: uppercase; letter-spacing: .07em;
+    padding: 5px 4px; background: var(--bg4);
+    border-bottom: 1px solid var(--border2); text-align: center;
+  }
+  .pt-caja-table thead th:first-child { text-align: left; padding-left: 8px; }
+  .pt-caja-table thead th:last-child { text-align: right; padding-right: 8px; }
+  .pt-caja-table tbody tr { border-bottom: 1px solid var(--border); }
+  .pt-caja-table tbody tr:last-child { border-bottom: none; }
+  .pt-caja-table tbody tr:hover { background: var(--bg4); }
+  .pt-caja-denom {
+    font-family: var(--mono); font-size: 12px; font-weight: 500;
+    color: var(--text); padding: 4px 4px 4px 8px; width: 64px; white-space: nowrap;
+  }
+  .pt-caja-inp-wrap { padding: 3px 3px; text-align: center; vertical-align: middle; }
+  .pt-billete-inp {
+    background: var(--bg2); border: 1px solid var(--border2);
+    color: var(--text); border-radius: 6px; padding: 5px 4px;
+    font-family: var(--mono); font-size: 13px; width: 88px;
+    text-align: center; outline: none; transition: border-color 0.15s;
+    -webkit-appearance: none; -moz-appearance: textfield; appearance: none;
+  }
+  .pt-billete-inp:focus { border-color: var(--accent); background: var(--bg); }
+  .pt-billete-inp::-webkit-outer-spin-button,
+  .pt-billete-inp::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  /* Paca/Bulto config inputs (valor de referencia — persistente) */
+  .pt-cfg-inp {
+    background: var(--bg4); border: 1px dashed var(--border2);
+    color: var(--text3); border-radius: 5px; padding: 4px 3px;
+    font-family: var(--mono); font-size: 9px; width: 40px;
+    text-align: center; outline: none; transition: border-color 0.15s, color 0.15s;
+    -webkit-appearance: none; -moz-appearance: textfield; appearance: none;
+  }
+  .pt-cfg-inp:focus { border-color: var(--accent); color: var(--text); border-style: solid; }
+  .pt-cfg-inp::-webkit-outer-spin-button,
+  .pt-cfg-inp::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .pt-cfg-lbl { display: none; }
+  /* Cantidad de pacas/bultos (se ingresa por turno) */
+  .pt-pb-inp {
+    background: var(--bg2); border: 1px solid var(--border2);
+    color: var(--text); border-radius: 6px; padding: 5px 3px;
+    font-family: var(--mono); font-size: 13px; width: 44px;
+    text-align: center; outline: none; transition: border-color 0.15s;
+    -webkit-appearance: none; -moz-appearance: textfield; appearance: none;
+  }
+  .pt-pb-inp:focus { border-color: var(--blue); background: var(--bg); }
+  .pt-pb-inp::-webkit-outer-spin-button,
+  .pt-pb-inp::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .pt-caja-sub {
+    font-family: var(--mono); font-size: 11px; color: var(--text2);
+    padding: 4px 8px 4px 2px; text-align: right; white-space: nowrap;
+  }
+
+  /* ── PACAS — tabla compacta ── */
+  .pt-pacas-table {
+    width: 100%; border-collapse: collapse;
+    background: var(--bg3); border: 1px solid var(--border2);
+    border-radius: var(--radius); overflow: hidden;
+    margin-bottom: 0;
+  }
+  .pt-pacas-table thead th {
+    font-family: var(--mono); font-size: 9px; font-weight: 600;
+    color: var(--text2); text-transform: uppercase; letter-spacing: .07em;
+    padding: 5px 8px; background: var(--bg4);
+    border-bottom: 1px solid var(--border2); text-align: left;
+  }
+  .pt-pacas-table thead th:last-child { text-align: right; }
+  .pt-pacas-table tbody tr { border-bottom: 1px solid var(--border); }
+  .pt-pacas-table tbody tr:last-child { border-bottom: none; }
+  .pt-pacas-table tbody tr:hover { background: var(--bg4); }
+  .pt-paca-lbl {
+    font-family: var(--mono); font-size: 12px; color: var(--text);
+    padding: 5px 8px;
+  }
+  .pt-paca-inp-wrap { padding: 3px 6px; }
+  .pt-paca-inp {
+    background: var(--bg2); border: 1px solid var(--border2);
+    color: var(--text); border-radius: 5px; padding: 5px 8px;
+    font-family: var(--mono); font-size: 13px; width: 88px;
+    text-align: center; outline: none; transition: border-color 0.15s;
+    -webkit-appearance: none; -moz-appearance: textfield; appearance: none;
+  }
+  .pt-paca-inp:focus { border-color: var(--accent); background: var(--bg); }
+  .pt-paca-inp::-webkit-outer-spin-button,
+  .pt-paca-inp::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .pt-paca-name-inp {
+    background: var(--bg2); border: 1px solid var(--border2);
+    color: var(--text); border-radius: 5px; padding: 5px 8px;
+    font-family: var(--mono); font-size: 12px; width: 150px;
+    outline: none; transition: border-color 0.15s;
+  }
+  .pt-paca-name-inp:focus { border-color: var(--accent); }
+  .pt-paca-val-inp {
+    background: var(--bg2); border: 1px solid var(--border2);
+    color: var(--text); border-radius: 5px; padding: 5px 8px;
+    font-family: var(--mono); font-size: 12px; width: 120px;
+    outline: none; transition: border-color 0.15s;
+    -webkit-appearance: none; -moz-appearance: textfield; appearance: none;
+  }
+  .pt-paca-val-inp:focus { border-color: var(--accent); }
+  .pt-paca-val-inp::-webkit-outer-spin-button,
+  .pt-paca-val-inp::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .pt-paca-sub {
+    font-family: var(--mono); font-size: 11px; color: var(--text2);
+    padding: 5px 10px; text-align: right;
+  }
+
+  /* ── TOTALES ── */
+  .pt-total-ef {
+    background: var(--bg3);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius); padding: 12px 15px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .pt-total-ef-lbl {
+    font-family: var(--mono); font-size: 11px; color: var(--text);
+    text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600;
+  }
+  .pt-total-ef-val {
+    font-family: var(--mono); font-size: 22px; font-weight: 600; color: var(--accent);
+  }
+
+  /* ── VENTAS DEL TURNO ── */
+  .pt-medio-item {
+    background: var(--bg3); border: 1px solid var(--border2);
+    border-radius: var(--radius); padding: 11px 13px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .pt-medio-lbl {
+    font-family: var(--mono); font-size: 11px; color: var(--text);
+    font-weight: 500; width: 130px; flex-shrink: 0;
+  }
+  .pt-medio-inp {
+    background: var(--bg2); border: 1px solid var(--border2);
+    color: var(--text); font-family: var(--mono); font-size: 14px;
+    flex: 1; padding: 5px 8px; outline: none;
+    transition: border-color 0.15s; border-radius: 5px; text-align: right;
+  }
+  .pt-medio-inp:focus { border-color: var(--accent); background: var(--bg); }
+
+  /* ── DIFERENCIA ── */
+  .pt-diferencia {
+    border-radius: var(--radius); padding: 14px 16px;
+    display: flex; justify-content: space-between; align-items: center;
+    transition: all 0.25s;
+  }
+  .pt-dif-neutral  { background: var(--bg3); border: 1px solid var(--border2); }
+  .pt-dif-ok       { background: var(--green-bg); border: 1px solid var(--green); }
+  .pt-dif-sobrante { background: var(--blue-bg);  border: 1px solid var(--blue); }
+  .pt-dif-faltante { background: var(--red-bg);   border: 1px solid var(--red); }
+  .pt-dif-lbl { font-family: var(--mono); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; }
+  .pt-dif-neutral  .pt-dif-lbl { color: var(--text2); }
+  .pt-dif-ok       .pt-dif-lbl { color: var(--green); }
+  .pt-dif-sobrante .pt-dif-lbl { color: var(--blue); }
+  .pt-dif-faltante .pt-dif-lbl { color: var(--red); }
+  .pt-dif-desc { font-family: var(--mono); font-size: 11px; color: var(--text2); margin-top: 3px; }
+  .pt-dif-val { font-family: var(--mono); font-size: 24px; font-weight: 600; }
+  .pt-dif-neutral  .pt-dif-val { color: var(--text2); }
+  .pt-dif-ok       .pt-dif-val { color: var(--green); }
+  .pt-dif-sobrante .pt-dif-val { color: var(--blue); }
+  .pt-dif-faltante .pt-dif-val { color: var(--red); }
+
+  /* Botón cierre */
+  .pt-cerrar-btn {
+    width: 100%; padding: 17px;
+    background: var(--accent); border: none; border-radius: 14px;
+    color: #0f0f0f; font-family: var(--sans); font-size: 16px; font-weight: 700;
+    cursor: pointer; transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    letter-spacing: 0.01em;
+    box-shadow: 0 4px 16px rgba(232,197,71,0.25);
+  }
+  .pt-cerrar-btn:hover { background: #f0d050; box-shadow: 0 6px 20px rgba(232,197,71,0.35); transform: translateY(-1px); }
+  .pt-cerrar-btn:active { transform: translateY(0); }
+  .pt-cerrar-btn:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; transform: none; }
+
+  /* Confirmado */
+  .pt-confirmado {
+    text-align: center; padding: 36px 20px;
+  }
+  .pt-confirmado-ico { font-size: 52px; margin-bottom: 14px; }
+  .pt-confirmado h3 {
+    font-size: 18px; font-weight: 700; color: var(--green); margin-bottom: 6px;
+  }
+  .pt-confirmado p { font-size: 13px; color: var(--text3); font-family: var(--mono); }
+
+  /* Modal OBS */
+  .pt-modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.65);
+    z-index: 600; display: flex; align-items: flex-end; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .pt-modal-overlay.open { opacity: 1; pointer-events: all; }
+  .pt-modal {
+    background: var(--bg2); border: 0.5px solid var(--border2);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    padding: 20px; width: 100%; max-width: 600px;
+    transform: translateY(16px); transition: transform 0.2s;
+    max-height: 80vh; overflow-y: auto; position: relative;
+  }
+  .pt-modal-overlay.open .pt-modal { transform: translateY(0); }
+  .pt-modal-head {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;
+  }
+  .pt-modal-title {
+    font-family: var(--mono); font-size: 11px; font-weight: 500;
+    text-transform: uppercase; letter-spacing: 0.1em; color: var(--text2);
+  }
+  .pt-modal-close {
+    background: var(--bg3); border: 0.5px solid var(--border);
+    color: var(--text3); width: 26px; height: 26px; border-radius: 50%;
+    cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center;
+    transition: all 0.12s;
+  }
+  .pt-modal-close:hover { border-color: var(--red); color: var(--red); }
+  .pt-modal-tarea-nombre { font-size: 14px; font-weight: 500; margin-bottom: 12px; color: var(--text); }
+
+  /* Modal definición tarea */
+  .pt-form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+  .pt-form-lbl {
+    font-family: var(--mono); font-size: 10px; font-weight: 500;
+    text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3);
+  }
+  .pt-form-sel, .pt-form-inp {
+    background: var(--bg3); border: 0.5px solid var(--border2);
+    color: var(--text); border-radius: var(--radius);
+    padding: 9px 12px; font-family: var(--sans); font-size: 13px;
+    outline: none; transition: border-color 0.15s; width: 100%;
+    appearance: none; -webkit-appearance: none;
+  }
+  .pt-form-sel:focus, .pt-form-inp:focus { border-color: var(--accent); }
+  .pt-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .pt-day-checks { display: flex; flex-wrap: wrap; gap: 5px; }
+  .pt-day-check { display: flex; align-items: center; gap: 3px; cursor: pointer; }
+  .pt-day-check input { accent-color: var(--accent); }
+  .pt-day-check span { font-family: var(--mono); font-size: 10px; color: var(--text2); }
+  .pt-turno-chips, .pt-local-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .pt-tchip {
+    padding: 5px 11px; border-radius: 20px; border: 0.5px solid var(--border);
+    font-family: var(--mono); font-size: 10px; color: var(--text2);
+    cursor: pointer; transition: all 0.12s; user-select: none;
+  }
+  .pt-tchip.sel-manana { background: var(--orange-bg); border-color: var(--orange); color: var(--orange); }
+  .pt-tchip.sel-tarde  { background: var(--blue-bg);   border-color: var(--blue);   color: var(--blue); }
+  .pt-tchip.sel-noche  { background: var(--purple-bg); border-color: var(--purple); color: var(--purple); }
+  .pt-tchip.sel-local  { background: rgba(232,197,71,0.1); border-color: var(--accent); color: var(--accent); }
+  .pt-tchip.sel-dia    { background: var(--green-bg,rgba(80,200,120,0.12)); border-color: var(--green); color: var(--green); }
+  .pt-save-btn {
+    width: 100%; padding: 12px;
+    background: var(--accent); border: none; border-radius: var(--radius);
+    color: #0f0f0f; font-family: var(--sans); font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: background 0.15s; margin-top: 4px;
+  }
+  .pt-save-btn:hover { background: #f0d050; }
+
+  @media (max-width: 380px) {
+    .pt-billetes-grid { grid-template-columns: repeat(2,1fr); }
+    .pt-medios-grid   { grid-template-columns: 1fr; }
+  }
+
+  /* ── SECCIÓN COLAPSABLE ── */
+  .pt-section-header.collapsible { cursor: pointer; user-select: none; }
+  .pt-collapse-arrow {
+    font-size: 11px; color: var(--text3);
+    transition: transform 0.2s; display: inline-block; margin-left: 4px;
+  }
+  .pt-section-body.collapsed { display: none; }
+
+  /* ── CHECKS DE CIERRE ── */
+  .pt-checks-list { display: flex; flex-direction: column; gap: 8px; }
+
+  .pt-check-item {
+    background: var(--bg3); border: 0.5px solid var(--border);
+    border-radius: var(--radius); padding: 14px 14px;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .pt-check-item.done   { border-color: var(--green); background: var(--green-bg); }
+  .pt-check-item.alert  { border-color: var(--orange); background: var(--orange-bg); }
+
+  .pt-check-row {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .pt-check-toggle {
+    width: 22px; height: 22px; border-radius: 6px;
+    border: 1.5px solid var(--border2); background: transparent;
+    cursor: pointer; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s; font-size: 12px; color: transparent;
+  }
+  .pt-check-toggle:hover { border-color: var(--green); }
+  .pt-check-item.done .pt-check-toggle {
+    background: var(--green); border-color: var(--green); color: #0f0f0f;
+  }
+  /* Botones ok/no por check */
+  .pt-check-btns { display:flex; gap:6px; flex-shrink:0; }
+  .pt-check-btn-ok, .pt-check-btn-no {
+    width:44px; height:44px; border-radius:10px; border:1.5px solid var(--border2);
+    background:transparent; cursor:pointer; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    transition:all 0.15s; font-size:18px; color:var(--text3);
+  }
+  .pt-check-btn-ok:hover  { border-color:var(--green); color:var(--green); background: var(--green-bg); }
+  .pt-check-btn-no:hover  { border-color:var(--red);   color:var(--red);   background: var(--red-bg); }
+  .pt-check-item.done  .pt-check-btn-ok { background:var(--green); border-color:var(--green); color:#0f0f0f; }
+  .pt-check-item.alert .pt-check-btn-no { background:var(--red);   border-color:var(--red);   color:#fff; }
+  .pt-check-item.alert { border-color:var(--red); background:rgba(255,60,60,.04); }
+  .pt-check-item.alert .pt-check-label  { color:var(--red); }
+
+  .pt-check-info { flex: 1; }
+  .pt-check-label {
+    font-size: 15px; font-weight: 500; color: var(--text);
+  }
+  .pt-check-item.done .pt-check-label { color: var(--text2); text-decoration: line-through; }
+  .pt-check-sublabel {
+    font-family: var(--mono); font-size: 12px; color: var(--text2); margin-top: 4px;
+  }
+
+  /* Hielos — contador */
+  .pt-hielo-counter {
+    display: flex; align-items: center; gap: 8px; margin-top: 10px;
+  }
+  .pt-hielo-btn {
+    width: 30px; height: 30px; border-radius: 7px;
+    background: var(--bg4); border: 0.5px solid var(--border2);
+    color: var(--text); font-size: 18px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.12s; font-weight: 300;
+  }
+  .pt-hielo-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .pt-hielo-dots {
+    display: flex; gap: 5px; flex: 1; justify-content: center;
+  }
+  .pt-hielo-dot {
+    width: 16px; height: 16px; border-radius: 50%;
+    border: 1.5px solid var(--border2); background: transparent;
+    transition: all 0.15s;
+  }
+  .pt-hielo-dot.filled { background: var(--blue); border-color: var(--blue); }
+  .pt-hielo-val {
+    font-family: var(--mono); font-size: 13px; color: var(--text2);
+    min-width: 28px; text-align: center;
+  }
+
+  /* Recargas */
+  .pt-recargas-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 10px;
+  }
+  .pt-recarga-field { display: flex; flex-direction: column; gap: 4px; }
+  .pt-recarga-lbl {
+    font-family: var(--mono); font-size: 10px; color: var(--text2);
+    text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500;
+  }
+  .pt-recarga-inp {
+    background: var(--bg4); border: 0.5px solid var(--border2);
+    color: var(--text); border-radius: 6px; padding: 7px 9px;
+    font-family: var(--mono); font-size: 13px; width: 100%;
+    outline: none; transition: border-color 0.15s;
+  }
+  .pt-recarga-inp:focus { border-color: var(--accent); }
+  .pt-recarga-resultado {
+    grid-column: span 2;
+    background: var(--bg4); border: 0.5px solid var(--border);
+    border-radius: 6px; padding: 8px 10px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .pt-recarga-res-lbl { font-family: var(--mono); font-size: 10px; color: var(--text2); font-weight: 500; }
+  .pt-recarga-res-val { font-family: var(--mono); font-size: 14px; font-weight: 500; }
+
+  /* Sub-checks de delivery */
+  .pt-sub-checks { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+  .pt-sub-check-row {
+    display: flex; align-items: center; gap: 8px; padding-left: 4px;
+  }
+  .pt-sub-check-box {
+    width: 17px; height: 17px; border-radius: 4px;
+    border: 1.5px solid var(--border2); background: transparent;
+    cursor: pointer; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; color: transparent; transition: all 0.12s;
+  }
+  .pt-sub-check-box:hover { border-color: var(--green); }
+  .pt-sub-check-box.checked { background: var(--green); border-color: var(--green); color: #0f0f0f; }
+  .pt-sub-check-lbl { font-size: 12px; color: var(--text); font-family: var(--mono); font-weight: 500; }
+
+  /* Barra progreso checks */
+  .pt-checks-progress {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 10px;
+  }
+  .pt-checks-bar-wrap {
+    flex: 1; height: 4px; background: var(--bg4);
+    border-radius: 2px; overflow: hidden;
+  }
+  .pt-checks-bar {
+    height: 100%; background: var(--green);
+    border-radius: 2px; transition: width 0.3s;
+    width: 0%;
+  }
+  .pt-checks-count {
+    font-family: var(--mono); font-size: 11px; color: var(--text2);
+    white-space: nowrap; font-weight: 500;
+  }
+
+  /* ── TICKET BADGE ── */
+  .ticket-notice {
+    background: var(--orange-bg);
+    border: 0.5px solid rgba(240,136,74,0.3);
+    border-radius: var(--radius); padding: 12px 14px;
+    margin-bottom: 20px;
+    font-family: var(--mono); font-size: 12px;
+    color: var(--orange); line-height: 1.5;
+  }
+
+  /* ── ADMIN PIN ── */
+  .pin-screen {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 40px 32px;
+  }
+  .pin-title { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+  .pin-sub { font-size: 13px; color: var(--text3); font-family: var(--mono); margin-bottom: 32px; }
+  .pin-dots { display: flex; gap: 12px; margin-bottom: 28px; }
+  .pin-dot {
+    width: 12px; height: 12px; border-radius: 50%;
+    border: 1.5px solid var(--border2); background: transparent;
+    transition: all 0.15s;
+  }
+  .pin-dot.filled { background: var(--accent); border-color: var(--accent); }
+  .pin-pad {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 10px; width: 100%; max-width: 280px;
+  }
+  .pin-key {
+    aspect-ratio: 1; border-radius: var(--radius);
+    background: var(--bg2); border: 0.5px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; font-weight: 500; cursor: pointer;
+    transition: all 0.1s;
+  }
+  .pin-key:hover { background: var(--bg3); border-color: var(--border2); }
+  .pin-key:active { transform: scale(0.95); }
+  .pin-key.del { font-size: 16px; color: var(--text2); }
+  .pin-error { color: var(--red); font-family: var(--mono); font-size: 12px; margin-top: 16px; height: 16px; }
+
+  /* ── ADMIN DASHBOARD ── */
+  .admin-scroll { flex: 1; overflow-y: auto; padding: 16px 16px 100px; }
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; }
+  .stat-card {
+    background: var(--bg2); border: 0.5px solid var(--border);
+    border-radius: var(--radius); padding: 14px;
+  }
+  .stat-label { font-family: var(--mono); font-size: 11px; color: var(--text3); margin-bottom: 6px; }
+  .stat-value { font-size: 22px; font-weight: 700; color: var(--text); font-family: var(--mono); }
+  .stat-sub { font-size: 11px; color: var(--text3); font-family: var(--mono); margin-top: 2px; }
+
+  .section-head {
+    font-family: var(--mono); font-size: 11px;
+    color: var(--text3); text-transform: uppercase;
+    letter-spacing: 0.1em; margin-bottom: 10px; margin-top: 4px;
+  }
+
+  .filter-row {
+    display: flex; gap: 6px; margin-bottom: 14px; overflow-x: auto;
+    scrollbar-width: none; padding-bottom: 2px;
+  }
+  .filter-row::-webkit-scrollbar { display: none; }
+  .filter-chip {
+    background: var(--bg3); border: 0.5px solid var(--border);
+    border-radius: 20px; padding: 5px 12px;
+    font-size: 12px; color: var(--text2); cursor: pointer;
+    white-space: nowrap; transition: all 0.12s; flex-shrink: 0;
+  }
+  .filter-chip.active {
+    background: rgba(232,197,71,0.1);
+    border-color: var(--accent); color: var(--accent);
+  }
+
+  .report-item {
+    background: var(--bg2); border: 0.5px solid var(--border);
+    border-radius: var(--radius); padding: 14px;
+    margin-bottom: 8px; cursor: pointer; transition: border-color 0.15s;
+  }
+  .report-item:hover { border-color: var(--border2); }
+  .report-item-top {
+    display: flex; align-items: flex-start;
+    justify-content: space-between; gap: 8px; margin-bottom: 6px;
+  }
+  .report-type-badge {
+    font-family: var(--mono); font-size: 10px;
+    padding: 2px 8px; border-radius: 4px;
+    flex-shrink: 0;
+  }
+  .report-item-desc { font-size: 13px; color: var(--text); flex: 1; line-height: 1.4; }
+  .report-item-meta {
+    display: flex; gap: 10px;
+    font-family: var(--mono); font-size: 11px; color: var(--text3);
+  }
+  .resolve-btn {
+    margin-top: 10px; padding: 7px 14px;
+    background: var(--green-bg); border: 0.5px solid var(--green);
+    border-radius: 6px; color: var(--green);
+    font-family: var(--mono); font-size: 11px;
+    cursor: pointer; transition: opacity 0.15s;
+  }
+  .resolve-btn:hover { opacity: 0.8; }
+  .resolved-tag {
+    font-family: var(--mono); font-size: 10px;
+    color: var(--text3); margin-top: 8px;
+  }
+  /* Reporte detail modal */
+  /* ── Drive Auth Overlay ── */
+  .drive-auth-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+    z-index: 900; display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .drive-auth-overlay.open { opacity: 1; pointer-events: all; }
+  .drive-auth-box {
+    background: var(--bg2); border: 0.5px solid var(--border2);
+    border-radius: 16px; padding: 28px 24px 24px;
+    width: calc(100% - 40px); max-width: 360px; text-align: center;
+  }
+  .drive-auth-icon { font-size: 36px; margin-bottom: 12px; }
+  .drive-auth-title {
+    font-family: var(--syne); font-size: 16px; font-weight: 700;
+    color: var(--text); margin-bottom: 8px;
+  }
+  .drive-auth-sub {
+    font-family: var(--mono); font-size: 12px; color: var(--text2);
+    margin-bottom: 20px; line-height: 1.5;
+  }
+  .drive-auth-btn {
+    width: 100%; padding: 14px; border-radius: 10px;
+    background: var(--accent); color: #000;
+    font-family: var(--syne); font-size: 14px; font-weight: 700;
+    border: none; cursor: pointer; margin-bottom: 10px;
+  }
+  .drive-auth-cancel {
+    background: none; border: none; color: var(--text3);
+    font-family: var(--mono); font-size: 12px; cursor: pointer;
+    padding: 6px;
+  }
+
+  .rep-modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+    z-index: 500; display: flex; align-items: flex-end; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .rep-modal-overlay.open { opacity: 1; pointer-events: all; }
+  .rep-modal {
+    background: var(--bg2); border: 0.5px solid var(--border2);
+    border-radius: 16px 16px 0 0;
+    width: 100%; max-width: 620px;
+    transform: translateY(20px); transition: transform 0.2s;
+    max-height: 85vh; overflow-y: auto; padding: 20px 20px 32px;
+  }
+  .rep-modal-overlay.open .rep-modal { transform: translateY(0); }
+  .rep-modal-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px; position: sticky; top: 0;
+    background: var(--bg2); padding-bottom: 12px;
+    border-bottom: 0.5px solid var(--border);
+  }
+  .rep-modal-tipo {
+    font-family: var(--mono); font-size: 10px; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 3px 10px; border-radius: 5px;
+  }
+  .rep-modal-close {
+    background: var(--bg3); border: 0.5px solid var(--border);
+    border-radius: 6px; color: var(--text2); font-size: 16px;
+    cursor: pointer; width: 30px; height: 30px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .rep-det-row {
+    display: flex; flex-direction: column; gap: 3px;
+    padding: 10px 0; border-bottom: 0.5px solid var(--border);
+  }
+  .rep-det-row:last-child { border-bottom: none; }
+  .rep-det-label {
+    font-family: var(--mono); font-size: 10px; color: var(--text3);
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .rep-det-value { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .rep-item-card {
+    background: var(--bg3); border-radius: 8px;
+    padding: 10px 12px; margin-bottom: 8px;
+  }
+  .rep-item-name { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 6px; }
+  .rep-item-tags { display: flex; flex-wrap: wrap; gap: 8px; font-family: var(--mono); font-size: 11px; color: var(--text2); }
+
+  /* Animations */
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .form-scroll > * { animation: fadeIn 0.25s ease forwards; }
+
+  /* ══════════════════════════════════════
+     PANTALLA DE LOGIN v8
+  ══════════════════════════════════════ */
+  #login-screen {
+    position: fixed; inset: 0; z-index: 9999;
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    padding: 0 24px;
+  }
+  #login-screen.hidden { display: none; }
+  .login-wrap { width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 28px; }
+  .login-wordmark { font-family: var(--mono); font-size: 11px; color: var(--accent); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 8px; text-align:center; }
+  .login-title { font-size: 32px; font-weight: 700; color: var(--text); letter-spacing: -0.5px; text-align:center; }
+  .login-step { display: none; flex-direction: column; gap: 10px; }
+  .login-step.visible { display: flex; }
+  .login-step-label { font-family: var(--mono); font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 2px; }
+  .login-option-btn { background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 15px 18px; text-align: left; cursor: pointer; display: flex; align-items: center; gap: 14px; transition: all 0.15s; color: var(--text); width: 100%; }
+  .login-option-btn:hover { border-color: var(--border2); background: var(--bg3); }
+  .login-option-icon { font-size: 20px; flex-shrink: 0; }
+  .login-option-name { font-size: 14px; font-weight: 500; font-family: var(--sans); color: var(--text); }
+  .login-option-desc { font-size: 11px; color: var(--text3); font-family: var(--mono); margin-top: 2px; }
+  .login-back-btn { background: none; border: none; color: var(--text3); font-family: var(--mono); font-size: 11px; cursor: pointer; text-align: left; padding: 0; margin-bottom: 4px; display: flex; align-items: center; gap: 5px; transition: color 0.12s; }
+  .login-back-btn:hover { color: var(--text2); }
+  .login-clave-titulo { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+  .login-clave-sub { font-family: var(--mono); font-size: 11px; color: var(--text3); margin-bottom: 4px; }
+  .login-inp-wrap { position: relative; }
+  .login-inp-wrap input { padding-right: 44px; }
+  .login-ver-btn { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text3); cursor: pointer; font-size: 15px; padding: 0; line-height: 1; transition: color 0.12s; }
+  .login-ver-btn:hover { color: var(--text2); }
+  .login-error { display: none; background: var(--red-bg); border: 0.5px solid rgba(232,93,74,0.3); border-radius: var(--radius); padding: 10px 13px; font-family: var(--mono); font-size: 11px; color: var(--red); }
+  .login-submit-btn { width: 100%; padding: 14px; background: var(--accent); border: none; border-radius: var(--radius); color: var(--bg); font-family: var(--sans); font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.15s; }
+  .login-submit-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .login-submit-btn:not(:disabled):hover { background: #f0d050; }
+  .hub-logout-btn { display: flex; align-items: center; gap: 6px; background: none; border: 0.5px solid var(--border); border-radius: var(--radius); padding: 6px 12px; color: var(--text3); font-family: var(--mono); font-size: 11px; cursor: pointer; transition: all 0.15s; }
+  .hub-logout-btn:hover { border-color: var(--red); color: var(--red); }
+  .accesos-row { background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 11px 13px; display: flex; align-items: center; gap: 11px; margin-bottom: 6px; }
+  .accesos-row.sin-clave { border-color: rgba(232,93,74,0.25); }
+  .accesos-row-info { flex: 1; min-width: 0; }
+  .accesos-row-name { font-size: 13px; font-weight: 500; color: var(--text); }
+  .accesos-row-desc { font-family: var(--mono); font-size: 10px; color: var(--text3); margin-top: 2px; }
+  .accesos-status { font-family: var(--mono); font-size: 10px; padding: 2px 8px; border-radius: 4px; flex-shrink: 0; }
+  .accesos-status.ok { background: var(--green-bg); color: var(--green); }
+  .accesos-status.err { background: var(--red-bg); color: var(--red); }
+
+  /* ══════════════════════════════════════
+     PANTALLA DE BLOQUEO — DEVICE ENROLLMENT
+  ══════════════════════════════════════ */
+  #block-screen {
+    position: fixed; inset: 0; z-index: 99999;
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    padding: 32px 24px;
+  }
+  #block-screen.hidden { display: none; }
+  .block-wrap {
+    width: 100%; max-width: 360px;
+    display: flex; flex-direction: column; align-items: center;
+    gap: 20px; text-align: center;
+  }
+  .block-icon {
+    width: 64px; height: 64px; border-radius: 50%;
+    background: var(--red-bg); border: 0.5px solid rgba(232,93,74,0.3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px;
+  }
+  .block-title {
+    font-size: 22px; font-weight: 700; color: var(--text);
+    margin-bottom: 4px;
+  }
+  .block-sub {
+    font-family: var(--mono); font-size: 12px; color: var(--text3);
+    line-height: 1.6;
+  }
+  .block-code-wrap {
+    width: 100%;
+    background: var(--bg2); border: 0.5px solid var(--border2);
+    border-radius: var(--radius); padding: 14px 16px; text-align: left;
+  }
+  .block-code-label {
+    font-family: var(--mono); font-size: 10px; color: var(--text3);
+    text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;
+  }
+  .block-device-id {
+    font-family: var(--mono); font-size: 12px; color: var(--accent);
+    word-break: break-all;
+  }
+  .block-contact {
+    font-family: var(--mono); font-size: 11px; color: var(--text3);
+    background: var(--bg3); border-radius: var(--radius);
+    padding: 10px 14px; line-height: 1.6; width: 100%; text-align: left;
+  }
+
+
+</style>
+</head>
+<body>
+
+<div id="loading-overlay"><div class="spinner"></div><span class="loading-text">conectando...</span></div>
+<div id="toast"><span class="toast-icon"></span><span id="toast-msg"></span></div>
+
+<div class="screen" id="screen-admin-pin">
+  <div class="topbar">
+    <div class="topbar-back" onclick="goBack()">←</div>
+    <span class="topbar-title">Administración</span>
+  </div>
+  <div class="pin-screen">
+    <div class="pin-title">Ingresar PIN</div>
+    <div class="pin-sub">acceso de administrador</div>
+    <div class="pin-dots" id="pin-dots">
+      <div class="pin-dot" id="pd0"></div>
+      <div class="pin-dot" id="pd1"></div>
+      <div class="pin-dot" id="pd2"></div>
+      <div class="pin-dot" id="pd3"></div>
+      <div class="pin-dot" id="pd4"></div>
+      <div class="pin-dot" id="pd5"></div>
+      <div class="pin-dot" id="pd6"></div>
+      <div class="pin-dot" id="pd7"></div>
+    </div>
+    <div class="pin-pad">
+      <div class="pin-key" onclick="pinKey('1')">1</div>
+      <div class="pin-key" onclick="pinKey('2')">2</div>
+      <div class="pin-key" onclick="pinKey('3')">3</div>
+      <div class="pin-key" onclick="pinKey('4')">4</div>
+      <div class="pin-key" onclick="pinKey('5')">5</div>
+      <div class="pin-key" onclick="pinKey('6')">6</div>
+      <div class="pin-key" onclick="pinKey('7')">7</div>
+      <div class="pin-key" onclick="pinKey('8')">8</div>
+      <div class="pin-key" onclick="pinKey('9')">9</div>
+      <div class="pin-key" style="background:transparent;border:none"></div>
+      <div class="pin-key" onclick="pinKey('0')">0</div>
+      <div class="pin-key del" onclick="pinDel()">⌫</div>
+    </div>
+    <div class="pin-error" id="pin-error"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SCREEN: ADMIN DASHBOARD
+════════════════════════════════════════ -->
+<div class="screen" id="screen-admin">
+  <div class="topbar">
+    <div class="topbar-back" onclick="goBack()">←</div>
+    <span class="topbar-title">Administración</span>
+    <span class="topbar-badge" id="admin-mes">—</span>
+  </div>
+
+  <!-- Nav tabs -->
+  <div class="adm-nav">
+    <div class="adm-tab active" id="adm-tab-resumen"   onclick="admTab('resumen')">Resumen</div>
+    <div class="adm-tab"        id="adm-tab-cierres"   onclick="admTab('cierres')">Cierres</div>
+    <div class="adm-tab"        id="adm-tab-tareas"    onclick="admTab('tareas')">Tareas</div>
+    <div class="adm-tab"        id="adm-tab-reportes"  onclick="admTab('reportes')">Reportes</div>
+    <div class="adm-tab"        id="adm-tab-empleados" onclick="admTab('empleados')">Empleados</div>
+    <div class="adm-tab"        id="adm-tab-liquidacion" onclick="admTab('liquidacion');admLoadLiquidacion()">Liquidación</div>
+    <div class="adm-tab"        id="adm-tab-accesos"   onclick="admTab('accesos');accesosCargar();deCargarDispositivos();logCargar()">Accesos</div>
+  </div>
+
+  <!-- ── TAB 1: RESUMEN ── -->
+  <div class="adm-panel active" id="adm-panel-resumen">
+    <div class="section-head" style="margin-bottom:10px">KPIs por local — hoy</div>
+    <div class="adm-local-grid" id="adm-local-grid">
+      <div class="adm-local-card" style="opacity:0.4;--lcard-accent:var(--text3)">
+        <div class="adm-local-name">Cargando...</div>
+      </div>
+    </div>
+    <div class="section-head" style="margin-bottom:10px">Alertas</div>
+    <div class="adm-alert-list" id="adm-alertas">
+      <div style="text-align:center;padding:20px;font-family:var(--mono);font-size:11px;color:var(--text3)">Cargando...</div>
+    </div>
+    <div class="section-head" style="margin-bottom:10px">Deudas por local</div>
+    <div class="stat-grid" id="adm-deudas-grid">
+      <div class="stat-card"><div class="stat-label">Palermo</div><div class="stat-value" id="admd-palermo">—</div></div>
+      <div class="stat-card"><div class="stat-label">Belgrano</div><div class="stat-value" id="admd-belgrano">—</div></div>
+      <div class="stat-card"><div class="stat-label">B. Chino</div><div class="stat-value" id="admd-barrio_chino">—</div></div>
+      <div class="stat-card"><div class="stat-label">San Telmo</div><div class="stat-value" id="admd-san_telmo">—</div></div>
+    </div>
+  </div>
+
+  <!-- ── TAB 2: CIERRES ── -->
+  <div class="adm-panel" id="adm-panel-cierres">
+    <div class="adm-filter-bar">
+      <div class="filter-chip active" onclick="admCierresFiltro('local','',this)">Todos</div>
+      <div class="filter-chip" onclick="admCierresFiltro('local','palermo',this)">Palermo</div>
+      <div class="filter-chip" onclick="admCierresFiltro('local','belgrano',this)">Belgrano</div>
+      <div class="filter-chip" onclick="admCierresFiltro('local','barrio_chino',this)">B. Chino</div>
+      <div class="filter-chip" onclick="admCierresFiltro('local','san_telmo',this)">San Telmo</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+      <input type="date" id="adm-cierres-desde" style="font-size:12px;padding:7px 10px" onchange="admLoadCierres()">
+      <input type="date" id="adm-cierres-hasta" style="font-size:12px;padding:7px 10px" onchange="admLoadCierres()">
+    </div>
+    <div id="adm-cierres-list">
+      <div style="text-align:center;padding:30px;font-family:var(--mono);font-size:11px;color:var(--text3)">Cargando...</div>
+    </div>
+  </div>
+
+  <!-- ── TAB 3: TAREAS ── -->
+  <div class="adm-panel" id="adm-panel-tareas">
+    <div class="adm-filter-bar" id="adm-tareas-filter-bar">
+      <div class="filter-chip active" onclick="admTareasFiltro('',this)">Todas</div>
+      <div class="filter-chip" onclick="admTareasFiltro('manana',this)">Mañana</div>
+      <div class="filter-chip" onclick="admTareasFiltro('tarde',this)">Tarde</div>
+      <div class="filter-chip" onclick="admTareasFiltro('noche',this)">Noche</div>
+    </div>
+    <div id="adm-tareas-list">
+      <div style="text-align:center;padding:30px;font-family:var(--mono);font-size:11px;color:var(--text3)">Cargando...</div>
+    </div>
+  </div>
+
+  <!-- ── TAB 4: REPORTES ── -->
+  <div class="adm-panel" id="adm-panel-reportes">
+    <div class="stat-grid" id="admin-stats" style="margin-bottom:16px">
+      <div class="stat-card"><div class="stat-label">reportes hoy</div><div class="stat-value" id="stat-hoy">—</div></div>
+      <div class="stat-card"><div class="stat-label">este mes</div><div class="stat-value" id="stat-mes">—</div></div>
+      <div class="stat-card"><div class="stat-label">tickets pend.</div><div class="stat-value" id="stat-tickets" style="color:var(--orange)">—</div></div>
+      <div class="stat-card"><div class="stat-label">más fallas</div><div class="stat-value" id="stat-top" style="font-size:14px">—</div><div class="stat-sub" id="stat-top-name">—</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      <select id="filter-mes" onchange="applyAdminFilters()" style="font-size:13px;padding:8px 12px">
+        <option value="">Todos los meses</option>
+        <option value="01">Enero</option><option value="02">Febrero</option>
+        <option value="03">Marzo</option><option value="04">Abril</option>
+        <option value="05">Mayo</option><option value="06">Junio</option>
+        <option value="07">Julio</option><option value="08">Agosto</option>
+        <option value="09">Septiembre</option><option value="10">Octubre</option>
+        <option value="11">Noviembre</option><option value="12">Diciembre</option>
+      </select>
+      <select id="filter-anio" onchange="applyAdminFilters()" style="font-size:13px;padding:8px 12px">
+        <option value="">Todos los años</option>
+        <option value="2025">2025</option><option value="2026">2026</option><option value="2027">2027</option>
+      </select>
+    </div>
+    <div class="adm-filter-bar" style="margin-bottom:12px">
+      <div class="filter-chip active" onclick="adminFilterLocal('',this)">Todos</div>
+      <div class="filter-chip" onclick="adminFilterLocal('palermo',this)">Palermo</div>
+      <div class="filter-chip" onclick="adminFilterLocal('belgrano',this)">Belgrano</div>
+      <div class="filter-chip" onclick="adminFilterLocal('barrio_chino',this)">B. Chino</div>
+      <div class="filter-chip" onclick="adminFilterLocal('san_telmo',this)">San Telmo</div>
+    </div>
+    <div class="filter-row" id="admin-filters" style="margin-bottom:12px">
+      <div class="filter-chip active" onclick="adminFilterTipo('',this)">Todos</div>
+      <div class="filter-chip" onclick="adminFilterTipo('falla_tienda',this)">Falla tienda</div>
+      <div class="filter-chip" onclick="adminFilterTipo('edilicio',this)">Edilicio</div>
+      <div class="filter-chip" onclick="adminFilterTipo('rotos_vencidos',this)">Rotos/Venc.</div>
+      <div class="filter-chip" onclick="adminFilterTipo('pedido',this)">Pedidos</div>
+      <div class="filter-chip" onclick="adminFilterTipo('ticket',this)">Tickets</div>
+    </div>
+    <div class="adm-filter-bar" id="admin-filters-just" style="margin-bottom:12px">
+      <div class="filter-chip active" onclick="adminFilterJust('',this)">Todos</div>
+      <div class="filter-chip" onclick="adminFilterJust('no',this)">⚠ No justificados</div>
+      <div class="filter-chip" onclick="adminFilterJust('si',this)">✓ Justificados</div>
+    </div>
+    <div style="display:flex;gap:8px;border-bottom:0.5px solid var(--border);margin-bottom:14px">
+      <div id="tab-reportes" onclick="switchTab('reportes')" style="padding:8px 16px;font-size:13px;cursor:pointer;border-bottom:2px solid var(--accent);color:var(--accent);font-weight:500">Reportes</div>
+      <div id="tab-resumen" onclick="switchTab('resumen')" style="padding:8px 16px;font-size:13px;cursor:pointer;border-bottom:2px solid transparent;color:var(--text3)">Por empleado</div>
+    </div>
+    <div id="panel-reportes"><div id="admin-report-list"><div style="text-align:center;padding:40px 0;font-family:var(--mono);font-size:12px;color:var(--text3)">cargando...</div></div></div>
+    <div id="panel-resumen" style="display:none"><div id="admin-resumen-list"></div></div>
+  </div>
+
+  <!-- ── TAB 5: EMPLEADOS ── -->
+  <div class="adm-panel" id="adm-panel-empleados">
+    <div id="adm-emp-list">
+      <div style="text-align:center;padding:30px;font-family:var(--mono);font-size:11px;color:var(--text3)">Cargando...</div>
+    </div>
+  </div>
+
+  <!-- ── TAB 6: LIQUIDACIÓN ── -->
+  <div class="adm-panel" id="adm-panel-liquidacion">
+
+    <!-- Tabla de penalidades por tipo de reporte -->
+    <div style="background:var(--bg3);border:0.5px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:18px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em">Penalidades por tipo de reporte</div>
+        <button onclick="liqGuardarPenalidades()" id="btn-guardar-pen" style="background:rgba(232,197,71,0.1);border:0.5px solid var(--accent);border-radius:6px;padding:4px 12px;color:var(--accent);font-family:var(--mono);font-size:11px;cursor:pointer">Guardar</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px" id="pen-grid">
+        <div><div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:3px">Falla en tienda</div><input type="number" min="0" id="pen-falla_tienda" placeholder="$0" style="width:100%;background:var(--bg2);border:0.5px solid var(--border2);border-radius:6px;padding:6px 9px;font-family:var(--mono);font-size:12px;color:var(--text);outline:none"></div>
+        <div><div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:3px">Edilicio</div><input type="number" min="0" id="pen-edilicio" placeholder="$0" style="width:100%;background:var(--bg2);border:0.5px solid var(--border2);border-radius:6px;padding:6px 9px;font-family:var(--mono);font-size:12px;color:var(--text);outline:none"></div>
+        <div><div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:3px">Rotos / Vencidos</div><input type="number" min="0" id="pen-rotos_vencidos" placeholder="$0" style="width:100%;background:var(--bg2);border:0.5px solid var(--border2);border-radius:6px;padding:6px 9px;font-family:var(--mono);font-size:12px;color:var(--text);outline:none"></div>
+        <div><div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:3px">Pedido delivery</div><input type="number" min="0" id="pen-pedido" placeholder="$0" style="width:100%;background:var(--bg2);border:0.5px solid var(--border2);border-radius:6px;padding:6px 9px;font-family:var(--mono);font-size:12px;color:var(--text);outline:none"></div>
+        <div style="grid-column:1/-1"><div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:3px">Ticket sistema</div><input type="number" min="0" id="pen-ticket" placeholder="$0" style="width:100%;background:var(--bg2);border:0.5px solid var(--border2);border-radius:6px;padding:6px 9px;font-family:var(--mono);font-size:12px;color:var(--text);outline:none"></div>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+      <select id="liq-mes" style="font-size:13px;padding:8px 12px;flex:1;min-width:120px" onchange="admLoadLiquidacion()">
+        <option value="01">Enero</option><option value="02">Febrero</option>
+        <option value="03">Marzo</option><option value="04">Abril</option>
+        <option value="05">Mayo</option><option value="06">Junio</option>
+        <option value="07">Julio</option><option value="08">Agosto</option>
+        <option value="09">Septiembre</option><option value="10">Octubre</option>
+        <option value="11">Noviembre</option><option value="12">Diciembre</option>
+      </select>
+      <select id="liq-anio" style="font-size:13px;padding:8px 12px;flex:1;min-width:100px" onchange="admLoadLiquidacion()">
+        <option value="2025">2025</option><option value="2026">2026</option><option value="2027">2027</option>
+      </select>
+    </div>
+    <div id="adm-liq-list">
+      <div style="text-align:center;padding:30px;font-family:var(--mono);font-size:11px;color:var(--text3)">Seleccioná mes y año</div>
+    </div>
+
+    <!-- Modal reportes justificados -->
+    <div id="liq-rep-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1100;align-items:center;justify-content:center;padding:16px">
+      <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:20px;width:100%;max-width:480px;max-height:85vh;overflow-y:auto">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <div style="font-family:var(--syne);font-size:14px;font-weight:700" id="liq-rep-modal-title">Reportes justificados</div>
+          <button onclick="document.getElementById('liq-rep-modal').style.display='none'"
+            style="background:none;border:none;font-size:18px;color:var(--text3);cursor:pointer;line-height:1">✕</button>
+        </div>
+        <div id="liq-rep-modal-body"></div>
+      </div>
+    </div>
+
+    <!-- Modal agregar adelanto -->
+    <div id="liq-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;align-items:center;justify-content:center;padding:20px">
+      <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:20px;width:100%;max-width:360px">
+        <div style="font-family:var(--mono);font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:14px">Nuevo adelanto de sueldo</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div>
+            <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:4px">MONTO (ARS)</div>
+            <input id="liq-modal-monto" type="number" min="1" placeholder="Ej: 50000"
+              style="width:100%;background:var(--bg3);border:0.5px solid var(--border2);border-radius:8px;padding:9px 12px;color:var(--text);font-family:var(--mono);font-size:13px;outline:none;box-sizing:border-box">
+          </div>
+          <div>
+            <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:4px">DESCRIPCIÓN (opcional)</div>
+            <input id="liq-modal-desc" type="text" placeholder="Ej: Adelanto quincena"
+              style="width:100%;background:var(--bg3);border:0.5px solid var(--border2);border-radius:8px;padding:9px 12px;color:var(--text);font-family:var(--mono);font-size:13px;outline:none;box-sizing:border-box">
+          </div>
+          <div>
+            <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:4px">FECHA DE PAGO</div>
+            <input id="liq-modal-fecha" type="date"
+              style="width:100%;background:var(--bg3);border:0.5px solid var(--border2);border-radius:8px;padding:9px 12px;color:var(--text);font-family:var(--mono);font-size:13px;outline:none;box-sizing:border-box">
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:16px">
+          <button onclick="liqCerrarModal()"
+            style="flex:1;padding:10px;background:var(--bg3);border:0.5px solid var(--border2);border-radius:8px;color:var(--text3);font-family:var(--mono);font-size:12px;cursor:pointer">
+            Cancelar
+          </button>
+          <button onclick="liqGuardarAdelanto()"
+            style="flex:1;padding:10px;background:rgba(232,197,71,0.15);border:0.5px solid var(--accent);border-radius:8px;color:var(--accent);font-family:var(--mono);font-size:12px;font-weight:600;cursor:pointer">
+            Guardar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel Accesos -->
+  <div class="adm-panel" id="adm-panel-accesos">
+    <div style="font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Claves de acceso al sistema</div>
+    <div style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-bottom:16px">El admin administra todas las claves desde acá. Los cambios aplican al próximo login.</div>
+    <div id="accesos-list">
+      <div style="color:var(--text3);font-family:var(--mono);font-size:12px;padding:20px 0;text-align:center">Seleccioná el tab para cargar...</div>
+    </div>
+    <button onclick="accesosCargar()" style="margin-top:14px;background:none;border:0.5px solid var(--border2);border-radius:var(--radius);padding:8px 13px;color:var(--text3);font-family:var(--mono);font-size:11px;cursor:pointer;transition:border-color 0.15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border2)'">↺ Actualizar</button>
+
+    <!-- ── GESTIÓN DE DISPOSITIVOS ────────────────────────────────── -->
+    <div style="margin-top:28px;padding-top:20px;border-top:0.5px solid var(--border)">
+      <div style="font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Dispositivos autorizados</div>
+      <div style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-bottom:14px;line-height:1.6">Solo los dispositivos registrados acá pueden abrir el sistema. Si alguien copia el link y lo abre desde otro lugar, ve pantalla de bloqueo.</div>
+
+      <!-- ── Generar código de enroll para otros dispositivos ── -->
+      <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px">Registrar nuevo dispositivo</div>
+        <div style="font-family:var(--mono);font-size:11px;color:var(--text3);line-height:1.5;margin-bottom:10px">Generá un código de 6 dígitos de un solo uso (expira en 30 min). El empleado lo ingresa en <span style="color:var(--accent)">enroll.html</span> desde su teléfono.</div>
+
+        <!-- Código generado (oculto hasta generar) -->
+        <div id="enroll-code-display" style="display:none;margin-bottom:10px">
+          <div style="background:var(--bg3);border:0.5px solid rgba(232,197,71,0.3);border-radius:8px;padding:12px;text-align:center">
+            <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.08em">Código activo</div>
+            <div id="enroll-code-val" style="font-family:var(--mono);font-size:32px;letter-spacing:0.25em;color:var(--accent);font-weight:500">——</div>
+            <div id="enroll-code-exp" style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:4px">expira en —</div>
+          </div>
+        </div>
+
+        <button onclick="enrollGenerarCodigo()" id="enroll-btn-gen"
+          style="background:rgba(232,197,71,0.1);border:0.5px solid var(--accent);border-radius:var(--radius);padding:8px 14px;color:var(--accent);font-family:var(--mono);font-size:11px;cursor:pointer;transition:all 0.15s;width:100%"
+          onmouseover="this.style.background=&quot;rgba(232,197,71,0.18)&quot;"
+          onmouseout="this.style.background=&quot;rgba(232,197,71,0.1)&quot;">
+          ⊕ Generar código
+        </button>
+      </div>
+
+      <!-- Enrolar este dispositivo -->
+      <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px">Este dispositivo</div>
+        <div style="font-family:var(--mono);font-size:11px;color:var(--accent);margin-bottom:10px;word-break:break-all" id="de-this-device-id">—</div>
+        <button onclick="deEnrolarEsteDispositivo()" id="de-btn-enrolar"
+          style="background:rgba(232,197,71,0.1);border:0.5px solid var(--accent);border-radius:var(--radius);padding:8px 14px;color:var(--accent);font-family:var(--mono);font-size:11px;cursor:pointer;transition:all 0.15s;width:100%">
+          ✓ Autorizar este dispositivo
+        </button>
+      </div>
+
+      <!-- Lista de dispositivos registrados -->
+      <div id="de-tokens-list" style="margin-bottom:10px">
+        <div style="text-align:center;padding:12px;font-family:var(--mono);font-size:11px;color:var(--text3)">Cargando dispositivos...</div>
+      </div>
+      <button onclick="deCargarDispositivos()" style="background:none;border:0.5px solid var(--border2);border-radius:var(--radius);padding:7px 12px;color:var(--text3);font-family:var(--mono);font-size:11px;cursor:pointer;transition:border-color 0.15s;width:100%" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border2)'">↺ Actualizar lista</button>
+    </div>
+
+    <!-- ── LOG DE ACCESOS ──────────────────────────────────── -->
+    <div style="margin-top:28px;padding-top:20px;border-top:0.5px solid var(--border)">
+      <div style="font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Log de accesos</div>
+      <div style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-bottom:14px;line-height:1.6">Últimos intentos de login — todos los dispositivos.</div>
+      <div id="log-accesos-list">
+        <div style="text-align:center;padding:12px;font-family:var(--mono);font-size:11px;color:var(--text3)">Cargando...</div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button onclick="logCargar()" style="flex:1;background:none;border:0.5px solid var(--border2);border-radius:var(--radius);padding:7px 12px;color:var(--text3);font-family:var(--mono);font-size:11px;cursor:pointer;transition:border-color 0.15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border2)'">↺ Actualizar</button>
+        <button onclick="logCargar('fail')" style="flex:1;background:none;border:0.5px solid var(--border2);border-radius:var(--radius);padding:7px 12px;color:var(--text3);font-family:var(--mono);font-size:11px;cursor:pointer;transition:border-color 0.15s" onmouseover="this.style.borderColor='var(--red)'" onmouseout="this.style.borderColor='var(--border2)'">Solo fallidos</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FAB — Nueva tarea (visible solo en tab tareas) -->
+  <button class="adm-fab hidden" id="adm-fab" onclick="admNuevaTarea()">+</button>
+
+</div>
+
+
+<!-- ════════════════════════════════════════
+     SCREEN: PANEL DE TURNO
+════════════════════════════════════════ -->
+
+<!-- Modal detalle reporte -->
+<div class="rep-modal-overlay" id="rep-modal-overlay" onclick="closeRepModal(event)">
+  <div class="rep-modal" id="rep-modal-body">
+    <div class="rep-modal-head">
+      <span class="rep-modal-tipo" id="rep-modal-tipo-badge">—</span>
+      <button class="rep-modal-close" onclick="closeRepModal()">✕</button>
+    </div>
+    <div id="rep-modal-content"></div>
+  </div>
+</div>
+
+<script>
+
+const SUPABASE_URL = 'https://oiuualqixcccfhtpcist.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pdXVhbHFpeGNjY2ZodHBjaXN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NzUxNjEsImV4cCI6MjA4OTQ1MTE2MX0.ms4MHVhKDTKfID0WGi05EFPySf350SA66uNi4wPfsOo';
+
+const LOCALES = {
+  palermo:     'Thames · Palermo',
+  belgrano:    'Roosevelt · Belgrano',
+  barrio_chino:'Juramento · B. Chino',
+  san_telmo:   'Independencia · S. Telmo',
+};
+
+// ── sbFetch propio (PRD §5.4) ──
+let _appSecret = null;
+
+async function sbLoadAppSecret() {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/config?clave=eq.app_secret&select=valor`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json' }
+    });
+    if (res.ok) { const data = await res.json(); _appSecret = data?.[0]?.valor || null; }
+  } catch(e) { console.warn('[admin] app_secret:', e); }
+}
+
+async function sbFetch(path, opts = {}) {
+  if (!_appSecret) await sbLoadAppSecret();
+  const { extraHeaders, ...fetchOpts } = opts;
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    headers: {
+      'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json', 'Prefer': 'return=representation',
+      ...(_appSecret ? { 'x-app-secret': _appSecret } : {}),
+      ...opts.headers, ...(extraHeaders || {}),
+    },
+    ...fetchOpts
+  });
+  if (!res.ok) { const err = await res.text(); throw new Error(err); }
+  return res.status === 204 ? null : res.json();
+}
+
+async function getConfig(clave) {
+  const data = await sbFetch(`config?clave=eq.${clave}&select=valor`);
+  return data?.[0]?.valor || null;
+}
+
+// ── Toast ──
+let toastTimer;
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  t.className = `show ${type}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.className = ''; }, 3000);
+}
+
+// ── Navegación ──
+// admin.html es standalone iframe — nunca usa goTo() del hub
+function goBack() {
+  if (_hubOrigin) {
+    window.parent.postMessage({ tipo: 'admin-back' }, _hubOrigin);
+  }
+}
+
+// ── Estado — NUNCA usar localStorage como fuente de rol ──
+let state = {
+  local: null, localName: null,
+  rol: null, empleado: null, empleado_id: null, turno: null,
+  reportes: [], adminFilter: '',
+};
+let _hubOrigin = null;
+
+// ── Contrato postMessage con index.html (PRD §5.3) ──
+window.addEventListener('message', (e) => {
+  const d = e.data;
+  if (!d || d.type !== 'break-context') return;
+  // local puede ser '' para admin en modo "Todas las tiendas" — solo rechazar si falta rol
+  if (!d.rol) return;
+
+  _hubOrigin   = e.origin;
+  state.local      = d.local;
+  state.localName  = d.localName || LOCALES[d.local] || d.local;
+  state.rol        = d.rol;
+  state.empleado   = d.empleado || null;
+  state.empleado_id = d.empleado_id || null;
+  state.turno      = d.turno || null;
+
+  document.getElementById('loading-overlay').classList.add('hidden');
+
+  // Si el rol es admin, ir directo al dashboard sin PIN
+  if (state.rol === 'admin') {
+    showScreen('admin');
+    admInit();
+  } else {
+    // Otros roles con acceso al admin (encargado con permisos) → mostrar PIN
+    showScreen('admin-pin');
+  }
+});
+
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById('screen-' + name);
+  if (el) { el.classList.add('active'); el.scrollTop = 0; }
+}
+
+// ── admData — estado del panel ──
+let admData = {
+  cierres: [], tareasDefs: [], empleados: [],
+  cierresLocalFiltro: '', cierresTurnoFiltro: '',
+  tareasFiltrTurno: '', hielosByCierre: {}, _cuentasMap: {},
+};
+
+// ── Constantes enroll/device ──
+const LS_AUTH_KEY     = 'break_auth';
+
+function lsGetDeviceId() {
+  let id = localStorage.getItem('break_device_id');
+  if (!id) {
+    id = 'dev_' + Math.random().toString(36).slice(2,9) + '_' + Math.random().toString(36).slice(2,5);
+    localStorage.setItem('break_device_id', id);
+  }
+  return id;
+}
+
+// ADMIN PIN
+// ═══════════════════════════════════════
+let pinInput = '';
+let adminPinValue = null;
+
+function resetPin() {
+  pinInput = '';
+  updatePinDots();
+  document.getElementById('pin-error').textContent = '';
+}
+
+function pinKey(k) {
+  if (pinInput.length >= 8) return;
+  pinInput += k;
+  updatePinDots();
+  if (pinInput.length >= 4) setTimeout(checkPin, 200);
+}
+
+function pinDel() {
+  pinInput = pinInput.slice(0,-1);
+  updatePinDots();
+}
+
+function updatePinDots() {
+  for (let i = 0; i < 8; i++) {
+    const d = document.getElementById(`pd${i}`);
+    if (d) d.classList.toggle('filled', i < pinInput.length);
+  }
+}
+
+async function checkPin() {
+  if (!adminPinValue) {
+    adminPinValue = await getConfig('admin_pin') || '1234';
+  }
+  if (pinInput === adminPinValue) {
+    document.getElementById('pin-error').textContent = '';
+    pinInput = '';
+    updatePinDots();
+    state.adminPin = adminPinValue;
+    state.rol = 'admin';
+    // Si el admin ya seleccionó empleado, local y turno → panel de turno
+    // Si no → dashboard admin
+    admInit(); // PIN correcto — ya en admin.html
+  } else if (pinInput.length >= adminPinValue.length || pinInput.length >= 8) {
+    document.getElementById('pin-error').textContent = 'PIN incorrecto';
+    setTimeout(() => { pinInput = ''; updatePinDots(); }, 800);
+  }
+}
+
+// ═══════════════════════════════════════
+// ADMIN DASHBOARD
+// ═══════════════════════════════════════
+let adminCurrentTab = 'reportes';
+let adminTipoFilter = '';
+let adminLocalFilter = '';
+let adminJustFilter = '';
+
+// ── NUEVO PANEL ADMIN ────────────────────
+
+async function admInit() {
+  const now = new Date();
+  document.getElementById('admin-mes').textContent =
+    now.toLocaleString('es-AR',{month:'long',year:'numeric'});
+  document.getElementById('filter-mes').value  = String(now.getMonth()+1).padStart(2,'0');
+  document.getElementById('filter-anio').value = String(now.getFullYear());
+
+  // Siempre setear filtros de fecha al abrir (fix: el guard !value fijaba la fecha de apertura)
+  const hoy = now.toISOString().split('T')[0];
+  const hace7 = new Date(now - 7*86400000).toISOString().split('T')[0];
+  const desdeEl = document.getElementById('adm-cierres-desde');
+  const hastaEl = document.getElementById('adm-cierres-hasta');
+  if (desdeEl) desdeEl.value = hace7;
+  if (hastaEl) hastaEl.value = hoy;
+
+  admTab('resumen');
+
+  try {
+    const [reportesData, cuentasData] = await Promise.all([
+      sbFetch('reportes?select=*,ticket_items(*),reporte_items(*)&order=created_at.desc&limit=500').catch(() => []),
+      sbFetch('cuentas?tipo=eq.empleado&select=id,nombre').catch(() => []),
+    ]);
+    // Mapa id→nombre para enriquecer sin FK hint
+    const cMap = {};
+    (cuentasData||[]).forEach(c => { cMap[c.id] = c.nombre; });
+    state.reportes = (reportesData||[]).map(r => ({
+      ...r,
+      cuentas: r.empleado_id ? { nombre: cMap[r.empleado_id] || '—' } : null,
+      responsable: r.responsable_id ? { nombre: cMap[r.responsable_id] || '—' } : null,
+    }));
+    applyAdminFilters();
+  } catch(e) {
+    console.error(e);
+  }
+
+  // Cargar resumen
+  admLoadResumen();
+}
+
+async function admTab(tab) {
+  document.querySelectorAll('.adm-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.adm-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(`adm-tab-${tab}`)?.classList.add('active');
+  document.getElementById(`adm-panel-${tab}`)?.classList.add('active');
+
+  // FAB solo en tareas
+  const fab = document.getElementById('adm-fab');
+  if (fab) fab.classList.toggle('hidden', tab !== 'tareas');
+
+  if (tab === 'resumen')     admLoadResumen();
+  if (tab === 'cierres')     admLoadCierres();
+  if (tab === 'tareas')      admLoadTareas();
+  if (tab === 'reportes')    applyAdminFilters();
+  if (tab === 'empleados')   admLoadEmpleados();
+  if (tab === 'liquidacion') { admLoadLiquidacion(); liqCargarPenalidades(); }
+  if (tab === 'accesos')     { accesosCargar(); deCargarDispositivos(); logCargar(); }
+}
+
+// ── TAB 1: RESUMEN ────────────────────────
+async function admLoadResumen() {
+  const hoy = new Date().toISOString().split('T')[0];
+  const LOCALES_DATA = [
+    { key:'palermo',     nombre:'Palermo',    color:'var(--green)' },
+    { key:'belgrano',    nombre:'Belgrano',   color:'var(--blue)' },
+    { key:'barrio_chino',nombre:'B. Chino',   color:'var(--orange)' },
+    { key:'san_telmo',   nombre:'San Telmo',  color:'var(--purple)' },
+  ];
+
+  try {
+    // Cierres de hoy
+    const cierresHoy = await sbFetch(`cierres_turno?fecha=eq.${hoy}&select=*`);
+    // Deudas
+    const entradas = await sbFetch('entradas?select=cid,monto');
+    const cuentas  = await sbFetch('cuentas?tipo=eq.empleado&select=id,nombre,local');
+
+    // Calcular saldo por cuenta
+    const saldos = {};
+    (entradas||[]).forEach(e => { saldos[e.cid] = (saldos[e.cid]||0) + e.monto; });
+
+    // Suma deudas por local (usando local de la cuenta — campo que puede no existir, usar cierres)
+    const grid = document.getElementById('adm-local-grid');
+    grid.innerHTML = LOCALES_DATA.map(loc => {
+      const cierresLoc = (cierresHoy||[]).filter(c => c.local === loc.key);
+      const tieneCierre = cierresLoc.length > 0;
+      const ultimo = cierresLoc[0];
+      const difClass = !tieneCierre ? 'neutral'
+        : ultimo.diferencia > 0 ? 'warn'
+        : ultimo.diferencia < 0 ? 'alert' : 'ok';
+      const difTxt = !tieneCierre ? 'Sin cierre hoy'
+        : ultimo.diferencia === 0 ? 'Cuadra ✓'
+        : `${ultimo.diferencia > 0 ? 'Sobrante' : 'Faltante'} $${Math.abs(ultimo.diferencia||0).toLocaleString('es-AR')}`;
+
+      let checksOk = '—';
+      if (tieneCierre && ultimo.checks_json) {
+        try {
+          const ch = typeof ultimo.checks_json === 'string'
+            ? JSON.parse(ultimo.checks_json) : ultimo.checks_json;
+          const vals = Object.values(ch);
+          const ok = vals.filter(v => v.ok).length;
+          checksOk = `${ok}/${vals.length} checks`;
+        } catch(e) {}
+      }
+
+      return `<div class="adm-local-card" style="--lcard-accent:${loc.color}">
+        <div class="adm-local-name">${loc.nombre}</div>
+        <div class="adm-local-cierre">${tieneCierre
+          ? `Cierre: <span>$${(ultimo.total_efectivo||0).toLocaleString('es-AR')}</span>`
+          : '<span style="color:var(--text3)">Sin cierre registrado</span>'}</div>
+        <div class="adm-kpi-row">
+          <span class="adm-kpi-badge adm-kpi-${difClass}">${difTxt}</span>
+          <span class="adm-kpi-badge adm-kpi-neutral">${checksOk}</span>
+        </div>
+      </div>`;
+    }).join('');
+
+    // Alertas
+    const alertList = document.getElementById('adm-alertas');
+    const alertas = [];
+    LOCALES_DATA.forEach(loc => {
+      const cierresLoc = (cierresHoy||[]).filter(c => c.local === loc.key);
+      if (!cierresLoc.length) {
+        alertas.push({ tipo:'warn', ico:'🕐', txt:`Sin cierre registrado hoy`, loc: loc.nombre });
+      } else {
+        const c = cierresLoc[0];
+        if (c.diferencia && Math.abs(c.diferencia) > 0) {
+          alertas.push({ tipo:'alert', ico:'💰', txt:`Diferencia de caja $${Math.abs(c.diferencia).toLocaleString('es-AR')}`, loc: loc.nombre });
+        }
+      }
+    });
+    alertList.innerHTML = alertas.length
+      ? alertas.map(a => `<div class="adm-alert-item ${a.tipo}">
+          <div class="adm-alert-ico">${a.ico}</div>
+          <div class="adm-alert-txt">${a.txt}</div>
+          <div class="adm-alert-loc">${a.loc}</div>
+        </div>`).join('')
+      : '<div style="text-align:center;padding:16px;font-family:var(--mono);font-size:11px;color:var(--green)">✓ Sin alertas por ahora</div>';
+
+    // Deudas por local — mostrar total y desglose por cuenta
+    const LOCALES_KEYS = ['palermo','belgrano','barrio_chino','san_telmo'];
+    const LOCALES_SHORT2 = { palermo:'Thames', belgrano:'Belgrano', barrio_chino:'B. Chino', san_telmo:'San Telmo' };
+    const fmt3 = n => '$' + Math.abs(n).toLocaleString('es-AR');
+    LOCALES_KEYS.forEach(loc => {
+      const el = document.getElementById(`admd-${loc}`);
+      if (!el) return;
+      const entradasLoc = (entradas||[]).filter(e => e.store === loc);
+      const saldosLoc = {};
+      entradasLoc.forEach(e => { saldosLoc[e.cid] = (saldosLoc[e.cid]||0) + e.monto; });
+      const cuentasConDeuda = (cuentas||[])
+        .map(c => ({ id: c.id, nombre: c.nombre, saldo: saldosLoc[c.id] || 0 }))
+        .filter(c => c.saldo > 0)
+        .sort((a,b) => b.saldo - a.saldo);
+      const totalLoc = cuentasConDeuda.reduce((a,c) => a + c.saldo, 0);
+      if (totalLoc === 0) {
+        el.innerHTML = `<span style="color:var(--green);font-family:var(--mono);font-size:12px">Sin deudas ✓</span>`;
+        return;
+      }
+      const desglose = cuentasConDeuda.map(c =>
+        `<div style="display:flex;justify-content:space-between;padding:2px 0;font-family:var(--mono);font-size:11px;border-bottom:0.5px solid var(--border)">` +
+        `<span style="color:var(--text2)">${c.nombre}</span>` +
+        `<span style="color:var(--red)">${fmt3(c.saldo)}</span></div>`
+      ).join('');
+      el.innerHTML =
+        `<div style="font-size:20px;font-weight:700;color:var(--red);font-family:var(--mono)">${fmt3(totalLoc)}</div>` +
+        `<details style="margin-top:6px">` +
+        `<summary style="font-family:var(--mono);font-size:10px;color:var(--text3);cursor:pointer;list-style:none">▸ Ver desglose (${cuentasConDeuda.length})</summary>` +
+        `<div style="margin-top:6px">${desglose}</div>` +
+        `</details>`;
+    });
+
+  } catch(e) {
+    console.error('admLoadResumen', e);
+  }
+}
+
+// ── TAB 2: CIERRES ────────────────────────
+async function admLoadCierres() {
+  const desde = document.getElementById('adm-cierres-desde')?.value;
+  const hasta = document.getElementById('adm-cierres-hasta')?.value;
+  const local  = admData.cierresLocalFiltro;
+
+  // Sin FK hint — joinear nombres en JS para evitar error 400 si la FK no existe
+  let url = 'cierres_turno?select=*&order=created_at.desc&limit=200';
+  if (desde) url += `&fecha=gte.${desde}`;
+  if (hasta) url += `&fecha=lte.${hasta}`;
+  if (local) url += `&local=eq.${local}`;
+
+  document.getElementById('adm-cierres-list').innerHTML =
+    '<div style="text-align:center;padding:20px;font-family:var(--mono);font-size:11px;color:var(--text3)">Cargando...</div>';
+
+  try {
+    // Cargar cierres y cuentas en paralelo — sin FK hint para máxima compatibilidad
+    const [data, cuentasData] = await Promise.all([
+      sbFetch(url),
+      sbFetch('cuentas?tipo=eq.empleado&select=id,nombre').catch(() => []),
+    ]);
+    admData.cierres = data || [];
+
+    // Mapa id→nombre para joinear en JS
+    admData._cuentasMap = {};
+    (cuentasData || []).forEach(c => { admData._cuentasMap[c.id] = c.nombre; });
+
+    // Cargar hielos para estos cierres
+    admData.hielosByCierre = {};
+    if (admData.cierres.length) {
+      const ids = admData.cierres.map(c => c.id).join(',');
+      try {
+        const hielos = await sbFetch(`hielos_ciclos?cierre_id=in.(${ids})&order=hora.asc`);
+        (hielos||[]).forEach(h => {
+          if (!admData.hielosByCierre[h.cierre_id]) admData.hielosByCierre[h.cierre_id] = [];
+          admData.hielosByCierre[h.cierre_id].push(h);
+        });
+      } catch(e) { /* hielos_ciclos puede no existir aún */ }
+    }
+
+    admRenderCierres();
+  } catch(e) {
+    console.error('[admin] admLoadCierres error:', e);
+    document.getElementById('adm-cierres-list').innerHTML =
+      `<div style="padding:20px;font-family:var(--mono);font-size:12px;color:var(--red)">Error al cargar cierres: ${e.message}</div>`;
+  }
+}
+
+function admRenderCierres() {
+  const list = document.getElementById('adm-cierres-list');
+  if (!admData.cierres.length) {
+    list.innerHTML = '<div style="text-align:center;padding:30px;font-family:var(--mono);font-size:11px;color:var(--text3)">Sin cierres en este período</div>';
+    return;
+  }
+
+  const LOCALES_NOM = { palermo:'Thames · Palermo', belgrano:'Roosevelt · Belgrano', barrio_chino:'Juramento · B. Chino', san_telmo:'Independencia · S. Telmo' };
+  const TURNOS_NOM  = { manana:'Mañana', tarde:'Tarde', noche:'Noche' };
+  const CHECK_NOM   = { recargas:'Recargas', hielos:'Hielos', delivery:'Delivery', rotos:'Rotos', transf:'Transf. MP', cigarrillos:'Cigarrillos', cerohs:'0.0 hrs' };
+
+  list.innerHTML = admData.cierres.map((c,i) => {
+    const dif = c.diferencia || 0;
+    const difClass = dif === 0 ? 'dif-ok' : dif > 0 ? 'dif-alert' : 'dif-alert';
+    const difTxt   = dif === 0 ? '✓ Cuadra' : `${dif>0?'Sobrante':'Faltante'} $${Math.abs(dif).toLocaleString('es-AR')}`;
+    const difColor = dif === 0 ? 'ok' : dif > 0 ? 'sobrante' : 'faltante';
+    const empNombre = (admData._cuentasMap && admData._cuentasMap[c.empleado_id]) || c.empleado_id || '—';
+    const fecha = c.fecha ? new Date(c.fecha+'T12:00:00').toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'}) : '—';
+    const hora  = c.created_at ? new Date(c.created_at).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}) : '';
+
+    // Checks
+    let checksHtml = '';
+    if (c.checks_json) {
+      try {
+        const ch = typeof c.checks_json === 'string' ? JSON.parse(c.checks_json) : c.checks_json;
+        checksHtml = `<div class="adm-checks-grid">${Object.entries(ch).map(([k,v]) =>
+          `<div class="adm-check-pill ${v.ok?'ok':'miss'}">${v.ok?'✓':'✕'} ${CHECK_NOM[k]||k}</div>`
+        ).join('')}</div>`;
+      } catch(e) {}
+    }
+
+    // Hielos
+    const hls = admData.hielosByCierre?.[c.id] || [];
+    const hielosHtml = hls.length ? `<div class="adm-hielo-detail">
+      <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.08em">Ciclos de hielo — ${hls.reduce((a,h)=>a+h.bolsas,0)} bolsas totales</div>
+      ${hls.map((h,i) => {
+        const horaH = new Date(h.hora).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+        return `<div class="adm-hielo-row"><span>Ciclo ${i+1}</span><span>${h.bolsas} bolsas</span><span>${horaH}</span></div>`;
+      }).join('')}
+    </div>` : '';
+
+    return `<div class="adm-cierre-item ${difClass}" id="adm-ci-${i}">
+      <div class="adm-cierre-head" onclick="admToggleCierre('adm-ci-detail-${i}')">
+        <div>
+          <div class="adm-cierre-who">${empNombre}</div>
+          <div class="adm-cierre-meta">${fecha} ${hora} · ${LOCALES_NOM[c.local]||c.local} · ${TURNOS_NOM[c.turno]||c.turno}</div>
+        </div>
+        <div class="adm-cierre-right">
+          <div class="adm-cierre-ef">$${(c.total_efectivo||0).toLocaleString('es-AR')}</div>
+          <div class="adm-cierre-dif ${difColor}">${difTxt}</div>
+        </div>
+      </div>
+      <div class="adm-cierre-detail" id="adm-ci-detail-${i}">
+        ${checksHtml}
+        ${hielosHtml}
+        ${c.observaciones ? `<div style="margin-top:8px;font-size:12px;color:var(--text2);font-family:var(--mono)">📝 ${c.observaciones}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function admToggleCierre(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.toggle('open');
+}
+
+function admCierresFiltro(tipo, val, el) {
+  el.closest('.adm-filter-bar').querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  if (tipo === 'local') admData.cierresLocalFiltro = val;
+  admLoadCierres();
+}
+
+// admRenderCierres está definida arriba — no alias aquí
+
+// ── TAB 3: TAREAS ─────────────────────────
+async function admLoadTareas() {
+  document.getElementById('adm-tareas-list').innerHTML =
+    '<div style="text-align:center;padding:20px;font-family:var(--mono);font-size:11px;color:var(--text3)">Cargando...</div>';
+  try {
+    const data = await sbFetch('tareas_definicion?order=nombre.asc');
+    admData.tareasDefs = data || [];
+    admRenderTareas();
+  } catch(e) {
+    document.getElementById('adm-tareas-list').innerHTML =
+      '<div style="padding:20px;font-family:var(--mono);font-size:12px;color:var(--red)">Error al cargar</div>';
+  }
+}
+
+function admTareasFiltro(turno, el) {
+  el.closest('.adm-filter-bar').querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  admData.tareasFiltrTurno = turno;
+  admRenderTareas();
+}
+
+function admRenderTareas() {
+  const list = document.getElementById('adm-tareas-list');
+  const turnoFilt = admData.tareasFiltrTurno;
+  const FREC = { diaria:'Diaria', semanal:'Semanal', cada_n_horas:'Cada N hrs', mensual:'Mensual' };
+  const TURNO_NOM = { manana:'Mañana', tarde:'Tarde', noche:'Noche' };
+  const LOCALES_NOM = { palermo:'Palermo', belgrano:'Belgrano', barrio_chino:'B. Chino', san_telmo:'San Telmo' };
+
+  let tareas = admData.tareasDefs;
+  if (turnoFilt) tareas = tareas.filter(t => t.turnos?.includes(turnoFilt));
+
+  if (!tareas.length) {
+    list.innerHTML = '<div style="text-align:center;padding:30px;font-family:var(--mono);font-size:11px;color:var(--text3)">Sin tareas definidas</div>';
+    return;
+  }
+
+  list.innerHTML = tareas.map(t => {
+    const turnoPills = (t.turnos||[]).map(tr =>
+      `<span class="adm-tarea-pill">${TURNO_NOM[tr]||tr}</span>`).join('');
+    const localPill = t.local
+      ? `<span class="adm-tarea-pill" style="color:var(--blue)">${LOCALES_NOM[t.local]||t.local}</span>`
+      : `<span class="adm-tarea-pill">Todos</span>`;
+    const frecPill = `<span class="adm-tarea-pill">${FREC[t.frecuencia]||t.frecuencia}${t.intervalo_horas?` (${t.intervalo_horas}h)`:''}</span>`;
+    const estadoPill = t.activa
+      ? `<span class="adm-tarea-pill" style="color:var(--green)">Activa</span>`
+      : `<span class="adm-tarea-pill" style="color:var(--red)">Inactiva</span>`;
+
+    return `<div class="adm-tarea-row ${!t.activa?'inactiva':''}">
+      <div class="adm-tarea-info">
+        <div class="adm-tarea-nombre">${t.nombre}</div>
+        <div class="adm-tarea-meta">${frecPill}${turnoPills}${localPill}${estadoPill}</div>
+      </div>
+      <div class="adm-tarea-btns">
+        <button class="adm-btn-sm" onclick="admEditarTarea('${t.id}')">✎</button>
+        <button class="adm-btn-sm ${t.activa?'danger':'success'}" onclick="admToggleTarea('${t.id}',${!t.activa})">
+          ${t.activa ? 'Desact.' : 'Activar'}
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function admNuevaTarea() {
+  showToast('Para crear tareas, abrí el módulo Control/Cierre de Turno', '');
+}
+
+function admEditarTarea(id) {
+  showToast('Para editar tareas, abrí el módulo Control/Cierre de Turno', '');
+}
+
+async function admToggleTarea(id, activar) {
+  try {
+    await sbFetch(`tareas_definicion?id=eq.${id}`, {
+      method: 'PATCH', body: JSON.stringify({ activa: activar })
+    });
+    const t = admData.tareasDefs.find(x => x.id === id);
+    if (t) t.activa = activar;
+    admRenderTareas();
+    showToast(activar ? 'Tarea activada' : 'Tarea desactivada', activar ? 'success' : '');
+  } catch(e) { showToast('Error', 'error'); }
+}
+
+// ── TAB 5: EMPLEADOS ──────────────────────
+async function admLoadEmpleados() {
+  document.getElementById('adm-emp-list').innerHTML =
+    '<div style="text-align:center;padding:20px;font-family:var(--mono);font-size:11px;color:var(--text3)">Cargando...</div>';
+  try {
+    const data = await sbFetch('cuentas?tipo=eq.empleado&order=nombre.asc&select=id,nombre,rol');
+    admData.empleados = data || [];
+    admRenderEmpleados();
+  } catch(e) {
+    document.getElementById('adm-emp-list').innerHTML =
+      '<div style="padding:20px;font-family:var(--mono);font-size:12px;color:var(--red)">Error al cargar</div>';
+  }
+}
+
+function admRenderEmpleados() {
+  const list = document.getElementById('adm-emp-list');
+  const ROL_CICLO = { empleado: 'encargado', encargado: 'admin', admin: 'empleado' };
+  const ROL_NOM   = { empleado: 'Empleado', encargado: 'Encargado', admin: 'Admin' };
+
+  list.innerHTML = admData.empleados.map(e => {
+    const iniciales = e.nombre.split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase();
+    const rol = e.rol || 'empleado';
+    return `<div class="adm-emp-row">
+      <div class="adm-emp-avatar">${iniciales}</div>
+      <div class="adm-emp-info">
+        <div class="adm-emp-nombre">${e.nombre}</div>
+        <div class="adm-emp-sub">ID: ${e.id}</div>
+      </div>
+      <span class="adm-rol-badge adm-rol-${rol}" onclick="admCambiarRol('${e.id}','${ROL_CICLO[rol]}')" title="Click para cambiar rol">
+        ${ROL_NOM[rol]}
+      </span>
+    </div>`;
+  }).join('');
+}
+
+async function admCambiarRol(id, nuevoRol) {
+  const ROL_NOM = { empleado:'empleado', encargado:'encargado', admin:'admin' };
+  if (!confirm(`¿Cambiar este usuario a ${ROL_NOM[nuevoRol]}?`)) return;
+  try {
+    await sbFetch(`cuentas?id=eq.${id}`, {
+      method: 'PATCH', body: JSON.stringify({ rol: nuevoRol })
+    });
+    const e = admData.empleados.find(x => x.id === id);
+    if (e) e.rol = nuevoRol;
+    admRenderEmpleados();
+    showToast(`Rol actualizado a ${nuevoRol}`, 'success');
+  } catch(e) { showToast('Error al actualizar rol', 'error'); }
+}
+
+// ── TAB 6: LIQUIDACIÓN ───────────────────
+// ── LIQUIDACIÓN — estado en memoria ──────
+let liqData = { empleados:[], adelantos:[], entradas:[], hielosPorEmp:{}, reportesJust:{}, penalidades:{} };
+let liqModalEmpId = null;
+
+async function admLoadLiquidacion() {
+  const hoy = new Date();
+  const selMes  = document.getElementById('liq-mes');
+  const selAnio = document.getElementById('liq-anio');
+  if (!selMes || !selAnio) return;
+  if (!selMes.dataset.init) {
+    selMes.value  = String(hoy.getMonth()+1).padStart(2,'0');
+    selAnio.value = String(hoy.getFullYear());
+    selMes.dataset.init = '1';
+  }
+  const mes  = selMes.value;
+  const anio = selAnio.value;
+  const lastDay = new Date(parseInt(anio), parseInt(mes), 0).getDate();
+  const listEl = document.getElementById('adm-liq-list');
+  listEl.innerHTML = '<div style="text-align:center;padding:20px;font-family:var(--mono);font-size:11px;color:var(--text3)">Cargando...</div>';
+
+  try {
+    const [cuentas, entradas, adelantos, cierresMes, hielosTodos, reportesMes, penalidadesCfg] = await Promise.all([
+      sbFetch('cuentas?tipo=eq.empleado&order=nombre.asc&select=id,nombre,local'),
+      sbFetch('entradas?order=created_at.asc&select=id,cid,monto,fecha,store'),
+      sbFetch(`adelantos_sueldo?mes=eq.${mes}&anio=eq.${anio}&order=created_at.asc`),
+      sbFetch(`cierres_turno?select=id,empleado_id&fecha=gte.${anio}-${mes}-01&fecha=lte.${anio}-${mes}-${lastDay}`),
+      sbFetch('hielos_ciclos?select=id,cierre_id,bolsas'),
+      sbFetch(`reportes?justificado=eq.true&created_at=gte.${anio}-${mes}-01T00:00:00&created_at=lte.${anio}-${mes}-${lastDay}T23:59:59&select=id,tipo,subtipo,descripcion,empleado_id,foto_url,created_at&order=created_at.asc`),
+      sbFetch('config?clave=eq.penalidades_presentismo&select=valor'),
+    ]);
+
+    liqData.empleados = cuentas || [];
+    liqData.adelantos = adelantos || [];
+    liqData.entradas  = entradas  || [];
+
+    // Penalidades por tipo desde config
+    try {
+      const praw = (penalidadesCfg||[])[0]?.valor;
+      liqData.penalidades = praw ? JSON.parse(praw) : {};
+    } catch(e) { liqData.penalidades = {}; }
+
+    // Reportes justificados del mes agrupados por empleado_id
+    liqData.reportesJust = {};
+    (reportesMes||[]).forEach(r => {
+      const eid = r.empleado_id;
+      if (!eid) return;
+      if (!liqData.reportesJust[eid]) liqData.reportesJust[eid] = [];
+      liqData.reportesJust[eid].push(r);
+    });
+
+    // Hielos del mes por empleado
+    const cierreIdsMes = new Set((cierresMes||[]).map(c => c.id));
+    liqData.hielosPorEmp = {};
+    (hielosTodos||[]).forEach(h => {
+      if (!cierreIdsMes.has(h.cierre_id)) return;
+      const cierre = (cierresMes||[]).find(c => c.id === h.cierre_id);
+      if (!cierre) return;
+      const eid = cierre.empleado_id;
+      if (!liqData.hielosPorEmp[eid]) liqData.hielosPorEmp[eid] = { ciclos:0, bolsas:0 };
+      liqData.hielosPorEmp[eid].ciclos++;
+      liqData.hielosPorEmp[eid].bolsas += (h.bolsas||0);
+    });
+
+    liqRender(mes, anio);
+  } catch(err) {
+    console.error('admLoadLiquidacion', err);
+    listEl.innerHTML = '<div style="padding:20px;font-family:var(--mono);font-size:12px;color:var(--red)">Error al cargar. ¿Ejecutaste el SQL de la tabla adelantos_sueldo?</div>';
+  }
+}
+
+function liqRender(mes, anio) {
+  const listEl = document.getElementById('adm-liq-list');
+  const fmt = n => '$' + Math.abs(Math.round(n)).toLocaleString('es-AR');
+  const LOCALES = { palermo:'Thames', belgrano:'Roosevelt', barrio_chino:'B. Chino', san_telmo:'San Telmo' };
+
+  const { empleados, adelantos, entradas, hielosPorEmp } = liqData;
+  if (!empleados.length) {
+    listEl.innerHTML = '<div style="padding:20px;font-family:var(--mono);font-size:12px;color:var(--text3)">No hay empleados registrados.</div>';
+    return;
+  }
+
+  // Filtrar entradas del mes por fecha string "DD/MM/YY HH:MM"
+  const aa = anio.slice(2);
+  const entradasMes = entradas.filter(e => {
+    if (!e.fecha) return false;
+    const p = e.fecha.split('/');
+    return p.length >= 3 && p[1] === mes && p[2]?.slice(0,2) === aa;
+  });
+
+  let html = '';
+  for (const emp of empleados) {
+    const deudaMes = entradasMes
+      .filter(e => e.cid === emp.id)
+      .reduce((s,e) => s + (e.monto||0), 0);
+
+    const deudaTotal = entradas
+      .filter(e => e.cid === emp.id)
+      .reduce((s,e) => s + (e.monto||0), 0);
+
+    const adelantosEmp = adelantos.filter(a => a.empleado_id === emp.id);
+    const totalAdelantos = adelantosEmp.reduce((s,a) => s + (a.monto||0), 0);
+
+    const hielos = hielosPorEmp[emp.id] || { ciclos:0, bolsas:0 };
+    const ini = emp.nombre.split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase();
+    const colorDeuda = deudaMes > 0 ? 'var(--red)' : deudaMes < 0 ? 'var(--green)' : 'var(--text3)';
+    const colorTotal = deudaTotal > 0 ? 'var(--red)' : deudaTotal < 0 ? 'var(--green)' : 'var(--text3)';
+
+    // Lista de adelantos del empleado
+    const adelantosHtml = adelantosEmp.length
+      ? adelantosEmp.map((a,i) => `
+          <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid var(--border)">
+            <span style="font-family:var(--mono);font-size:11px;color:var(--text);flex:1">${a.descripcion||'Adelanto'}</span>
+            <span style="font-family:var(--mono);font-size:12px;font-weight:600;color:var(--orange)">${fmt(a.monto)}</span>
+            <span style="font-family:var(--mono);font-size:10px;color:var(--text3);min-width:60px;text-align:right">${a.fecha_pago||''}</span>
+            <button onclick="liqEliminarAdelanto('${a.id}','${emp.id}')" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:0 2px;line-height:1" title="Eliminar">✕</button>
+          </div>`).join('')
+      : `<div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:8px 0;font-style:italic">Sin adelantos registrados</div>`;
+
+    html += `
+    <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <div style="width:34px;height:34px;border-radius:50%;background:var(--bg4);border:0.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:600;color:var(--text2);flex-shrink:0">${ini}</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:500;color:var(--text)">${emp.nombre}</div>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--text3)">${LOCALES[emp.local]||emp.local||'—'}</div>
+        </div>
+        <button onclick="liqImprimirEmpleado('${emp.id}')" title="Descargar resumen PDF"
+          style="background:var(--bg3);border:0.5px solid var(--border2);border-radius:8px;padding:7px 11px;color:var(--text3);font-size:13px;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:11px;white-space:nowrap"
+          onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
+          onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text3)'">
+          📄 PDF
+        </button>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+        <div style="background:var(--bg3);border:0.5px solid var(--border);border-radius:8px;padding:10px 12px">
+          <div style="font-family:var(--mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Deuda del mes</div>
+          <div style="font-size:16px;font-weight:600;color:${colorDeuda};font-family:var(--mono)">${fmt(deudaMes)}</div>
+        </div>
+        <div style="background:var(--bg3);border:0.5px solid var(--border);border-radius:8px;padding:10px 12px">
+          <div style="font-family:var(--mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Deuda total acumulada</div>
+          <div style="font-size:16px;font-weight:600;color:${colorTotal};font-family:var(--mono)">${fmt(deudaTotal)}</div>
+          ${(() => {
+            // Desglose por local
+            const LOCALES_LIQ = { palermo:'Thames', belgrano:'Belgrano', barrio_chino:'B. Chino', san_telmo:'San Telmo' };
+            const localesConDeuda = Object.entries(LOCALES_LIQ)
+              .map(([k,v]) => ({
+                local: v,
+                saldo: entradas.filter(e => e.cid === emp.id && e.store === k).reduce((s,e) => s+(e.monto||0), 0)
+              }))
+              .filter(l => l.saldo > 0);
+            if (!localesConDeuda.length) return '';
+            return '<div style="margin-top:6px;border-top:0.5px solid var(--border);padding-top:5px">' +
+              localesConDeuda.map(l =>
+                '<div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;padding:2px 0">' +
+                '<span style="color:var(--text3)">' + l.local + '</span>' +
+                '<span style="color:var(--red)">' + fmt(l.saldo) + '</span>' +
+                '</div>'
+              ).join('') +
+              '</div>';
+          })()}
+        </div>
+        <div style="background:var(--bg3);border:0.5px solid var(--border);border-radius:8px;padding:10px 12px">
+          <div style="font-family:var(--mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Adelantos del mes</div>
+          <div style="font-size:16px;font-weight:600;color:var(--orange);font-family:var(--mono)">${totalAdelantos > 0 ? fmt(totalAdelantos) : '—'}</div>
+        </div>
+        <div style="background:var(--bg3);border:0.5px solid var(--border);border-radius:8px;padding:10px 12px">
+          <div style="font-family:var(--mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Hielos del mes</div>
+          <div style="font-size:14px;font-weight:600;color:var(--blue);font-family:var(--mono)">${hielos.ciclos} ciclos · ${hielos.bolsas} bolsas</div>
+        </div>
+      </div>
+
+      <!-- Reportes justificados del mes -->
+      ${(() => {
+        const reps = liqData.reportesJust[emp.id] || [];
+        if (!reps.length) return '';
+        const total = reps.reduce((s,r) => s + (liqData.penalidades[r.tipo] || 0), 0);
+        return '<div style="border-top:0.5px solid var(--border);padding-top:10px;margin-bottom:10px">' +
+          '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">' +
+            '<div style="font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em">Reportes justificados</div>' +
+            '<div style="display:flex;gap:6px;align-items:center">' +
+              '<span style="background:rgba(232,93,74,0.15);color:var(--red);border-radius:10px;padding:2px 8px;font-family:var(--mono);font-size:10px;font-weight:600">' + reps.length + ' reporte' + (reps.length !== 1 ? 's' : '') + '</span>' +
+              '<button onclick="liqVerReportes(\'' + emp.id + '\')" style="background:var(--bg3);border:0.5px solid var(--border2);border-radius:6px;padding:3px 9px;font-family:var(--mono);font-size:10px;color:var(--text2);cursor:pointer">Ver detalle</button>' +
+            '</div>' +
+          '</div>' +
+          (total > 0
+            ? '<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:rgba(232,93,74,0.07);border:0.5px solid rgba(232,93,74,0.25);border-radius:6px;margin-bottom:8px">' +
+                '<div style="font-family:var(--mono);font-size:11px;color:var(--text2)">Descuento sugerido por penalidades</div>' +
+                '<div style="display:flex;align-items:center;gap:8px">' +
+                  '<span style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--red)">-$' + Math.round(total).toLocaleString("es-AR") + '</span>' +
+                  '<button onclick="liqAplicarPenalidades(\'' + emp.id + '\')" style="background:var(--red);border:none;border-radius:6px;padding:4px 10px;font-family:var(--mono);font-size:10px;color:#fff;cursor:pointer;font-weight:600">Aplicar</button>' +
+                '</div>' +
+              '</div>'
+            : '<div style="font-family:var(--mono);font-size:10px;color:var(--text3);padding:6px 0;margin-bottom:8px">Sin penalidades configuradas para estos tipos — configurar en tabla de penalidades</div>'
+          ) +
+        '</div>';
+      })()}
+
+      <!-- Sueldo base, bonificaciones, presentismo -->
+      <div style="border-top:0.5px solid var(--border);padding-top:10px;margin-bottom:10px">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">Liquidación</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+          <div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:3px">Sueldo base</div>
+            <input type="number" min="0" id="liq-sueldo-${emp.id}" placeholder="$0"
+              style="width:100%;background:var(--bg3);border:0.5px solid var(--border2);border-radius:6px;padding:7px 10px;font-family:var(--mono);font-size:13px;color:var(--text);outline:none"
+              value="${liqGetLocal('sueldo','${emp.id}',mes,anio)}"
+              oninput="liqSaveLocal('sueldo','${emp.id}',this.value,'${mes}','${anio}');liqRecalcNeto('${emp.id}')">
+          </div>
+          <div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:3px">Bonificaciones</div>
+            <input type="number" min="0" id="liq-bonif-${emp.id}" placeholder="$0"
+              style="width:100%;background:var(--bg3);border:0.5px solid var(--border2);border-radius:6px;padding:7px 10px;font-family:var(--mono);font-size:13px;color:var(--text);outline:none"
+              value="${liqGetLocal('bonif','${emp.id}',mes,anio)}"
+              oninput="liqSaveLocal('bonif','${emp.id}',this.value,'${mes}','${anio}');liqRecalcNeto('${emp.id}')">
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--bg3);border:0.5px solid var(--border);border-radius:6px;margin-bottom:8px">
+          <label style="display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;color:var(--text3);cursor:pointer">
+            <input type="checkbox" id="liq-pres-check-${emp.id}"
+              ${liqGetLocal('pres_check','${emp.id}',mes,anio)==='true'?'checked':''}
+              onchange="liqSaveLocal('pres_check','${emp.id}',this.checked.toString(),'${mes}','${anio}');liqRecalcNeto('${emp.id}')">
+            Descuento presentismo
+          </label>
+          <input type="number" min="0" id="liq-pres-${emp.id}" placeholder="$0"
+            style="flex:1;background:var(--bg2);border:0.5px solid var(--border2);border-radius:6px;padding:5px 8px;font-family:var(--mono);font-size:12px;color:var(--text);outline:none"
+            value="${liqGetLocal('pres','${emp.id}',mes,anio)}"
+            oninput="liqSaveLocal('pres','${emp.id}',this.value,'${mes}','${anio}');liqRecalcNeto('${emp.id}')">
+        </div>
+        <!-- Neto calculado -->
+        <div style="background:var(--bg4);border:0.5px solid var(--border2);border-radius:8px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center">
+          <div style="font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em">Neto a cobrar</div>
+          <div id="liq-neto-${emp.id}" style="font-family:var(--mono);font-size:18px;font-weight:600;color:var(--green)">—</div>
+        </div>
+      </div>
+
+      <div style="border-top:0.5px solid var(--border);padding-top:10px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div style="font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em">Adelantos registrados</div>
+          <button onclick="liqAbrirModalAdelanto('${emp.id}')"
+            style="background:rgba(232,197,71,0.1);border:0.5px solid var(--accent);border-radius:6px;padding:4px 10px;color:var(--accent);font-family:var(--mono);font-size:11px;cursor:pointer">
+            + Agregar adelanto
+          </button>
+        </div>
+        <div id="liq-adelantos-${emp.id}">
+          ${adelantosHtml}
+        </div>
+      </div>
+    </div>`;
+  }
+
+  listEl.innerHTML = html;
+  // Recalcular neto para todos al renderizar
+  empleados.forEach(emp => liqRecalcNeto(emp.id));
+}
+
+// ── LIQUIDACION: localStorage helpers ──
+function liqKey(campo, empId, mes, anio) {
+  return 'liq_' + campo + '_' + empId + '_' + mes + '_' + anio;
+}
+function liqGetLocal(campo, empId, mes, anio) {
+  return localStorage.getItem(liqKey(campo, empId, mes, anio)) || '';
+}
+function liqSaveLocal(campo, empId, val, mes, anio) {
+  localStorage.setItem(liqKey(campo, empId, mes, anio), val);
+}
+function liqRecalcNeto(empId) {
+  const mes  = document.getElementById('liq-mes')?.value  || '';
+  const anio = document.getElementById('liq-anio')?.value || '';
+  const sueldo = parseFloat(document.getElementById('liq-sueldo-' + empId)?.value) || 0;
+  const bonif  = parseFloat(document.getElementById('liq-bonif-'  + empId)?.value) || 0;
+  const presCheck = document.getElementById('liq-pres-check-' + empId)?.checked || false;
+  const pres   = presCheck ? (parseFloat(document.getElementById('liq-pres-' + empId)?.value) || 0) : 0;
+  // Deuda mes del empleado
+  const aa = anio.slice(2);
+  const deudaMes = liqData.entradas.filter(e => {
+    if (!e.cid || e.cid !== empId) return false;
+    const p = e.fecha?.split('/');
+    return p?.length >= 3 && p[1] === mes && p[2]?.slice(0,2) === aa;
+  }).reduce((s,e) => s + (e.monto||0), 0);
+  const adelantos = liqData.adelantos.filter(a => a.empleado_id === empId).reduce((s,a) => s + (a.monto||0), 0);
+  const neto = sueldo - deudaMes - adelantos - pres + bonif;
+  const netoEl = document.getElementById('liq-neto-' + empId);
+  if (netoEl) {
+    const fmt = n => '$' + Math.abs(Math.round(n)).toLocaleString('es-AR');
+    netoEl.textContent = (neto < 0 ? '-' : '') + fmt(neto);
+    netoEl.style.color = neto >= 0 ? 'var(--green)' : 'var(--red)';
+  }
+}
+
+// ── LIQ: VER REPORTES JUSTIFICADOS ──────────────────────────────
+function liqVerReportes(empId) {
+  const reps = liqData.reportesJust[empId] || [];
+  const emp  = liqData.empleados.find(e => e.id === empId);
+  const TIPO_LBL = { falla_tienda:'Falla en tienda', edilicio:'Edilicio', rotos_vencidos:'Rotos/Vencidos', pedido:'Pedido delivery', ticket:'Ticket sistema' };
+  const TIPO_CLR = { falla_tienda:'var(--red)', edilicio:'var(--orange)', rotos_vencidos:'#c084fc', pedido:'var(--blue)', ticket:'var(--green)' };
+
+  document.getElementById('liq-rep-modal-title').textContent =
+    (emp ? emp.nombre : '') + ' — Reportes justificados';
+
+  const body = document.getElementById('liq-rep-modal-body');
+  if (!reps.length) {
+    body.innerHTML = '<div style="font-family:var(--mono);font-size:12px;color:var(--text3);text-align:center;padding:20px">Sin reportes justificados este mes</div>';
+  } else {
+    body.innerHTML = reps.map(r => {
+      const fecha = r.created_at ? new Date(r.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'}) : '—';
+      const tipo  = TIPO_LBL[r.tipo] || r.tipo;
+      const clr   = TIPO_CLR[r.tipo] || 'var(--text2)';
+      const pen   = liqData.penalidades[r.tipo] || 0;
+      const fotoHtml = r.foto_url
+        ? '<a href="' + r.foto_url + '" target="_blank" style="display:block;margin-top:8px"><img src="' + r.foto_url + '" style="width:100%;max-height:180px;object-fit:cover;border-radius:6px;border:0.5px solid var(--border)"></a>'
+        : '';
+      return '<div style="border:0.5px solid var(--border);border-radius:8px;padding:11px 13px;margin-bottom:10px">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">' +
+          '<span style="font-family:var(--mono);font-size:10px;font-weight:600;color:' + clr + ';text-transform:uppercase;letter-spacing:0.06em">' + tipo + '</span>' +
+          '<div style="display:flex;align-items:center;gap:8px">' +
+            (pen > 0 ? '<span style="font-family:var(--mono);font-size:11px;color:var(--red);font-weight:600">-$' + Math.round(pen).toLocaleString('es-AR') + '</span>' : '<span style="font-family:var(--mono);font-size:10px;color:var(--text3)">sin penalidad</span>') +
+            '<span style="font-family:var(--mono);font-size:10px;color:var(--text3)">' + fecha + '</span>' +
+          '</div>' +
+        '</div>' +
+        (r.descripcion ? '<div style="font-family:var(--mono);font-size:11px;color:var(--text2);line-height:1.5">' + r.descripcion + '</div>' : '') +
+        fotoHtml +
+      '</div>';
+    }).join('');
+  }
+
+  const total = reps.reduce((s,r) => s + (liqData.penalidades[r.tipo] || 0), 0);
+  if (total > 0) {
+    body.innerHTML += '<div style="background:rgba(232,93,74,0.1);border:0.5px solid rgba(232,93,74,0.3);border-radius:8px;padding:10px 13px;display:flex;justify-content:space-between;align-items:center;margin-top:4px">' +
+      '<span style="font-family:var(--mono);font-size:11px;color:var(--text2)">Total descuento</span>' +
+      '<span style="font-family:var(--mono);font-size:15px;font-weight:700;color:var(--red)">-$' + Math.round(total).toLocaleString('es-AR') + '</span>' +
+    '</div>';
+  }
+
+  document.getElementById('liq-rep-modal').style.display = 'flex';
+}
+
+// ── LIQ: APLICAR PENALIDADES AL INPUT PRESENTISMO ────────────────
+function liqAplicarPenalidades(empId) {
+  const mes  = document.getElementById('liq-mes')?.value  || '';
+  const anio = document.getElementById('liq-anio')?.value || '';
+  const reps  = liqData.reportesJust[empId] || [];
+  const total = reps.reduce((s,r) => s + (liqData.penalidades[r.tipo] || 0), 0);
+  if (!total) { showToast('No hay penalidades configuradas para estos tipos', ''); return; }
+
+  const inputPres  = document.getElementById('liq-pres-' + empId);
+  const checkPres  = document.getElementById('liq-pres-check-' + empId);
+  if (inputPres)  { inputPres.value = total; liqSaveLocal('pres', empId, total, mes, anio); }
+  if (checkPres)  { checkPres.checked = true; liqSaveLocal('pres_check', empId, 'true', mes, anio); }
+  liqRecalcNeto(empId);
+  showToast('Descuento de $' + Math.round(total).toLocaleString('es-AR') + ' aplicado ✓', 'success');
+}
+
+// ── LIQ: CARGAR Y GUARDAR PENALIDADES ────────────────────────────
+async function liqCargarPenalidades() {
+  try {
+    const res = await sbFetch('config?clave=eq.penalidades_presentismo&select=valor');
+    const raw = (res||[])[0]?.valor;
+    const pen = raw ? JSON.parse(raw) : {};
+    const tipos = ['falla_tienda','edilicio','rotos_vencidos','pedido','ticket'];
+    tipos.forEach(t => {
+      const el = document.getElementById('pen-' + t);
+      if (el && pen[t]) el.value = pen[t];
+    });
+    liqData.penalidades = pen;
+  } catch(e) { console.warn('liqCargarPenalidades', e); }
+}
+
+async function liqGuardarPenalidades() {
+  const tipos = ['falla_tienda','edilicio','rotos_vencidos','pedido','ticket'];
+  const pen = {};
+  tipos.forEach(t => {
+    const v = parseFloat(document.getElementById('pen-' + t)?.value) || 0;
+    if (v > 0) pen[t] = v;
+  });
+  const btn = document.getElementById('btn-guardar-pen');
+  if (btn) { btn.textContent = 'Guardando...'; btn.disabled = true; }
+  try {
+    await fetch(SUPABASE_URL + 'config?clave=eq.penalidades_presentismo', {
+      method: 'PATCH',
+      headers: { 'Content-Type':'application/json', 'apikey':SUPABASE_KEY, 'Authorization':'Bearer ' + SUPABASE_KEY, 'x-app-secret':_appSecret, 'Prefer':'return=minimal' },
+      body: JSON.stringify({ valor: JSON.stringify(pen) })
+    });
+    liqData.penalidades = pen;
+    showToast('Penalidades guardadas ✓', 'success');
+  } catch(e) {
+    showToast('Error al guardar', 'error');
+  } finally {
+    if (btn) { btn.textContent = 'Guardar'; btn.disabled = false; }
+  }
+}
+
+function liqAbrirModalAdelanto(empId) {
+  liqModalEmpId = empId;
+  document.getElementById('liq-modal-monto').value = '';
+  document.getElementById('liq-modal-desc').value = '';
+  document.getElementById('liq-modal-fecha').value = new Date().toISOString().split('T')[0];
+  document.getElementById('liq-modal').style.display = 'flex';
+}
+
+function liqCerrarModal() {
+  document.getElementById('liq-modal').style.display = 'none';
+  liqModalEmpId = null;
+}
+
+async function liqGuardarAdelanto() {
+  const monto = parseInt(document.getElementById('liq-modal-monto').value);
+  const desc  = document.getElementById('liq-modal-desc').value.trim();
+  const fecha = document.getElementById('liq-modal-fecha').value;
+  if (!monto || monto <= 0) { showToast('Ingresá un monto válido', 'error'); return; }
+  if (!fecha) { showToast('Ingresá una fecha', 'error'); return; }
+
+  const mes  = document.getElementById('liq-mes').value;
+  const anio = document.getElementById('liq-anio').value;
+  const [y,m,d] = fecha.split('-');
+  const fechaPago = `${d}/${m}/${y.slice(2)}`;
+
+  try {
+    const res = await sbFetch('adelantos_sueldo', {
+      method: 'POST',
+      body: JSON.stringify({
+        empleado_id: liqModalEmpId,
+        monto,
+        descripcion: desc || 'Adelanto de sueldo',
+        fecha_pago: fechaPago,
+        mes,
+        anio,
+      })
+    });
+    if (res && res[0]) {
+      liqData.adelantos.push(res[0]);
+      liqCerrarModal();
+      liqRender(mes, anio);
+      showToast('Adelanto registrado ✓', 'success');
+    }
+  } catch(e) {
+    showToast('Error al guardar', 'error');
+  }
+}
+
+async function liqEliminarAdelanto(adelantoId, empId) {
+  if (!confirm('¿Eliminar este adelanto?')) return;
+  const mes  = document.getElementById('liq-mes').value;
+  const anio = document.getElementById('liq-anio').value;
+  try {
+    await sbFetch(`adelantos_sueldo?id=eq.${adelantoId}`, { method: 'DELETE' });
+    liqData.adelantos = liqData.adelantos.filter(a => a.id !== adelantoId);
+    liqRender(mes, anio);
+    showToast('Adelanto eliminado', '');
+  } catch(e) {
+    showToast('Error al eliminar', 'error');
+  }
+}
+
+function liqImprimirEmpleado(empId) {
+  const mes  = document.getElementById('liq-mes').value;
+  const anio = document.getElementById('liq-anio').value;
+  const MESES_NOM = { '01':'Enero','02':'Febrero','03':'Marzo','04':'Abril','05':'Mayo','06':'Junio','07':'Julio','08':'Agosto','09':'Septiembre','10':'Octubre','11':'Noviembre','12':'Diciembre' };
+  const LOCALES_P = { palermo:'Thames · Palermo', belgrano:'Roosevelt · Belgrano', barrio_chino:'Juramento · B. Chino', san_telmo:'Independencia · San Telmo' };
+  const fmt = n => '$' + Math.abs(Math.round(n)).toLocaleString('es-AR');
+
+  const emp = liqData.empleados.find(e => e.id === empId);
+  if (!emp) return;
+
+  const aa = anio.slice(2);
+  const entradasMes = liqData.entradas.filter(e => {
+    if (!e.cid || e.cid !== empId) return false;
+    const p = e.fecha?.split('/');
+    return p?.length >= 3 && p[1] === mes && p[2]?.slice(0,2) === aa;
+  });
+
+  const deudaMes   = entradasMes.reduce((s,e) => s + (e.monto||0), 0);
+  const deudaTotal = liqData.entradas.filter(e => e.cid === empId).reduce((s,e) => s + (e.monto||0), 0);
+  const adelantosEmp = liqData.adelantos.filter(a => a.empleado_id === empId);
+  const totalAdelantos = adelantosEmp.reduce((s,a) => s + (a.monto||0), 0);
+  const hielos = liqData.hielosPorEmp[empId] || { ciclos:0, bolsas:0 };
+
+  // Sueldo / bonif / presentismo desde localStorage
+  const sueldo     = parseFloat(liqGetLocal('sueldo', empId, mes, anio)) || 0;
+  const bonif      = parseFloat(liqGetLocal('bonif',  empId, mes, anio)) || 0;
+  const presCheck  = liqGetLocal('pres_check', empId, mes, anio) === 'true';
+  const presDesc   = presCheck ? (parseFloat(liqGetLocal('pres', empId, mes, anio)) || 0) : 0;
+  const neto       = sueldo - deudaMes - totalAdelantos - presDesc + bonif;
+  const netoHex    = neto >= 0 ? '#4caf82' : '#e85d4a';
+
+  // Desglose por local de deuda total
+  const LOCALES_LIQ = { palermo:'Thames', belgrano:'Belgrano', barrio_chino:'B. Chino', san_telmo:'San Telmo' };
+  const desgloseLocal = Object.entries(LOCALES_LIQ)
+    .map(([k,v]) => ({ local:v, saldo: liqData.entradas.filter(e => e.cid===empId && e.store===k).reduce((s,e)=>s+(e.monto||0),0) }))
+    .filter(l => l.saldo > 0);
+
+  const colorDeudaHex = deudaMes > 0 ? '#e85d4a' : deudaMes < 0 ? '#4caf82' : '#848180';
+  const colorTotalHex = deudaTotal > 0 ? '#e85d4a' : deudaTotal < 0 ? '#4caf82' : '#848180';
+  const hoy = new Date().toLocaleDateString('es-AR', { day:'2-digit', month:'2-digit', year:'numeric' });
+
+  const adelantosRows = adelantosEmp.length
+    ? adelantosEmp.map(a => `<tr><td>${a.descripcion||'Adelanto'}</td><td>${a.fecha_pago||'—'}</td><td style="text-align:right;color:#f0884a;font-weight:600">${fmt(a.monto)}</td></tr>`).join('')
+    : '<tr><td colspan="3" style="color:#848180;font-style:italic">Sin adelantos registrados</td></tr>';
+
+  const desgloseRows = desgloseLocal.length
+    ? desgloseLocal.map(l => `<tr><td style="color:#848180">${l.local}</td><td></td><td style="text-align:right;color:#e85d4a">${fmt(l.saldo)}</td></tr>`).join('')
+    : '';
+
+  // Reportes justificados del mes para PDF
+  const repsJustPdf = liqData.reportesJust[empId] || [];
+  const TIPO_LBL_PDF = { falla_tienda:'Falla en tienda', edilicio:'Edilicio', rotos_vencidos:'Rotos/Vencidos', pedido:'Pedido delivery', ticket:'Ticket sistema' };
+  const totalPen = repsJustPdf.reduce((s,r) => s + (liqData.penalidades[r.tipo] || 0), 0);
+
+  const win = window.open('', '_blank', 'width=600,height=800');
+  win.document.write(`<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Liquidación — ${emp.nombre} — ${MESES_NOM[mes]} ${anio}</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@500;700&display=swap');
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'DM Mono',monospace; background:#fff; color:#111; padding:32px; font-size:13px; }
+  .header { margin-bottom:24px; padding-bottom:16px; border-bottom:2px solid #111; }
+  .logo { font-family:'Syne',sans-serif; font-size:22px; font-weight:700; letter-spacing:-0.02em; }
+  .logo span { color:#b89b2e; }
+  .header-sub { font-size:11px; color:#555; margin-top:4px; }
+  .emp-name { font-family:'Syne',sans-serif; font-size:20px; font-weight:700; margin:16px 0 2px; }
+  .emp-local { font-size:11px; color:#555; }
+  .periodo { display:inline-block; background:#f5f0e0; border:1px solid #d4b94a; border-radius:6px; padding:4px 12px; font-size:12px; color:#7a6010; margin:10px 0 20px; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px; }
+  .card { border:1px solid #ddd; border-radius:8px; padding:12px 14px; }
+  .card-label { font-size:9px; text-transform:uppercase; letter-spacing:0.1em; color:#888; margin-bottom:6px; }
+  .card-val { font-size:20px; font-weight:600; }
+  .section-title { font-size:10px; text-transform:uppercase; letter-spacing:0.1em; color:#888; margin:0 0 8px; }
+  table { width:100%; border-collapse:collapse; margin-bottom:16px; }
+  th { font-size:10px; text-transform:uppercase; letter-spacing:0.06em; color:#888; text-align:left; padding:0 0 6px; border-bottom:1px solid #eee; }
+  td { padding:7px 0; border-bottom:1px solid #f0f0f0; font-size:12px; vertical-align:top; }
+  .footer { margin-top:24px; padding-top:14px; border-top:1px solid #eee; font-size:10px; color:#aaa; display:flex; justify-content:space-between; }
+  @media print {
+    body { padding:20px; }
+    @page { margin:1.5cm; size:A4; }
+  }
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="logo">◈ <span>BREAK</span></div>
+  <div class="header-sub">Sistema de Gestión Interno · Liquidación mensual</div>
+</div>
+<div class="emp-name">${emp.nombre}</div>
+<div class="emp-local">${LOCALES_P[emp.local]||emp.local||'—'}</div>
+<div class="periodo">📅 ${MESES_NOM[mes]} ${anio}</div>
+
+<div class="grid">
+  <div class="card">
+    <div class="card-label">Sueldo base</div>
+    <div class="card-val" style="color:#111">${sueldo > 0 ? fmt(sueldo) : "—"}</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Bonificaciones</div>
+    <div class="card-val" style="color:#4caf82">${bonif > 0 ? "+" + fmt(bonif) : "—"}</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Deuda del mes</div>
+    <div class="card-val" style="color:${colorDeudaHex}">${fmt(deudaMes)}</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Deuda total acumulada</div>
+    <div class="card-val" style="color:${colorTotalHex}">${fmt(deudaTotal)}</div>
+    ${desgloseRows ? "<table style=\"margin-top:8px;margin-bottom:0\">" + desgloseRows + "</table>" : ""}
+  </div>
+  <div class="card">
+    <div class="card-label">Adelantos del mes</div>
+    <div class="card-val" style="color:#f0884a">${totalAdelantos > 0 ? "-" + fmt(totalAdelantos) : "—"}</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Desc. presentismo</div>
+    <div class="card-val" style="color:${presDesc > 0 ? "#e85d4a" : "#848180"}">${presDesc > 0 ? "-" + fmt(presDesc) : "—"}</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Hielos del mes</div>
+    <div class="card-val" style="color:#5b9cf6;font-size:15px">${hielos.ciclos} ciclos · ${hielos.bolsas} bolsas</div>
+  </div>
+  <div class="card" style="grid-column:1/-1;background:#f5fff9;border-color:#4caf82;border-width:2px">
+    <div class="card-label" style="color:#2d7a50;font-size:11px">NETO A COBRAR</div>
+    <div class="card-val" style="color:${netoHex};font-size:26px">${(neto < 0 ? "-" : "") + fmt(neto)}</div>
+    <div style="font-size:10px;color:#888;margin-top:5px">Sueldo base − deuda mes − adelantos − desc. presentismo + bonificaciones</div>
+  </div>
+</div>
+
+<div class="section-title">Adelantos registrados</div>
+<table>
+  <thead><tr><th>Descripción</th><th>Fecha</th><th style="text-align:right">Monto</th></tr></thead>
+  <tbody>${adelantosRows}</tbody>
+</table>
+
+${repsJustPdf.length ? `
+<div class="section-title" style="margin-top:16px">Reportes justificados — descuento presentismo</div>
+<table>
+  <thead><tr><th>Tipo</th><th>Fecha</th><th style="text-align:right">Penalidad</th></tr></thead>
+  <tbody>
+    ${repsJustPdf.map(r => {
+      const tipo  = TIPO_LBL_PDF[r.tipo] || r.tipo;
+      const fecha = r.created_at ? new Date(r.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'}) : '—';
+      const pen   = liqData.penalidades[r.tipo] || 0;
+      return '<tr><td>' + tipo + (r.descripcion ? '<div style="font-size:10px;color:#888;margin-top:2px">' + r.descripcion.slice(0,60) + '</div>' : '') + '</td><td>' + fecha + '</td><td style="text-align:right;color:' + (pen > 0 ? '#e85d4a' : '#848180') + ';font-weight:600">' + (pen > 0 ? '-$' + Math.round(pen).toLocaleString('es-AR') : '—') + '</td></tr>';
+    }).join('')}
+    ${totalPen > 0 ? '<tr style="border-top:2px solid #eee"><td colspan="2" style="font-weight:600">Total descuento aplicado</td><td style="text-align:right;color:#e85d4a;font-weight:700">-$' + Math.round(totalPen).toLocaleString('es-AR') + '</td></tr>' : ''}
+  </tbody>
+</table>` : ''}
+
+<div class="footer">
+  <span>Break Sistema · Generado el ${hoy}</span>
+  <span>Confidencial — uso interno</span>
+</div>
+
+<script>window.onload = () => { window.print(); }<\/script>
+</body></html>`);
+  win.document.close();
+}
+
+
+// ── FILTRO LOCAL EN REPORTES ──────────────
+let adminLocalFilter2 = '';
+function adminFilterLocal(local, el) {
+  el.closest('.adm-filter-bar').querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  adminLocalFilter2 = local;
+  applyAdminFilters();
+}
+
+// ── FUNCIONES ORIGINALES PRESERVADAS ─────
+async function loadAdminDashboard() { admInit(); } // alias compatibilidad
+
+function adminFilterJust(val, el) {
+  el.closest('.adm-filter-bar').querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  adminJustFilter = val;
+  applyAdminFilters();
+}
+
+function getFilteredReportes() {
+  const mes  = document.getElementById('filter-mes')?.value  || '';
+  const anio = document.getElementById('filter-anio')?.value || '';
+  return state.reportes.filter(r => {
+    const d = r.created_at || '';
+    if (mes  && d.slice(5,7) !== mes)  return false;
+    if (anio && d.slice(0,4) !== anio) return false;
+    if (adminTipoFilter  && r.tipo  !== adminTipoFilter)  return false;
+    if (adminLocalFilter2 && r.local !== adminLocalFilter2) return false;
+    if (adminJustFilter === 'si'  && !r.justificado) return false;
+    if (adminJustFilter === 'no'  &&  r.justificado) return false;
+    return true;
+  });
+}
+
+function applyAdminFilters() {
+  const filtered = getFilteredReportes();
+  renderAdminStats(filtered);
+  if (adminCurrentTab === 'reportes') renderAdminReports(filtered);
+  else renderAdminResumen(filtered);
+}
+
+function adminFilterTipo(tipo, el) {
+  document.querySelectorAll('#admin-filters .filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  adminTipoFilter = tipo;
+  applyAdminFilters();
+}
+
+function switchTab(tab) {
+  adminCurrentTab = tab;
+  const filtered = getFilteredReportes();
+  document.getElementById('panel-reportes').style.display = tab === 'reportes' ? 'block' : 'none';
+  document.getElementById('panel-resumen').style.display  = tab === 'resumen'  ? 'block' : 'none';
+  const tabR = document.getElementById('tab-reportes');
+  const tabE = document.getElementById('tab-resumen');
+  if (tabR) { tabR.style.borderBottomColor = tab==='reportes'?'var(--accent)':'transparent'; tabR.style.color=tab==='reportes'?'var(--accent)':'var(--text3)'; }
+  if (tabE) { tabE.style.borderBottomColor = tab==='resumen'?'var(--accent)':'transparent';  tabE.style.color=tab==='resumen'?'var(--accent)':'var(--text3)'; }
+  if (tab === 'resumen') renderAdminResumen(filtered);
+  else renderAdminReports(filtered);
+}
+
+function renderAdminStats(reportes) {
+  const hoy = new Date().toISOString().slice(0,10);
+  const hoyCount = state.reportes.filter(r => r.created_at?.slice(0,10) === hoy).length;
+  const tickets  = state.reportes.filter(r => r.tipo === 'ticket' && !r.resuelto).length;
+  const mesCounts = {};
+  reportes.filter(r => r.responsable_id).forEach(r => {
+    const n = r.responsable?.nombre || r.responsable_id;
+    mesCounts[n] = (mesCounts[n] || 0) + 1;
+  });
+  const topEntry = Object.entries(mesCounts).sort((a,b) => b[1]-a[1])[0];
+  document.getElementById('stat-hoy').textContent  = hoyCount;
+  document.getElementById('stat-mes').textContent  = reportes.length;
+  document.getElementById('stat-tickets').textContent = tickets;
+  document.getElementById('stat-top').textContent  = topEntry ? topEntry[1] : '—';
+  document.getElementById('stat-top-name').textContent = topEntry ? topEntry[0] : 'sin datos';
+}
+
+const TIPO_COLORS = {
+  falla_tienda:   { bg: 'var(--orange-bg)', color: 'var(--orange)' },
+  edilicio:       { bg: 'var(--bg4)',        color: 'var(--text2)'  },
+  rotos_vencidos: { bg: 'var(--red-bg)',     color: 'var(--red)'    },
+  pedido:         { bg: 'var(--blue-bg)',    color: 'var(--blue)'   },
+  ticket:         { bg: 'rgba(232,197,71,0.1)', color: 'var(--accent)' },
+};
+const TIPO_LABELS = {
+  falla_tienda:   'Falla en tienda',
+  edilicio:       'Edilicio',
+  rotos_vencidos: 'Rotos / Vencidos',
+  pedido:         'Pedido delivery',
+  ticket:         'Ticket sistema',
+};
+const SUBTIPO_LABELS = {
+  cambio_cb:      'Cambio de CB',
+  articulo_nuevo: 'Artículo nuevo',
+  ajuste_stock:   'Ajuste de stock',
+  error_precio:   'Error de precio',
+  error_nombre:   'Error de nombre',
+  otro:           'Otro',
+};
+
+function renderAdminReports(reportes) {
+  _repModalData = reportes; // guardar para modal de detalle
+  const list = document.getElementById('admin-report-list');
+  if (!reportes.length) {
+    list.innerHTML = '<div style="text-align:center;padding:40px 0;font-family:var(--mono);font-size:12px;color:var(--text3)">sin reportes en este período</div>';
+    return;
+  }
+  list.innerHTML = reportes.slice(0,100).map(r => {
+    const c     = TIPO_COLORS[r.tipo] || TIPO_COLORS.edilicio;
+    const label = TIPO_LABELS[r.tipo] || r.tipo;
+    const fecha = r.created_at ? new Date(r.created_at).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
+    const emp   = r.cuentas?.nombre || '—';
+    const resp  = r.responsable?.nombre;
+    const local = LOCALES[r.local] || r.local;
+    const desc  = (r.subtipo ? (SUBTIPO_LABELS[r.subtipo] || r.subtipo) : null) || r.descripcion || '—';
+    const isTicket = r.tipo === 'ticket';
+    const fotoLink = r.foto_url
+      ? `<a href="${r.foto_url}" target="_blank" style="display:inline-block;margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--blue);text-decoration:none;border:0.5px solid rgba(91,156,246,0.3);padding:3px 10px;border-radius:5px">ver foto en Drive ↗</a>`
+      : '';
+
+    // Bloque de detalle según tipo — datos_json
+    const dj = r.datos_json || {};
+    let detalleBlock = '';
+    if (r.tipo === 'falla_tienda') {
+      const parts = [
+        dj.categoria ? `<span>📂 ${dj.categoria}</span>` : '',
+        dj.subfalla  ? `<span>→ ${dj.subfalla}</span>`   : '',
+      ].filter(Boolean).join('');
+      if (parts) detalleBlock = `<div style="margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--text2);display:flex;flex-wrap:wrap;gap:8px">${parts}</div>`;
+    } else if (r.tipo === 'edilicio') {
+      if (dj.tipo_falla) detalleBlock = `<div style="margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--text2)">🔧 ${dj.tipo_falla}</div>`;
+    } else if (r.tipo === 'pedido') {
+      const parts = [
+        dj.plataforma  ? `<span>📱 ${dj.plataforma}</span>`          : '',
+        dj.id_pedido   ? `<span>🆔 ${dj.id_pedido}</span>`           : '',
+        dj.motivo      ? `<span>⚑ ${dj.motivo}</span>`              : '',
+        dj.fecha       ? `<span>📅 ${dj.fecha}</span>`                : '',
+        dj.hora        ? `<span>🕐 ${dj.hora}</span>`                 : '',
+        dj.monto_total ? `<span>💲 $${dj.monto_total}</span>`        : '',
+        dj.monto_reclamo ? `<span>⚠ Reclamo: $${dj.monto_reclamo}</span>` : '',
+        dj.articulo_reclamo ? `<span>📦 ${dj.articulo_reclamo}</span>` : '',
+        dj.articulos   ? `<span style="color:var(--text3)">${dj.articulos}</span>` : '',
+      ].filter(Boolean).join('');
+      if (parts) detalleBlock = `<div style="margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--text2);display:flex;flex-wrap:wrap;gap:8px">${parts}</div>`;
+    } else if (r.tipo === 'ticket') {
+      if (dj.tipo_ticket === 'ajuste_stock') {
+        const parts = [
+          dj.articulo  ? `<span>📦 ${dj.articulo}</span>`             : '',
+          dj.operacion ? `<span>${dj.operacion === 'sumar' ? '➕' : '➖'} ${dj.operacion}</span>` : '',
+          dj.cantidad  ? `<span>× ${dj.cantidad}</span>`               : '',
+          dj.motivo    ? `<span>📋 ${dj.motivo}</span>`               : '',
+        ].filter(Boolean).join('');
+        if (parts) detalleBlock = `<div style="margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--text2);display:flex;flex-wrap:wrap;gap:8px">${parts}</div>`;
+      } else if (dj.tipo_ticket === 'error_precio') {
+        const parts = [
+          dj.articulo        ? `<span>📦 ${dj.articulo}</span>`              : '',
+          dj.ubicacion       ? `<span>📍 ${dj.ubicacion}</span>`             : '',
+          dj.precio_error    ? `<span style="color:var(--red)">✗ $${dj.precio_error}</span>`    : '',
+          dj.precio_correcto ? `<span style="color:var(--green)">✓ $${dj.precio_correcto}</span>` : '',
+        ].filter(Boolean).join('');
+        if (parts) detalleBlock = `<div style="margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--text2);display:flex;flex-wrap:wrap;gap:8px">${parts}</div>`;
+      } else if (dj.tipo_ticket === 'error_nombre') {
+        const parts = [
+          dj.nombre_error    ? `<span style="color:var(--red)">✗ ${dj.nombre_error}</span>`    : '',
+          dj.nombre_correcto ? `<span style="color:var(--green)">✓ ${dj.nombre_correcto}</span>` : '',
+          dj.ubicacion       ? `<span>📍 ${dj.ubicacion}</span>`             : '',
+        ].filter(Boolean).join('');
+        if (parts) detalleBlock = `<div style="margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--text2);display:flex;flex-wrap:wrap;gap:8px">${parts}</div>`;
+      }
+    }
+
+    // Items de ticket (articulo_nuevo, cambio_cb)
+    const tkItems = r.ticket_items || [];
+    const tkSubtipo = r.subtipo || '';
+    const tkBadgeColor = tkSubtipo === 'articulo_nuevo' ? 'var(--green)' : 'var(--blue)';
+    const tkBadgeBg    = tkSubtipo === 'articulo_nuevo' ? 'rgba(74,222,128,0.1)' : 'rgba(91,156,246,0.1)';
+    const tkBadgeLabel = SUBTIPO_LABELS[tkSubtipo] || tkSubtipo;
+    const tkBlock = tkItems.length > 0
+      ? '<div style="margin-top:10px;border-top:0.5px solid var(--border);padding-top:10px">'
+        + '<div style="font-family:var(--mono);font-size:10px;font-weight:600;color:' + tkBadgeColor + ';background:' + tkBadgeBg + ';border:0.5px solid ' + tkBadgeColor + ';border-radius:4px;padding:2px 8px;display:inline-block;margin-bottom:8px;letter-spacing:0.04em">'
+        + tkBadgeLabel.toUpperCase()
+        + '</div>'
+        + tkItems.map(item =>
+            '<div style="font-family:var(--mono);font-size:11px;margin-bottom:8px;padding:8px;background:var(--bg3);border-radius:6px">'
+          + '<div style="font-weight:500;color:var(--text);margin-bottom:4px">' + (item.nombre_articulo || '—') + '</div>'
+          + '<div style="color:var(--text2);display:flex;flex-wrap:wrap;gap:8px">'
+          + (item.presentacion  ? '<span>📦 ' + item.presentacion + '</span>' : '')
+          + (item.codigo_barras ? '<span>🔖 CB: ' + item.codigo_barras + '</span>' : '')
+          + (item.costo         ? '<span>💲 Costo: $' + item.costo + '</span>' : '')
+          + (item.precio_venta  ? '<span>🏷️ Venta: $' + item.precio_venta + '</span>' : '')
+          + (item.cantidad      ? '<span>× ' + item.cantidad + '</span>' : '')
+          + (item.proveedor     ? '<span>🏭 ' + item.proveedor + '</span>' : '')
+          + '</div>'
+          + (item.foto_url ? '<a href="' + item.foto_url + '" target="_blank" style="display:inline-block;margin-top:6px;font-size:11px;color:var(--blue);text-decoration:none;border:0.5px solid rgba(91,156,246,0.3);padding:2px 8px;border-radius:4px">ver foto ↗</a>' : '')
+          + '</div>'
+        ).join('')
+        + '</div>'
+      : '';
+
+    // Items de rotos/vencidos
+    const rvItems = r.reporte_items || [];
+    const rvBlock = rvItems.length > 0
+      ? '<div style="margin-top:10px;border-top:0.5px solid var(--border);padding-top:10px">'
+        + rvItems.map(item =>
+            '<div style="font-family:var(--mono);font-size:11px;margin-bottom:8px;padding:8px;background:var(--bg3);border-radius:6px">'
+          + '<div style="font-weight:500;color:var(--text);margin-bottom:4px">' + (item.nombre_articulo || '—') + '</div>'
+          + '<div style="color:var(--text2);display:flex;flex-wrap:wrap;gap:8px">'
+          + (item.presentacion ? '<span>📦 ' + item.presentacion + '</span>' : '')
+          + (item.cantidad ? '<span>× ' + item.cantidad + '</span>' : '')
+          + (item.precio_venta ? '<span>💲 $' + item.precio_venta + '</span>' : '')
+          + (item.fecha_vencimiento ? '<span>📅 Vence: ' + item.fecha_vencimiento + '</span>' : '')
+          + '</div>'
+          + (item.foto_url ? '<a href="' + item.foto_url + '" target="_blank" style="display:inline-block;margin-top:6px;font-size:11px;color:var(--blue);text-decoration:none;border:0.5px solid rgba(91,156,246,0.3);padding:2px 8px;border-radius:4px">ver foto ↗</a>' : '')
+          + '</div>'
+        ).join('')
+        + '</div>'
+      : '';
+
+    // Indicador click
+    const clickHint = '<div style="margin-top:8px;font-family:var(--mono);font-size:10px;color:var(--text3)">ver detalle →</div>';
+
+    return '<div class="report-item" id="report-' + r.id + '" onclick="openRepModal(\'' + r.id + '\')">'
+      + '<div class="report-item-top">'
+      +   '<div class="report-item-desc">' + desc + '</div>'
+      +   '<div class="report-type-badge" style="background:' + c.bg + ';color:' + c.color + '">' + label + '</div>'
+      + '</div>'
+      + '<div class="report-item-meta">'
+      +   '<span>\u{1F464} ' + emp + '</span><span>\u00B7</span><span>' + local + '</span><span>\u00B7</span><span>' + (r.turno||'\u2014') + '</span><span>\u00B7</span><span>' + fecha + '</span>'
+      + '</div>'
+      + (resp ? '<div style="margin-top:6px;font-size:11px;font-family:var(--mono);color:var(--orange)">' + '\u2691 resp: ' + resp + '</div>' : '')
+      + clickHint
+      + '</div>';
+  }).join('');
+}
+
+// ── Modal detalle reporte ────────────────────────────────────
+// Extrae fileId de cualquier URL de Google Drive
+function driveFileId(url) {
+  if (!url) return null;
+  let m = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (m) return m[1];
+  m = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  if (m) return m[1];
+  return null;
+}
+// Genera thumbnail inline + link al viewer de Drive
+// Usa /uc?export=view como src — es la URL de descarga directa para archivos públicos,
+// no requiere autenticación y no tiene X-Frame-Options que bloquee el load.
+function drivePhotoHtml(url) {
+  if (!url) return '';
+  const id = driveFileId(url);
+  const viewerUrl = id ? `https://drive.google.com/file/d/${id}/view` : url;
+  // /uc?export=view&id=X sirve la imagen directamente para archivos públicos (sin login)
+  const imgUrl = id ? `https://drive.google.com/uc?export=view&id=${id}` : null;
+  if (imgUrl) {
+    return `<a href="${viewerUrl}" target="_blank" style="display:block;margin-top:8px">` +
+      `<img src="${imgUrl}" style="width:100%;max-height:260px;object-fit:contain;border-radius:8px;border:0.5px solid var(--border2);background:var(--bg4)" ` +
+      `onerror="this.style.display='none';this.nextElementSibling.style.display='inline-block'">` +
+      `</a>` +
+      `<a href="${viewerUrl}" target="_blank" style="display:none;margin-top:6px;font-family:var(--mono);font-size:11px;color:var(--blue);text-decoration:none;border:0.5px solid rgba(91,156,246,0.3);padding:3px 10px;border-radius:5px">ver foto en Drive ↗</a>`;
+  }
+  return `<a href="${viewerUrl}" target="_blank" style="display:inline-block;margin-top:6px;font-family:var(--mono);font-size:11px;color:var(--blue);text-decoration:none;border:0.5px solid rgba(91,156,246,0.3);padding:3px 10px;border-radius:5px">ver foto en Drive ↗</a>`;
+}
+
+let _repModalData = [];
+
+async function openRepModal(id) {
+  const r = _repModalData.find(x => x.id === id);
+  if (!r) return;
+
+  // Lazy-load items si no vinieron en el join inicial
+  if (r.tipo === 'rotos_vencidos' && (!r.reporte_items || r.reporte_items.length === 0)) {
+    try {
+      const items = await sbFetch(`reporte_items?reporte_id=eq.${id}&order=id.asc`);
+      r.reporte_items = items || [];
+    } catch(e) { console.warn('No se pudieron cargar reporte_items:', e); }
+  }
+  if (r.tipo === 'ticket' && (!r.ticket_items || r.ticket_items.length === 0)) {
+    try {
+      const items = await sbFetch(`ticket_items?reporte_id=eq.${id}&order=id.asc`);
+      r.ticket_items = items || [];
+    } catch(e) { console.warn('No se pudieron cargar ticket_items:', e); }
+  }
+
+  const c     = TIPO_COLORS[r.tipo] || TIPO_COLORS.edilicio;
+  const label = TIPO_LABELS[r.tipo] || r.tipo;
+  const emp   = r.cuentas?.nombre || '—';
+  const resp  = r.responsable?.nombre;
+  const local = LOCALES[r.local] || r.local;
+  const fecha = r.created_at ? new Date(r.created_at).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
+  const dj    = r.datos_json || {};
+
+  // Badge tipo — protegido contra null (ej. localhost sin hub)
+  const badge = document.getElementById('rep-modal-tipo-badge');
+  if (badge) { badge.textContent = label; badge.style.background = c.bg; badge.style.color = c.color; }
+
+  // Construir filas de detalle
+  const rows = [];
+
+  const addRow = (label, value) => {
+    if (!value && value !== 0) return;
+    rows.push(`<div class="rep-det-row"><div class="rep-det-label">${label}</div><div class="rep-det-value">${value}</div></div>`);
+  };
+
+  // Meta siempre presente
+  addRow('Empleado', emp);
+  addRow('Local', local);
+  addRow('Turno', r.turno || '—');
+  addRow('Fecha', fecha);
+  if (resp) addRow('Responsable', `<span style="color:var(--orange)">${resp}</span>`);
+  if (r.descripcion) addRow('Descripción', r.descripcion);
+
+  // Detalle por tipo
+  if (r.tipo === 'falla_tienda') {
+    addRow('Categoría', dj.categoria);
+    addRow('Subfalla', dj.subfalla);
+  } else if (r.tipo === 'edilicio') {
+    addRow('Tipo de falla', dj.tipo_falla);
+  } else if (r.tipo === 'pedido') {
+    const tipoPedidoLabels = { cancelado: 'Cancelado', deduccion: 'Deducción', reintegro: 'Reintegro' };
+    addRow('Tipo', tipoPedidoLabels[dj.tipo_pedido] || dj.tipo_pedido);
+    addRow('Plataforma', dj.plataforma);
+    addRow('ID Pedido', dj.id_pedido);
+    addRow('ID FacilVirtual', dj.id_facilvirtual);
+    // Cancelado
+    addRow('Fecha del pedido', dj.fecha);
+    addRow('Hora del pedido', dj.hora);
+    addRow('Monto total', dj.monto_total ? '$' + dj.monto_total : null);
+    addRow('Artículos', dj.articulos);
+    // Deducción
+    addRow('Monto deducción', dj.monto_deduccion ? '$' + dj.monto_deduccion : null);
+    addRow('Artículo reclamo', dj.articulo_reclamo);
+    addRow('Explicación', dj.explicacion);
+    // Reintegro
+    addRow('Monto reintegro', dj.monto_reintegro ? '$' + dj.monto_reintegro : null);
+    addRow('Motivo reintegro', dj.motivo_reintegro);
+    // Responsable
+    const respTipoLabels = { empleado: 'Empleado', plataforma: 'Plataforma', rider: 'Rider', cliente: 'Cliente' };
+    addRow('Responsable tipo', respTipoLabels[dj.responsable_tipo] || dj.responsable_tipo);
+    addRow('Plataforma responsable', dj.responsable_plataforma);
+    if (dj.reclamo_justificado !== undefined) addRow('Reclamo justificado', dj.reclamo_justificado ? '✓ Sí' : '✗ No');
+  } else if (r.tipo === 'ticket') {
+    // tipo_ticket puede estar en dj o inferirse del subtipo (reportes viejos)
+    const tkTipoEff = dj.tipo_ticket || r.subtipo;
+    addRow('Subtipo', SUBTIPO_LABELS[r.subtipo] || r.subtipo);
+    if (tkTipoEff === 'ajuste_stock') {
+      addRow('Artículo', dj.articulo);
+      const opLabel = dj.operacion === 'sumar' ? '➕ Sumar' : dj.operacion === 'restar' ? '➖ Restar' : dj.operacion;
+      addRow('Operación', opLabel);
+      addRow('Cantidad', dj.cantidad);
+      addRow('Motivo', dj.motivo);
+    } else if (tkTipoEff === 'error_precio') {
+      addRow('Artículo', dj.articulo);
+      addRow('Ubicación', dj.ubicacion);
+      addRow('Precio erróneo', dj.precio_error ? `<span style="color:var(--red)">$${dj.precio_error}</span>` : null);
+      addRow('Precio correcto', dj.precio_correcto ? `<span style="color:var(--green)">$${dj.precio_correcto}</span>` : null);
+    } else if (tkTipoEff === 'error_nombre') {
+      addRow('Nombre erróneo', dj.nombre_error ? `<span style="color:var(--red)">${dj.nombre_error}</span>` : null);
+      addRow('Nombre correcto', dj.nombre_correcto ? `<span style="color:var(--green)">${dj.nombre_correcto}</span>` : null);
+      addRow('Ubicación', dj.ubicacion);
+    }
+  }
+
+  if (r.justificado) {
+    rows.push('<div class="rep-det-row"><div class="rep-det-label">Justificado</div><div class="rep-det-value" style="color:var(--green)">✓ Sí</div></div>');
+  }
+
+  // Foto principal
+  if (r.foto_url) {
+    rows.push(`<div class="rep-det-row"><div class="rep-det-label">Foto</div><div class="rep-det-value">${drivePhotoHtml(r.foto_url)}</div></div>`);
+  }
+
+  // Items de rotos/vencidos
+  const rvItems = r.reporte_items || [];
+  let rvSection = '';
+  if (rvItems.length > 0) {
+    rvSection = '<div style="margin-top:16px"><div style="font-family:var(--mono);font-size:10px;font-weight:600;color:var(--red);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">Artículos reportados</div>'
+      + rvItems.map(item =>
+          '<div class="rep-item-card">'
+        + '<div class="rep-item-name">' + (item.nombre_articulo || '—') + '</div>'
+        + '<div class="rep-item-tags">'
+        + (item.presentacion ? '<span>📦 ' + item.presentacion + '</span>' : '')
+        + (item.cantidad ? '<span>× ' + item.cantidad + '</span>' : '')
+        + (item.precio_venta ? '<span>💲 $' + item.precio_venta + '</span>' : '')
+        + (item.fecha_vencimiento ? '<span>📅 Vence: ' + item.fecha_vencimiento + '</span>' : '')
+        + (item.responsable ? '<span style="color:var(--orange)">⚑ ' + item.responsable + '</span>' : '')
+        + (item.responsable_proveedor ? '<span style="color:var(--blue)">🏭 ' + item.responsable_proveedor + '</span>' : '')
+        + '</div>'
+        + (item.foto_url ? drivePhotoHtml(item.foto_url) : '')
+        + '</div>'
+      ).join('') + '</div>';
+  }
+
+  // Items de ticket
+  const tkItems = r.ticket_items || [];
+  let tkSection = '';
+  if (tkItems.length > 0) {
+    const tkSubtipo = r.subtipo || dj.tipo_ticket || '';
+    const tkColor = tkSubtipo === 'articulo_nuevo' ? 'var(--green)' : 'var(--blue)';
+    const tkLabel = SUBTIPO_LABELS[tkSubtipo] || tkSubtipo || 'Artículos del ticket';
+    tkSection = '<div style="margin-top:16px"><div style="font-family:var(--mono);font-size:10px;font-weight:600;color:' + tkColor + ';text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">' + tkLabel + '</div>'
+      + tkItems.map(item =>
+          '<div class="rep-item-card">'
+        + '<div class="rep-item-name">' + (item.nombre_articulo || '—') + '</div>'
+        + '<div class="rep-item-tags">'
+        + (item.presentacion  ? '<span>📦 ' + item.presentacion + '</span>' : '')
+        + (item.codigo_barras ? '<span>🔖 CB: ' + item.codigo_barras + '</span>' : '')
+        + (item.costo         ? '<span>💲 Costo: $' + item.costo + '</span>' : '')
+        + (item.precio_venta  ? '<span>🏷️ Venta: $' + item.precio_venta + '</span>' : '')
+        + (item.cantidad      ? '<span>× ' + item.cantidad + '</span>' : '')
+        + (item.proveedor     ? '<span>🏭 ' + item.proveedor + '</span>' : '')
+        + '</div>'
+        + (item.foto_url ? drivePhotoHtml(item.foto_url) : '')
+        + '</div>'
+      ).join('') + '</div>';
+  }
+
+  // Botón resolver (tickets)
+  let resolveBtn = '';
+  if (r.tipo === 'ticket' && !r.resuelto) {
+    resolveBtn = '<button class="resolve-btn" style="margin-top:16px;width:100%" onclick="resolveTicket(\'' + r.id + '\',this);closeRepModal()">✓ Marcar como resuelto</button>';
+  } else if (r.resuelto) {
+    resolveBtn = '<div class="resolved-tag" style="margin-top:12px">✓ resuelto ' + (r.resuelto_at ? new Date(r.resuelto_at).toLocaleString('es-AR',{day:'2-digit',month:'2-digit'}) : '') + '</div>';
+  }
+
+  const modalContent = document.getElementById('rep-modal-content');
+  const modalOverlay = document.getElementById('rep-modal-overlay');
+  if (!modalContent || !modalOverlay) return; // guard: modal no disponible
+  modalContent.innerHTML = rows.join('') + rvSection + tkSection + resolveBtn;
+  modalOverlay.classList.add('open');
+}
+
+function closeRepModal(e) {
+  if (e && e.target !== document.getElementById('rep-modal-overlay')) return;
+  document.getElementById('rep-modal-overlay').classList.remove('open');
+}
+
+function renderAdminResumen(reportes) {
+  const list = document.getElementById('admin-resumen-list');
+  const porEmp = {};
+  reportes.forEach(r => {
+    const empId   = r.responsable_id || r.empleado_id;
+    const empName = r.responsable?.nombre || r.cuentas?.nombre || empId || '—';
+    if (!empId) return;
+    if (!porEmp[empId]) porEmp[empId] = { nombre: empName, total: 0, falla_tienda: 0, edilicio: 0, rotos_vencidos: 0, pedidos_imp: 0, ticket: 0 };
+    porEmp[empId].total++;
+    if (r.tipo === 'falla_tienda')   porEmp[empId].falla_tienda++;
+    if (r.tipo === 'edilicio')       porEmp[empId].edilicio++;
+    if (r.tipo === 'rotos_vencidos') porEmp[empId].rotos_vencidos++;
+    if (r.tipo === 'ticket')         porEmp[empId].ticket++;
+    if (r.tipo === 'pedido') {
+      const dj = r.datos_json || {};
+      const justificado = dj.reclamo_justificado === true || dj.reclamo_justificado === 'true';
+      if (dj.tipo_pedido === 'cancelado' || justificado) porEmp[empId].pedidos_imp++;
+    }
+  });
+  const entries = Object.values(porEmp).sort((a,b) => b.total - a.total);
+  if (!entries.length) {
+    list.innerHTML = '<div style="text-align:center;padding:40px 0;font-family:var(--mono);font-size:12px;color:var(--text3)">sin datos en este período</div>';
+    return;
+  }
+  list.innerHTML = entries.map(e => {
+    const bars = [
+      { label: 'Falla tienda',  val: e.falla_tienda,   color: 'var(--orange)' },
+      { label: 'Edilicio',      val: e.edilicio,        color: 'var(--text3)'  },
+      { label: 'Rotos/Venc.',   val: e.rotos_vencidos,  color: 'var(--red)'    },
+      { label: 'Pedidos imp.',  val: e.pedidos_imp,     color: 'var(--blue)'   },
+      { label: 'Tickets',       val: e.ticket,          color: 'var(--accent)' },
+    ].filter(b => b.val > 0);
+    const maxVal = Math.max(...bars.map(b => b.val), 1);
+    return '<div class="report-item" style="margin-bottom:10px">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
+      +   '<div style="font-size:14px;font-weight:500">' + e.nombre + '</div>'
+      +   '<div style="font-family:var(--mono);font-size:20px;font-weight:700;color:var(--text)">' + e.total + '</div>'
+      + '</div>'
+      + bars.map(b =>
+          '<div style="margin-bottom:7px">'
+        + '<div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--text3);margin-bottom:3px">'
+        +   '<span>' + b.label + '</span><span>' + b.val + '</span>'
+        + '</div>'
+        + '<div style="background:var(--bg4);border-radius:3px;height:4px;overflow:hidden">'
+        +   '<div style="background:' + b.color + ';height:100%;width:' + Math.round(b.val/maxVal*100) + '%;border-radius:3px"></div>'
+        + '</div></div>'
+      ).join('')
+      + '</div>';
+  }).join('');
+}
+
+async function resolveTicket(id, btn) {
+  btn.textContent = 'resolviendo...';
+  btn.disabled = true;
+  try {
+    await sbFetch('reportes?id=eq.' + id, {
+      method: 'PATCH',
+      body: JSON.stringify({ resuelto: true, resuelto_at: new Date().toISOString() })
+    });
+    const idx = state.reportes.findIndex(r => r.id === id);
+    if (idx >= 0) { state.reportes[idx].resuelto = true; state.reportes[idx].resuelto_at = new Date().toISOString(); }
+    const item = document.getElementById('report-' + id);
+    if (item) {
+      const rb = item.querySelector('.resolve-btn');
+      if (rb) rb.replaceWith(Object.assign(document.createElement('div'), { className: 'resolved-tag', textContent: '✓ resuelto ahora' }));
+    }
+    const filtered = getFilteredReportes();
+    renderAdminStats(filtered);
+    showToast('Ticket resuelto', 'success');
+  } catch(e) {
+    btn.textContent = '✓ Marcar como resuelto';
+    btn.disabled = false;
+    showToast('Error al resolver', 'error');
+  }
+}
+
+
+// ═══════════════════════════════════════
+// GESTIÓN DE ACCESOS (Panel Admin)
+// ═══════════════════════════════════════
+const ACCESOS_DEF = [
+  { grupo: 'Empleados por tienda', items: [
+    { label: 'Thames · Palermo',         emoji: '🌿', clave: 'pass_empleado_palermo' },
+    { label: 'Roosevelt · Belgrano',     emoji: '🏛️', clave: 'pass_empleado_belgrano' },
+    { label: 'Juramento · B. Chino',     emoji: '🏮', clave: 'pass_empleado_barrio_chino' },
+    { label: 'Independencia · S. Telmo', emoji: '🎭', clave: 'pass_empleado_san_telmo' },
+  ]},
+  { grupo: 'Encargados por tienda', items: [
+    { label: 'Thames · Palermo',         emoji: '🌿', clave: 'pass_encargado_palermo' },
+    { label: 'Roosevelt · Belgrano',     emoji: '🏛️', clave: 'pass_encargado_belgrano' },
+    { label: 'Juramento · B. Chino',     emoji: '🏮', clave: 'pass_encargado_barrio_chino' },
+    { label: 'Independencia · S. Telmo', emoji: '🎭', clave: 'pass_encargado_san_telmo' },
+  ]},
+  { grupo: 'Accesos especiales', items: [
+    { label: 'Logística',           emoji: '🚚', clave: 'pass_repartidor' },
+    { label: 'Supervisor',          emoji: '🗂️', clave: 'pass_supervisor' },
+    { label: 'Administrador (PIN)', emoji: '🔐', clave: 'admin_pin' },
+  ]},
+];
+
+async function accesosCargar() {
+  const list = document.getElementById('accesos-list');
+  if (!list) return;
+  list.innerHTML = '<div style="color:var(--text3);font-family:var(--mono);font-size:12px;padding:16px 0">Cargando...</div>';
+  try {
+    await lsPrecargarConfig();
+    const cfg = lsConfigCache || {};
+    list.innerHTML = '';
+    ACCESOS_DEF.forEach(grupo => {
+      const hdr = document.createElement('div');
+      hdr.style.cssText = 'font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin:16px 0 8px';
+      hdr.textContent = grupo.grupo;
+      list.appendChild(hdr);
+      grupo.items.forEach(item => {
+        const tiene = !!cfg[item.clave];
+        const row = document.createElement('div');
+        row.className = 'accesos-row' + (tiene ? '' : ' sin-clave');
+        const btnLabel = tiene ? 'cambiar' : 'configurar';
+        const statusClass = tiene ? 'ok' : 'err';
+        const statusTxt   = tiene ? '✓ ok' : '✗ sin clave';
+        row.innerHTML =
+          '<span style="font-size:16px">' + item.emoji + '</span>' +
+          '<div class="accesos-row-info"><div class="accesos-row-name">' + item.label + '</div></div>' +
+          '<span class="accesos-status ' + statusClass + '">' + statusTxt + '</span>';
+        const btn = document.createElement('button');
+        btn.textContent = btnLabel;
+        btn.style.cssText = 'background:none;border:0.5px solid var(--border2);border-radius:6px;padding:5px 10px;color:var(--text3);font-family:var(--mono);font-size:10px;cursor:pointer';
+        btn.onclick = () => accAbrir(item.clave, item.label);
+        row.appendChild(btn);
+        list.appendChild(row);
+      });
+    });
+  } catch(e) {
+    list.innerHTML = '<div style="color:var(--red);font-family:var(--mono);font-size:12px">Error al cargar — verificar conexión</div>';
+  }
+}
+
+function accAbrir(clave, label) {
+  const nueva = prompt('Nueva clave para "' + label + '"\n(mínimo 4 caracteres):');
+  if (nueva === null) return;
+  if (nueva.trim().length < 4) { showToast('Mínimo 4 caracteres', 'error'); return; }
+  const confirmar = prompt('Confirmá la clave para "' + label + '":');
+  if (confirmar === null) return;
+  if (nueva.trim() !== confirmar.trim()) { showToast('Las claves no coinciden', 'error'); return; }
+  accGuardar(clave, nueva.trim(), label);
+}
+
+async function accGuardar(clave, valor, label) {
+  try {
+    await sbFetch('config', {
+      method: 'POST',
+      body: JSON.stringify({ clave, valor }),
+      extraHeaders: { 'Prefer': 'resolution=merge-duplicates' }
+    });
+    lsConfigCache = null; // invalidar cache — próximo login consultará Supabase
+    showToast('Clave actualizada: ' + label, 'success');
+    accesosCargar();
+  } catch(e) {
+    showToast('Error al guardar clave', 'error');
+  }
+}
+
+// ── GESTIÓN DE DISPOSITIVOS (Panel Admin → Accesos) ───────────────────────────
+
+// ═══════════════════════════════════════
+// ENROLL — GENERAR CÓDIGO DE UN USO
+// ═══════════════════════════════════════
+const ENROLL_CODE_CFG = 'enroll_code';
+const ENROLL_EXP_CFG  = 'enroll_code_exp';
+const ENROLL_TTL_MS   = 30 * 60 * 1000; // 30 minutos
+
+let _enrollCountdownInterval = null;
+
+// Upsert para config — maneja 204 sin body correctamente
+async function enrollUpsertConfig(clave, valor) {
+  if (!_appSecret) await sbLoadAppSecret();
+  // Intentar PATCH primero (update si existe)
+  const resPatch = await fetch(`${SUPABASE_URL}/rest/v1/config?clave=eq.${clave}`, {
+    method: 'PATCH',
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=minimal',
+      ...(_appSecret ? { 'x-app-secret': _appSecret } : {}),
+    },
+    body: JSON.stringify({ valor })
+  });
+  if (!resPatch.ok) {
+    const err = await resPatch.text();
+    throw new Error('PATCH config failed: ' + err);
+  }
+  // Si PATCH no actualizó nada (fila no existe), hacer POST
+  const count = resPatch.headers.get('content-range');
+  if (count === '*/0' || resPatch.status === 204) {
+    // Verificar si realmente existe
+    const check = await fetch(`${SUPABASE_URL}/rest/v1/config?clave=eq.${clave}&select=clave`, {
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        ...(_appSecret ? { 'x-app-secret': _appSecret } : {}),
+      }
+    });
+    const rows = await check.json();
+    if (!rows || rows.length === 0) {
+      // Insertar fila nueva
+      const resPost = await fetch(`${SUPABASE_URL}/rest/v1/config`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal',
+          ...(_appSecret ? { 'x-app-secret': _appSecret } : {}),
+        },
+        body: JSON.stringify({ clave, valor })
+      });
+      if (!resPost.ok) {
+        const err = await resPost.text();
+        throw new Error('POST config failed: ' + err);
+      }
+    }
+  }
+}
+
+async function enrollGenerarCodigo() {
+  const btn = document.getElementById('enroll-btn-gen');
+  const displayEl = document.getElementById('enroll-code-display');
+  const valEl     = document.getElementById('enroll-code-val');
+  const expEl     = document.getElementById('enroll-code-exp');
+
+  btn.disabled = true;
+  btn.textContent = 'Generando...';
+
+  try {
+    // Generar código aleatorio de 6 dígitos
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const expTs = Date.now() + ENROLL_TTL_MS;
+
+    // Guardar en Supabase — usar PATCH para update directo sin esperar body
+    await enrollUpsertConfig(ENROLL_CODE_CFG, code);
+    await enrollUpsertConfig(ENROLL_EXP_CFG, String(expTs));
+
+    // Mostrar código
+    valEl.textContent = code;
+    displayEl.style.display = 'block';
+
+    // Countdown
+    if (_enrollCountdownInterval) clearInterval(_enrollCountdownInterval);
+    function updateCountdown() {
+      const remaining = expTs - Date.now();
+      if (remaining <= 0) {
+        clearInterval(_enrollCountdownInterval);
+        expEl.textContent = 'expirado';
+        valEl.style.opacity = '0.3';
+        btn.disabled = false;
+        btn.textContent = '⊕ Generar nuevo código';
+        return;
+      }
+      const mins = Math.floor(remaining / 60000);
+      const secs = Math.floor((remaining % 60000) / 1000);
+      expEl.textContent = `expira en ${mins}:${String(secs).padStart(2, '0')}`;
+    }
+    updateCountdown();
+    _enrollCountdownInterval = setInterval(updateCountdown, 1000);
+
+    valEl.style.opacity = '1';
+    btn.disabled = false;
+    btn.textContent = '⊕ Generar nuevo código';
+
+    showToast('Código generado — válido 30 minutos', 'success');
+  } catch(e) {
+    console.error('[Enroll] Error al generar código:', e.message || e);
+    showToast('Error: ' + (e.message || 'ver consola'), 'error');
+    btn.disabled = false;
+    btn.textContent = '⊕ Generar código';
+  }
+}
+
+async function deCargarDispositivos() {
+  const listEl = document.getElementById('de-tokens-list');
+  const thisDeviceEl = document.getElementById('de-this-device-id');
+  const btnEnrolar   = document.getElementById('de-btn-enrolar');
+  const miToken = localStorage.getItem(DE_TOKEN_KEY);
+  const miId    = lsGetDeviceId();
+
+  if (thisDeviceEl) thisDeviceEl.textContent = miId;
+  if (listEl) listEl.innerHTML = '<div style="text-align:center;padding:12px;font-family:var(--mono);font-size:11px;color:var(--text3)">Cargando...</div>';
+
+  try {
+    const rows = await sbFetch('config?clave=eq.' + DE_TOKENS_CFG + '&select=valor');
+    let tokens = [];
+    if (rows && rows.length) {
+      try { tokens = JSON.parse(rows[0].valor) || []; } catch(e) { tokens = []; }
+    }
+
+    // Actualizar botón de este dispositivo
+    const esteEnrolado = miToken && tokens.includes(miToken);
+    if (btnEnrolar) {
+      btnEnrolar.textContent = esteEnrolado ? '✓ Este dispositivo ya está autorizado' : '✓ Autorizar este dispositivo';
+      btnEnrolar.style.opacity = esteEnrolado ? '0.5' : '1';
+      btnEnrolar.disabled = esteEnrolado;
+    }
+
+    if (!listEl) return;
+    if (!tokens.length) {
+      listEl.innerHTML = '<div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:10px 0">Sin dispositivos registrados aún. Autorizá este dispositivo primero.</div>';
+      return;
+    }
+
+    listEl.innerHTML = tokens.map((t, i) => {
+      const esMio = (t === miToken);
+      return `<div style="background:var(--bg2);border:0.5px solid ${esMio ? 'rgba(76,175,130,0.3)' : 'var(--border)'};border-radius:var(--radius);padding:10px 12px;margin-bottom:7px;display:flex;align-items:center;gap:10px">
+        <div style="flex:1;min-width:0">
+          <div style="font-family:var(--mono);font-size:10px;color:${esMio ? 'var(--green)' : 'var(--text3)'};margin-bottom:3px">${esMio ? '← ESTE DISPOSITIVO' : 'Dispositivo ' + (i+1)}</div>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--text3);word-break:break-all;opacity:0.6">${t}</div>
+        </div>
+        <button onclick="deRevocarToken('${t}')"
+          style="background:none;border:0.5px solid var(--border2);border-radius:5px;padding:4px 8px;color:var(--text3);font-family:var(--mono);font-size:9px;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all 0.12s"
+          onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'"
+          onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text3)'">
+          revocar
+        </button>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    if (listEl) listEl.innerHTML = '<div style="font-family:var(--mono);font-size:11px;color:var(--red)">Error al cargar dispositivos</div>';
+  }
+}
+
+async function deEnrolarEsteDispositivo() {
+  const miId = lsGetDeviceId();
+  let miToken = localStorage.getItem(DE_TOKEN_KEY);
+  if (!miToken) {
+    miToken = 'bkt_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,10);
+    localStorage.setItem(DE_TOKEN_KEY, miToken);
+  }
+  try {
+    let tokens = [];
+    try {
+      const rows = await sbFetch('config?clave=eq.' + DE_TOKENS_CFG + '&select=valor');
+      if (rows && rows.length) tokens = JSON.parse(rows[0].valor) || [];
+    } catch(e) {}
+
+    if (!tokens.includes(miToken)) {
+      tokens.push(miToken);
+      await sbFetch('config', {
+        method: 'POST',
+        body: JSON.stringify({ clave: DE_TOKENS_CFG, valor: JSON.stringify(tokens) }),
+        extraHeaders: { 'Prefer': 'resolution=merge-duplicates' }
+      });
+    }
+    showToast('Dispositivo autorizado correctamente', 'success');
+    deCargarDispositivos();
+  } catch(e) {
+    showToast('Error al autorizar dispositivo', 'error');
+  }
+}
+
+async function deRevocarToken(token) {
+  if (!confirm('¿Revocar este dispositivo? Ya no podrá acceder al sistema.')) return;
+  try {
+    const rows = await sbFetch('config?clave=eq.' + DE_TOKENS_CFG + '&select=valor');
+    let tokens = (rows && rows.length) ? JSON.parse(rows[0].valor) : [];
+    tokens = tokens.filter(t => t !== token);
+    await sbFetch('config', {
+      method: 'POST',
+      body: JSON.stringify({ clave: DE_TOKENS_CFG, valor: JSON.stringify(tokens) }),
+      extraHeaders: { 'Prefer': 'resolution=merge-duplicates' }
+    });
+    showToast('Dispositivo revocado', 'success');
+    deCargarDispositivos();
+  } catch(e) {
+    showToast('Error al revocar', 'error');
+  }
+}
+
+// ═══════════════════════════════════════
+// LOG DE ACCESOS — CAPA 3B
+// ═══════════════════════════════════════
+
+// Registra un intento de login en Supabase (fire-and-forget, no bloquea el flujo)
+function logRegistrar(resultado, tipo, local) {
+  const deviceId = lsGetDeviceId();
+  sbFetch('login_attempts', {
+    method: 'POST',
+    body: JSON.stringify({ device_id: deviceId, tipo: tipo || null, local: local || null, resultado }),
+    extraHeaders: { 'Prefer': 'return=minimal' }
+  }).catch(() => {}); // silencioso — nunca interrumpe el login
+}
+
+// Carga y renderiza el log en el panel admin
+async function logCargar(filtroResultado) {
+  const listEl = document.getElementById('log-accesos-list');
+  if (!listEl) return;
+  listEl.innerHTML = '<div style="text-align:center;padding:12px;font-family:var(--mono);font-size:11px;color:var(--text3)">Cargando...</div>';
+
+  try {
+    let query = 'login_attempts?order=created_at.desc&limit=50';
+    if (filtroResultado) query += `&resultado=eq.${filtroResultado}`;
+
+    const rows = await sbFetch(query);
+    if (!rows || !rows.length) {
+      listEl.innerHTML = '<div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:10px 0">Sin registros aún.</div>';
+      return;
+    }
+
+    const RESULTADO_STYLE = {
+      ok:      { color: 'var(--green)',  bg: 'var(--green-bg)',  label: '✓ ok' },
+      fail:    { color: 'var(--red)',    bg: 'var(--red-bg)',    label: '✗ fallido' },
+      blocked: { color: 'var(--orange)', bg: 'var(--orange-bg)', label: '⊘ bloqueado' },
+    };
+    const LOCALES_NOM = { palermo:'Palermo', belgrano:'Belgrano', barrio_chino:'B. Chino', san_telmo:'S. Telmo' };
+
+    listEl.innerHTML = rows.map(r => {
+      const st = RESULTADO_STYLE[r.resultado] || { color: 'var(--text3)', bg: 'var(--bg4)', label: r.resultado };
+      const fecha = r.created_at ? new Date(r.created_at).toLocaleString('es-AR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) : '—';
+      const local = r.local ? (LOCALES_NOM[r.local] || r.local) : '—';
+      const deviceShort = r.device_id ? r.device_id.slice(-8) : '—';
+      return `<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:9px 12px;margin-bottom:6px;display:flex;align-items:center;gap:10px">
+        <span style="font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:4px;background:${st.bg};color:${st.color};flex-shrink:0">${st.label}</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-family:var(--mono);font-size:11px;color:var(--text)">${r.tipo || '—'} · ${local}</div>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:2px">${fecha} · dev …${deviceShort}</div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    listEl.innerHTML = '<div style="font-family:var(--mono);font-size:11px;color:var(--red)">Error al cargar log</div>';
+  }
+}
+
+
+// ── Inicialización ──
+// El módulo espera el postMessage del hub. NUNCA usa localStorage como fuente de rol.
+document.addEventListener('DOMContentLoaded', async () => {
+  await sbLoadAppSecret();
+  // Precargar config para el PIN
+  try {
+    const rows = await sbFetch('config?select=clave,valor');
+    const cfg = {};
+    (rows||[]).forEach(r => { cfg[r.clave] = r.valor; });
+    if (cfg['admin_pin']) adminPinValue = cfg['admin_pin'];
+  } catch(e) { console.warn('[admin] init config:', e); }
+});
+
+// Funciones console para administracion de dispositivos (acceso desde consola del browser)
+window.breakEnroll = async function() {
+  let token = localStorage.getItem(DE_TOKEN_KEY);
+  if (!token) { token = 'bkt_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,10); localStorage.setItem(DE_TOKEN_KEY, token); }
+  try {
+    let tokens = [];
+    try { const rows = await sbFetch('config?clave=eq.' + DE_TOKENS_CFG + '&select=valor'); if (rows?.length) tokens = JSON.parse(rows[0].valor) || []; } catch(e) {}
+    if (!tokens.includes(token)) { tokens.push(token); await sbFetch('config', { method:'POST', body: JSON.stringify({ clave: DE_TOKENS_CFG, valor: JSON.stringify(tokens) }), extraHeaders: { 'Prefer': 'resolution=merge-duplicates' } }); }
+    console.log('%c[Break] ✅ Dispositivo enrollado', 'color:#4caf82;font-weight:bold'); return token;
+  } catch(e) { console.error('[Break] ❌ Error:', e); }
+};
+window.breakUnenroll = function() { localStorage.removeItem(DE_TOKEN_KEY); console.log('[Break] Token local eliminado.'); };
+
+</script>
+</body>
+</html>

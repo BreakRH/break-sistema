@@ -130,9 +130,6 @@
   }
   .filter-chip:hover { border-color: var(--border2); color: var(--text); }
   .filter-chip.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
-.filter-chip-local { background: var(--surface); border: 0.5px solid var(--border); border-radius: 20px; padding: 6px 12px; font-size: 12px; color: var(--text2); cursor: pointer; transition: all 0.12s; white-space: nowrap; font-family: var(--mono); }
-.filter-chip-local:hover { border-color: var(--border2); color: var(--text); }
-.filter-chip-local.active { background: rgba(91,156,246,0.10); border-color: #5b9cf6; color: #5b9cf6; }
 
   /* SEARCH */
   .search-input {
@@ -381,12 +378,6 @@
   .check-box-tick { display: none; color: #0a0a0a; font-size: 10px; font-weight: 700; }
   .check-item.checked .check-box-tick { display: block; }
   .check-label { font-size: 12px; color: var(--text2); }
-.venc-row { display:grid; grid-template-columns:1fr auto auto; gap:6px; align-items:center; margin-bottom:6px; }
-.venc-row input { font-family:var(--mono); font-size:13px; }
-.venc-badge { display:inline-block; padding:3px 8px; border-radius:12px; font-family:var(--mono); font-size:10px; font-weight:600; }
-.venc-verde    { background:rgba(93,191,138,0.12); color:var(--green);  border:0.5px solid rgba(93,191,138,0.3); }
-.venc-amarillo { background:rgba(232,200,122,0.12); color:var(--accent); border:0.5px solid rgba(232,200,122,0.3); }
-.venc-rojo     { background:rgba(240,96,96,0.12);   color:var(--red);    border:0.5px solid rgba(240,96,96,0.3); }
   .check-item.checked .check-label { color: var(--green); }
 
   /* DETAIL MODAL */
@@ -496,16 +487,8 @@
       <div class="filter-group" id="filter-estado">
         <button class="filter-chip active" data-filter="todos" onclick="setFilter('todos',this)">Todos</button>
         <button class="filter-chip" data-filter="por_recibir" onclick="setFilter('por_recibir',this)">📦 Por recibir</button>
-        <button class="filter-chip" data-filter="por_pagar" onclick="setFilter('por_pagar',this)">Por pagar</button>
-        <button class="filter-chip" data-filter="ya_pagado" onclick="setFilter('ya_pagado',this)">Pagadas</button>
+        <button class="filter-chip" data-filter="cuenta_corriente" onclick="setFilter('cuenta_corriente',this)">💳 Cta. Corriente</button>
         <button class="filter-chip" data-filter="pendiente" onclick="setFilter('pendiente',this)">Incompletas</button>
-      </div>
-      <div class="filter-group" id="filter-local" style="display:none;margin-top:6px;padding-top:8px;border-top:0.5px solid var(--border);">
-        <button class="filter-chip-local active" data-local="" onclick="setFilterLocal('',this)">Todas</button>
-        <button class="filter-chip-local" data-local="palermo" onclick="setFilterLocal('palermo',this)">🌿 Thames</button>
-        <button class="filter-chip-local" data-local="belgrano" onclick="setFilterLocal('belgrano',this)">🏛️ Belgrano</button>
-        <button class="filter-chip-local" data-local="barrio_chino" onclick="setFilterLocal('barrio_chino',this)">🏮 B. Chino</button>
-        <button class="filter-chip-local" data-local="san_telmo" onclick="setFilterLocal('san_telmo',this)">🎭 San Telmo</button>
       </div>
       <div class="toolbar-right">
         <input class="search-input" type="text" placeholder="Buscar factura / proveedor..." id="search-input" oninput="renderTabla()">
@@ -578,7 +561,7 @@
 
           <div class="form-group span-2">
             <label class="form-label">Proveedor</label>
-            <select class="form-select" id="sv-proveedor">
+            <select class="form-select" id="sv-proveedor" onchange="onProveedorChange('sv-proveedor')">
               <option value="">Seleccionar proveedor...</option>
             </select>
           </div>
@@ -596,8 +579,7 @@
               <option value="transferencia">Transferencia</option>
               <option value="mp">Mercado Pago</option>
               <option value="qr">QR</option>
-              <option value="ya_pagado">Ya pagado</option>
-              <option value="por_pagar">Por pagar</option>
+              <option value="cuenta_corriente">Cuenta Corriente</option>
             </select>
           </div>
 
@@ -652,7 +634,7 @@
         <div class="form-group span-2">
           <label class="form-label">Proveedor</label>
           <div style="display:flex;gap:8px;align-items:center;">
-            <select class="form-select" id="f-proveedor" style="flex:1;">
+            <select class="form-select" id="f-proveedor" style="flex:1;" onchange="onProveedorChange('f-proveedor')">
               <option value="">Seleccionar proveedor...</option>
             </select>
             <button type="button" class="btn btn-ghost" onclick="abrirModalNuevoProveedor('f-proveedor')" style="white-space:nowrap;min-height:44px;padding:0 14px;font-size:13px;">+ Nuevo</button>
@@ -691,8 +673,7 @@
             <option value="transferencia">Transferencia</option>
             <option value="mp">Mercado Pago</option>
             <option value="qr">QR</option>
-            <option value="ya_pagado">Ya pagado</option>
-            <option value="por_pagar">Por pagar</option>
+            <option value="cuenta_corriente">Cuenta Corriente</option>
           </select>
         </div>
 
@@ -795,36 +776,16 @@
               <div class="check-box"><span class="check-box-tick">✓</span></div>
               <span class="check-label">Activado Rappi</span>
             </label>
-            <label class="check-item" onclick="toggleCheck(this)">
-              <input type="checkbox" id="c-check-factura">
-              <div class="check-box"><span class="check-box-tick">✓</span></div>
-              <span class="check-label">Check factura</span>
-            </label>
-            <label class="check-item" onclick="toggleCheck(this)">
-              <input type="checkbox" id="c-check-nocturno">
-              <div class="check-box"><span class="check-box-tick">✓</span></div>
-              <span class="check-label">Check nocturno</span>
-            </label>
-            <label class="check-item" onclick="toggleCheck(this)">
+            <!-- revision_precios: admin/supervisor only, shown via JS -->
+            <label class="check-item" id="wrap-revision-precios" onclick="toggleCheck(this)" style="display:none;border-color:var(--accent);">
               <input type="checkbox" id="c-revision-precios">
               <div class="check-box"><span class="check-box-tick">✓</span></div>
-              <span class="check-label">Revisión de precios</span>
+              <span class="check-label">❖ Revisión de precios</span>
             </label>
           </div>
         </div>
 
       </div>
-
-        <!-- Productos por vencer -->
-        <div class="section-divider" style="margin-top:8px;">
-          <span class="section-divider-label">📅 Productos por vencer</span>
-          <div class="section-divider-line"></div>
-        </div>
-        <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:10px;">
-          Registrá los productos que llegaron con fecha de vencimiento próxima. Aparecerán en el semáforo del panel de turno.
-        </div>
-        <div id="venc-lista"></div>
-        <button type="button" class="btn btn-ghost btn-sm" onclick="vencAgregar()" style="margin-bottom:4px;">+ Agregar producto</button>
 
       <div style="display:flex;gap:8px;margin-top:20px;">
         <button class="btn btn-primary" onclick="submitOT()">
@@ -916,7 +877,6 @@
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal()">Cerrar</button>
       <button class="btn btn-ghost" id="btn-modal-editar" onclick="editFromModal()" style="display:none;">✎ Editar</button>
-      <button class="btn btn-primary" id="btn-modal-completar" onclick="completarOT()" style="display:none;">✓ Completar OT</button>
       <button class="btn btn-danger btn-sm" id="btn-modal-eliminar" onclick="eliminarOTdesdeModal()" style="display:none;margin-left:auto;">🗑 Eliminar</button>
     </div>
   </div>
@@ -932,21 +892,31 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 // IMPORTANTE: declarar _sbSecret y sbFetch ANTES del bloque init
 // para evitar temporal dead zone (init llama loadOrdenes → sbFetch)
 let _sbSecret = null;
-(async () => {
-  try {
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/config?clave=eq.app_secret&select=clave,valor`, {
-      headers: {'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json'}
-    });
-    const d = await r.json();
-    if (Array.isArray(d)) {
-      d.forEach(row => {
-        if (row.clave === 'app_secret') _sbSecret = row.valor;
+let _sbSecretPromise = null;
+
+async function sbLoadAppSecret() {
+  if (_sbSecret) return _sbSecret;
+  if (_sbSecretPromise) return _sbSecretPromise;
+  _sbSecretPromise = (async () => {
+    try {
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/config?clave=eq.app_secret&select=clave,valor`, {
+        headers: {'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json'}
       });
-    }
-  } catch(e) { console.warn('[ordenes] config no disponible', e); }
-})();
+      const d = await r.json();
+      if (Array.isArray(d)) {
+        d.forEach(row => { if (row.clave === 'app_secret') _sbSecret = row.valor; });
+      }
+    } catch(e) { console.warn('[ordenes] config no disponible', e); }
+    return _sbSecret;
+  })();
+  return _sbSecretPromise;
+}
+// Pre-cargar al inicio
+sbLoadAppSecret();
 
 async function sbFetch(path, opts = {}) {
+  // Esperar a que _sbSecret esté disponible — fix race condition
+  if (!_sbSecret) await sbLoadAppSecret();
   const headers = {
     'apikey': SUPABASE_KEY,
     'Authorization': `Bearer ${SUPABASE_KEY}`,
@@ -971,14 +941,6 @@ let rolActual = 'empleado'; // 'empleado' | 'encargado' | 'admin'
 let empleadoNombre = '';
 let ordenes = [];
 let filtroActivo = 'todos';
-let filtroLocal = '';
-
-function setFilterLocal(loc, el) {
-  filtroLocal = loc;
-  document.querySelectorAll('.filter-chip-local').forEach(c => c.classList.remove('active'));
-  el.classList.add('active');
-  renderTabla();
-}
 let editingId = null;
 let modalOrdenId = null;
 
@@ -988,8 +950,6 @@ window.addEventListener('message', e => {
     localKey = e.data.local || '';
     localName = e.data.localName || localKey;
     rolActual = e.data.rol || 'empleado';
-    const flEl = document.getElementById('filter-local');
-    if (flEl) flEl.style.display = (rolActual === 'admin' || rolActual === 'supervisor') ? '' : 'none';
     empleadoNombre = e.data.empleado || '';
     empleadoNombre = e.data.empleado || '';
     empleadoNombre = e.data.empleado || '';
@@ -1007,10 +967,6 @@ window.addEventListener('message', e => {
   }
 });
 
-// Init — SOLO cargar desde URL params (dev/debug).
-// En producción (iframe desde index.html), el postMessage con localKey y rol
-// llega en ~150ms y dispara loadOrdenes(). NUNCA usar localStorage como fuente
-// de rol/local: puede tener contexto de una sesión de admin anterior.
 const urlParams = new URLSearchParams(window.location.search);
 if (urlParams.get('local')) {
   localKey = urlParams.get('local');
@@ -1018,10 +974,17 @@ if (urlParams.get('local')) {
   updateHeader();
   loadOrdenes();
 } else {
-  // Esperar postMessage — no llamar loadOrdenes() con localStorage
-  updateHeader();
-  document.getElementById('tabla-body').innerHTML =
-    '<tr><td colspan="9"><div class="loading"><div class="spinner"></div>Esperando contexto...</div></td></tr>';
+  // fallback: esperar postMessage o usar localStorage
+  const stored = localStorage.getItem('break_local');
+  if (stored) {
+    localKey = stored;
+    localName = capitalizeLocal(localKey);
+    updateHeader();
+    loadOrdenes();
+  } else {
+    updateHeader();
+    loadOrdenes();
+  }
 }
 
 // Fecha/hora inicial en form
@@ -1058,8 +1021,8 @@ async function loadOrdenes() {
 // ─── STATS ───────────────────────────────────────────────────
 function renderStats() {
   const total = ordenes.length;
-  const porPagar = ordenes.filter(o => o.estado_pago === 'por_pagar');
-  const totalPorPagar = porPagar.reduce((s,o) => s + (parseFloat(o.total)||0), 0);
+  const ctaCte = ordenes.filter(o => o.estado_pago === 'cuenta_corriente');
+  const totalCtaCte = ctaCte.reduce((s,o) => s + (parseFloat(o.total)||0), 0);
   const incompletas = ordenes.filter(o => !isComplete(o)).length;
 
   document.getElementById('stats-bar').innerHTML = `
@@ -1068,12 +1031,12 @@ function renderStats() {
       <div class="stat-value accent">${total}</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">Por pagar</div>
-      <div class="stat-value red">${porPagar.length}</div>
+      <div class="stat-label">Cta. Corriente</div>
+      <div class="stat-value red">${ctaCte.length}</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">Monto por pagar</div>
-      <div class="stat-value yellow">${formatMoney(totalPorPagar)}</div>
+      <div class="stat-label">Monto Cta. Cte.</div>
+      <div class="stat-value yellow">${formatMoney(totalCtaCte)}</div>
     </div>
     <div class="stat-card">
       <div class="stat-label">Incompletas</div>
@@ -1087,12 +1050,21 @@ function renderTabla() {
   const search = document.getElementById('search-input').value.toLowerCase();
   let data = ordenes;
 
-  if (filtroActivo === 'por_pagar') data = data.filter(o => o.estado_pago === 'por_pagar');
-  else if (filtroActivo === 'ya_pagado') data = data.filter(o => o.estado_pago === 'ya_pagado');
-  else if (filtroActivo === 'pendiente') data = data.filter(o => !isComplete(o));
-  else if (filtroActivo === 'por_recibir') data = data.filter(o => !o.registrado && o.estado_pago !== 'ya_pagado');
-
-  if (filtroLocal) data = data.filter(o => o.local === filtroLocal);
+  // Excluir del filtro base las que ya pasaron al historial (pagadas/completas sin cta. cte.)
+  if (filtroActivo === 'cuenta_corriente') {
+    data = data.filter(o => o.estado_pago === 'cuenta_corriente');
+  } else if (filtroActivo === 'pendiente') {
+    data = data.filter(o => !isComplete(o) && !isPagadoInmediato(o));
+  } else if (filtroActivo === 'por_recibir') {
+    data = data.filter(o => !o.registrado && !isPagadoInmediato(o));
+  } else {
+    // admin/supervisor ven cuenta_corriente + incompletas; empleados no ven archivadas
+    if (rolActual === 'admin' || rolActual === 'supervisor') {
+      data = data.filter(o => !isPagadoInmediato(o));
+    } else {
+      data = data.filter(o => !isPasadaAHistorial(o));
+    }
+  }
 
   if (search) data = data.filter(o =>
     (o.nro_factura||'').toLowerCase().includes(search) ||
@@ -1149,7 +1121,21 @@ function checkCount(o) {
 
 function isComplete(o) {
   const fields = ['repuesto','registrado','activo_pya','activo_mp','activo_rappi','check_factura','check_nocturno','revision_precios'];
-  return fields.every(f => o[f]);
+  // Para avisos rápidos (sin nro_factura) considerar completo si tiene pago confirmado
+  if (!o.nro_factura) return isPagadoInmediato(o);
+  return fields.every(f => o[f] === true);
+}
+
+function isPagadoInmediato(o) {
+  return ['efectivo','transferencia','mp','qr'].includes(o.estado_pago);
+}
+
+// Una OT "pasa al historial" si está pagada con método inmediato O si tiene todos
+// los checks completados. cuenta_corriente SIEMPRE queda en lista hasta confirmar pago.
+function isPasadaAHistorial(o) {
+  if (o.estado_pago === 'cuenta_corriente') return false;
+  if (isPagadoInmediato(o)) return true;
+  return isComplete(o);
 }
 
 // ─── BADGES ──────────────────────────────────────────────────
@@ -1161,8 +1147,8 @@ function badgeTipo(t) {
 }
 
 function badgePago(p) {
-  const map = { efectivo:'green', transferencia:'blue', mp:'blue', qr:'blue', ya_pagado:'green', por_pagar:'red' };
-  const labels = { efectivo:'Efectivo', transferencia:'Transf.', mp:'MP', qr:'QR', ya_pagado:'Pagado', por_pagar:'Por pagar' };
+  const map    = { efectivo:'green', transferencia:'blue', mp:'blue', qr:'blue', cuenta_corriente:'yellow' };
+  const labels = { efectivo:'Efectivo', transferencia:'Transf.', mp:'MP', qr:'QR', cuenta_corriente:'Cta. Cte.' };
   const cls = map[p] || 'gray';
   return `<span class="badge badge-${cls}">${labels[p]||p||'—'}</span>`;
 }
@@ -1181,10 +1167,11 @@ function openDetalle(id) {
     { key:'activo_pya', label:'Activado PYA' },
     { key:'activo_mp', label:'Activado MP' },
     { key:'activo_rappi', label:'Activado Rappi' },
-    { key:'check_factura', label:'Check factura' },
-    { key:'check_nocturno', label:'Check nocturno' },
-    { key:'revision_precios', label:'Revisión de precios' },
   ];
+  // Revisión de precios: solo visible para admin/supervisor
+  if (rolActual === 'admin' || rolActual === 'supervisor') {
+    checks.push({ key:'revision_precios', label:'❖ Revisión de precios', adminOnly:true });
+  }
 
   document.getElementById('modal-body').innerHTML = `
     <div class="detail-section">
@@ -1219,7 +1206,7 @@ function openDetalle(id) {
           <div class="check-item ${o[c.key] ? 'checked' : ''}"
                id="modal-check-${c.key}"
                onclick="toggleCheckModal('${o.id}', '${c.key}', this)"
-               style="cursor:pointer;">
+               style="cursor:pointer;${c.adminOnly ? 'border-color:var(--accent);' : ''}">
             <div class="check-box"><span class="check-box-tick">✓</span></div>
             <span class="check-label">${c.label}</span>
           </div>
@@ -1248,45 +1235,28 @@ function openDetalle(id) {
   document.getElementById('modal-detalle').classList.add('open');
   const btnEditar = document.getElementById('btn-modal-editar');
   if (btnEditar) btnEditar.style.display = (rolActual === 'admin' || rolActual === 'supervisor') ? '' : 'none';
-  const btnCompletar = document.getElementById('btn-modal-completar');
-  if (btnCompletar) {
-    const completo = isComplete(o);
-    const tieneFoto = o.foto_factura_urls && o.foto_factura_urls.length > 0;
-    btnCompletar.style.display = completo ? 'none' : '';
-    if (!tieneFoto) {
-      btnCompletar.textContent = '📷 Falta foto para completar';
-      btnCompletar.style.opacity = '0.5';
-      btnCompletar.title = 'Adjuntá al menos una foto de la factura';
-    } else {
-      btnCompletar.textContent = '✓ Completar OT';
-      btnCompletar.style.opacity = '1';
-      btnCompletar.title = '';
-    }
-  }
-  const btnEliminar = document.getElementById('btn-modal-eliminar');
-  if (btnEliminar) btnEliminar.style.display = (rolActual === 'admin' && !o.pedido_id) ? '' : 'none';
 }
 
 // ─── SECCIÓN PAGO MODAL (6.3) ────────────────────────────────
 function buildPagoSection(o) {
-  const METODO_LABELS = { efectivo:'Efectivo', transferencia:'Transferencia', mp:'Mercado Pago', qr:'QR', ya_pagado:'Ya pagado', por_pagar:'Por pagar' };
-  const METODO_COLOR  = { efectivo:'var(--green)', transferencia:'var(--blue)', mp:'var(--blue)', qr:'var(--blue)', ya_pagado:'var(--green)', por_pagar:'var(--red)' };
+  const METODO_LABELS = { efectivo:'Efectivo', transferencia:'Transferencia', mp:'Mercado Pago', qr:'QR', cuenta_corriente:'Cuenta Corriente' };
+  const METODO_COLOR  = { efectivo:'var(--green)', transferencia:'var(--blue)', mp:'var(--blue)', qr:'var(--blue)', cuenta_corriente:'var(--yellow)' };
   const estadoLabel   = METODO_LABELS[o.estado_pago] || o.estado_pago || '—';
   const estadoColor   = METODO_COLOR[o.estado_pago]  || 'var(--text3)';
 
-  // Siempre mostrar formulario editable de pago (cualquier estado)
-  const esPendiente = o.estado_pago === 'por_pagar';
-  const borderColor = esPendiente ? 'var(--amber)' : 'var(--border)';
-  const bgColor     = esPendiente ? 'rgba(255,180,0,0.04)' : 'transparent';
-  const titleColor  = esPendiente ? 'var(--amber)' : 'var(--text2)';
-  const titleText   = esPendiente ? '⚠ Pago pendiente — confirmar al abonar' : 'Estado de pago';
+  // cuenta_corriente = pendiente de pago confirmado
+  const esPendiente = o.estado_pago === 'cuenta_corriente';
+  const borderColor = esPendiente ? 'var(--yellow)' : 'var(--border)';
+  const bgColor     = esPendiente ? 'rgba(245,197,24,0.04)' : 'transparent';
+  const titleColor  = esPendiente ? 'var(--yellow)' : 'var(--text2)';
+  const titleText   = esPendiente ? '💳 Cuenta Corriente — confirmar al abonar' : 'Estado de pago';
 
   const planLabel = o.pago_planificado
     ? `<div style="font-size:11px;color:var(--text3);margin-bottom:12px;">Método planificado al pedir: <strong style="color:var(--text);">${METODO_LABELS[o.pago_planificado]||o.pago_planificado}</strong></div>`
-    : (esPendiente ? `<div style="font-size:11px;color:var(--text3);margin-bottom:12px;">Método planificado: <strong style="color:var(--amber);">Por pagar</strong></div>` : '');
+    : (esPendiente ? `<div style="font-size:11px;color:var(--text3);margin-bottom:12px;">Pendiente de pago: <strong style="color:var(--yellow);">Cuenta Corriente</strong></div>` : '');
 
   const metodoActual = (!esPendiente && o.metodo_confirmado) ? o.metodo_confirmado
-    : (!esPendiente && o.estado_pago && o.estado_pago !== 'por_pagar') ? o.estado_pago : '';
+    : (!esPendiente && o.estado_pago && o.estado_pago !== 'cuenta_corriente') ? o.estado_pago : '';
   const montoActual  = (!esPendiente && o.monto_pagado != null) ? o.monto_pagado : '';
   // Recibido por: usar el registrado en la OT, o el empleado logueado como fallback
   const recepcionActual = o.recepcion || empleadoNombre || '';
@@ -1304,8 +1274,7 @@ function buildPagoSection(o) {
             <option value="transferencia" ${metodoActual==='transferencia'?'selected':''}>Transferencia</option>
             <option value="mp" ${metodoActual==='mp'?'selected':''}>Mercado Pago</option>
             <option value="qr" ${metodoActual==='qr'?'selected':''}>QR</option>
-            <option value="ya_pagado" ${metodoActual==='ya_pagado'?'selected':''}>Ya pagado</option>
-            <option value="por_pagar" ${metodoActual==='por_pagar'?'selected':''}>Por pagar</option>
+            ${(rolActual==='admin'||rolActual==='encargado') ? `<option value="cuenta_corriente" ${metodoActual==='cuenta_corriente'?'selected':''}>Cuenta Corriente</option>` : ''}
           </select>
         </div>
         <div>
@@ -1360,9 +1329,15 @@ async function confirmarPago(ordenId) {
     }
     renderTabla();
     renderStats();
-    // Refrescar el modal en lugar de cerrarlo — permite corregir el método si se equivocaron
-    openDetalle(ordenId);
-    showToast('Pago actualizado ✓', 'success');
+    // Si el pago es inmediato → la OT pasa al historial → cerrar modal con toast
+    if (isPagadoInmediato({estado_pago: metodo})) {
+      closeModal();
+      showToast('✓ Pago confirmado — OT pasó al historial', 'success');
+    } else {
+      // Cuenta corriente u otro: refrescar modal para actualizar estado
+      openDetalle(ordenId);
+      showToast('Pago actualizado ✓', 'success');
+    }
   } catch(e) {
     showToast('Error al confirmar pago: ' + e.message, 'error');
   }
@@ -1371,43 +1346,6 @@ async function confirmarPago(ordenId) {
 function closeModal() {
   document.getElementById('modal-detalle').classList.remove('open');
   modalOrdenId = null;
-}
-
-async function completarOT() {
-  const id = modalOrdenId;
-  if (!id) return;
-  const o = ordenes.find(x => x.id === id);
-  if (!o) return;
-  // Si ya está completa, ir directo al historial
-  if (isComplete(o)) {
-    closeModal();
-    switchTab('historial');
-    loadHistorialOT();
-    return;
-  }
-  // Validar que haya al menos una foto adjunta
-  if (!o.foto_factura_urls || o.foto_factura_urls.length === 0) {
-    showToast('⚠ Adjuntá al menos una foto de la factura antes de completar', 'error');
-    return;
-  }
-  // Marcar todos los campos de activación como true
-  const campos = ['repuesto','registrado','activo_pya','activo_mp','activo_rappi','check_factura','check_nocturno','revision_precios'];
-  const patch = {};
-  campos.forEach(c => { patch[c] = true; });
-  try {
-    await sbFetch(`ordenes_trabajo?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify(patch) });
-    campos.forEach(c => { o[c] = true; });
-    // Eliminar del array local para que desaparezca de Lista
-    ordenes = ordenes.filter(x => x.id !== id);
-    renderTabla();
-    renderStats();
-    showToast('OT completada ✓', 'success');
-    closeModal();
-    switchTab('historial');
-    await loadHistorialOT();
-  } catch(e) {
-    showToast('Error al completar OT: ' + e.message, 'error');
-  }
 }
 
 async function toggleCheckModal(ordenId, campo, el) {
@@ -1427,6 +1365,14 @@ async function toggleCheckModal(ordenId, campo, el) {
     // Actualizar el array local para que la tabla y los dots reflejen el cambio
     const orden = ordenes.find(o => o.id === ordenId);
     if (orden) orden[campo] = nuevoValor;
+    // Si la OT acaba de completarse, cerrar modal y mostrar toast de paso al historial
+    if (orden && isPasadaAHistorial(orden)) {
+      closeModal();
+      showToast('✓ OT completa — pasó al historial', 'success');
+    } else {
+      // Refrescar modal para actualizar dots
+      if (modalOrdenId === ordenId) openDetalle(ordenId);
+    }
     renderTabla();
     renderStats();
   } catch(e) {
@@ -1512,7 +1458,14 @@ function switchTab(tab) {
     // Re-chequear después de 300ms por si el postMessage llega tarde
     setTimeout(aplicarFormNueva, 300);
   }
-  if (tab === 'calendario') loadCalendario();
+  if (tab === 'calendario') {
+    loadCalendario().then(() => {
+      // Scroll al día de hoy (índice 7 = 8vo elemento, los primeros 7 son días pasados)
+      const cont = document.getElementById('calendario-semana');
+      const divs = cont?.querySelectorAll('[style*="flex:0 0 130px"]');
+      if (divs && divs[7]) divs[7].scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    });
+  }
   if (tab === 'historial') loadHistorialOT();
 }
 
@@ -1595,8 +1548,6 @@ function editOT(id) {
     'c-activo-pya': o.activo_pya,
     'c-activo-mp': o.activo_mp,
     'c-activo-rappi': o.activo_rappi,
-    'c-check-factura': o.check_factura,
-    'c-check-nocturno': o.check_nocturno,
     'c-revision-precios': o.revision_precios,
   };
   Object.entries(map).forEach(([id, val]) => {
@@ -1607,10 +1558,12 @@ function editOT(id) {
       else el.closest('.check-item').classList.remove('checked');
     }
   });
+  // Mostrar revisión de precios solo para admin/supervisor
+  const wrapRev = document.getElementById('wrap-revision-precios');
+  if (wrapRev) wrapRev.style.display = (rolActual === 'admin' || rolActual === 'supervisor') ? '' : 'none';
 }
 
 function cancelEdit() {
-  vencReset();
   editingId = null;
   resetForm();
   switchTab('lista');
@@ -1629,102 +1582,6 @@ function toggleCheck(el) {
   el.classList.toggle('checked');
   const cb = el.querySelector('input[type="checkbox"]');
   if (cb) cb.checked = !cb.checked;
-}
-
-// ── VENCIMIENTOS ─────────────────────────────────────────────
-let vencItems = []; // [{nombre, fecha_vencimiento}]
-
-function vencAgregar() {
-  const idx = vencItems.length;
-  vencItems.push({ nombre: '', fecha_vencimiento: '' });
-  vencRender();
-  // Foco en el input de nombre recién creado
-  setTimeout(() => {
-    const el = document.getElementById(`venc-nombre-${idx}`);
-    if (el) el.focus();
-  }, 50);
-}
-
-function vencEliminar(idx) {
-  vencItems.splice(idx, 1);
-  vencRender();
-}
-
-function vencUpdate(idx, campo, val) {
-  vencItems[idx][campo] = val;
-  if (campo === 'fecha_vencimiento') vencRender();
-}
-
-function vencDias(fechaStr) {
-  if (!fechaStr) return null;
-  const hoy = new Date(); hoy.setHours(0,0,0,0);
-  const venc = new Date(fechaStr + 'T00:00:00');
-  return Math.round((venc - hoy) / 86400000);
-}
-
-function vencColor(dias) {
-  if (dias === null) return '';
-  if (dias <= 7)  return 'rojo';
-  if (dias <= 30) return 'amarillo';
-  return 'verde';
-}
-
-function vencLabel(dias) {
-  if (dias === null) return '';
-  if (dias < 0)  return 'Vencido';
-  if (dias === 0) return 'Vence hoy';
-  return `${dias}d`;
-}
-
-function vencRender() {
-  const lista = document.getElementById('venc-lista');
-  if (!lista) return;
-  if (vencItems.length === 0) {
-    lista.innerHTML = '<div style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-bottom:8px;">Sin productos cargados.</div>';
-    return;
-  }
-  lista.innerHTML = vencItems.map((it, idx) => {
-    const dias = vencDias(it.fecha_vencimiento);
-    const col  = vencColor(dias);
-    const lbl  = vencLabel(dias);
-    return `<div class="venc-row">
-      <input class="form-input" type="text" id="venc-nombre-${idx}" value="${it.nombre}"
-        placeholder="Nombre del producto..." oninput="vencUpdate(${idx},'nombre',this.value)"
-        style="font-size:13px;padding:8px 10px;">
-      <input class="form-input" type="date" id="venc-fecha-${idx}" value="${it.fecha_vencimiento}"
-        onchange="vencUpdate(${idx},'fecha_vencimiento',this.value)"
-        style="font-size:13px;padding:8px 10px;width:140px;">
-      ${col ? `<span class="venc-badge venc-${col}">${lbl}</span>` : '<span style="width:36px"></span>'}
-      <button type="button" onclick="vencEliminar(${idx})"
-        style="background:transparent;border:none;color:var(--text3);cursor:pointer;font-size:16px;padding:4px 6px;line-height:1;">✕</button>
-    </div>`;
-  }).join('');
-}
-
-function vencReset() {
-  vencItems = [];
-  vencRender();
-}
-
-async function vencGuardar(ot_id) {
-  if (!vencItems.length) return;
-  const proveedor = document.getElementById('f-proveedor')?.value.trim() || '';
-  const hoy = new Date().toISOString().split('T')[0];
-  const rows = vencItems
-    .filter(it => it.nombre && it.fecha_vencimiento)
-    .map(it => ({
-      local:             localKey,
-      nombre:            it.nombre,
-      fecha_vencimiento: it.fecha_vencimiento,
-      proveedor:         proveedor,
-      ot_id:             ot_id,
-      estado:            'activo',
-      created_at:        new Date().toISOString(),
-    }));
-  if (!rows.length) return;
-  try {
-    await sbFetch('productos_vencimiento', { method: 'POST', body: JSON.stringify(rows) });
-  } catch(e) { console.warn('[venc] Error guardando vencimientos:', e); }
 }
 
 async function submitOT() {
@@ -1761,9 +1618,7 @@ async function submitOT() {
     activo_pya: document.getElementById('c-activo-pya').checked,
     activo_mp: document.getElementById('c-activo-mp').checked,
     activo_rappi: document.getElementById('c-activo-rappi').checked,
-    check_factura: document.getElementById('c-check-factura').checked,
-    check_nocturno: document.getElementById('c-check-nocturno').checked,
-    revision_precios: document.getElementById('c-revision-precios').checked,
+    revision_precios: document.getElementById('c-revision-precios')?.checked || false,
     updated_at: new Date().toISOString(),
   };
 
@@ -1776,18 +1631,10 @@ async function submitOT() {
       showToast('Orden actualizada', 'success');
     } else {
       payload.created_at = new Date().toISOString();
-      const resOT = await sbFetch('ordenes_trabajo?select=id&order=created_at.desc&limit=1&local=eq.' + localKey, {});
-      // Guardar con el ID de la OT recién creada
       await sbFetch('ordenes_trabajo', {
         method: 'POST',
         body: JSON.stringify(payload)
       });
-      // Recuperar ID real post-insert
-      try {
-        const creadas = await sbFetch(`ordenes_trabajo?local=eq.${localKey}&nro_factura=eq.${encodeURIComponent(payload.nro_factura)}&order=created_at.desc&limit=1&select=id`);
-        const newId = creadas?.[0]?.id || null;
-        await vencGuardar(newId);
-      } catch(e) { console.warn('[venc] no se pudo obtener ID OT:', e); }
       showToast('Orden creada', 'success');
     }
     cancelEdit();
@@ -1890,11 +1737,29 @@ async function cargarProveedoresDatalist() { await cargarProveedores(); }
 function _llenarSelectProv(selectId, valorActual) {
   const sel = document.getElementById(selectId);
   if (!sel) return;
-  const esSv = selectId === 'sv-proveedor';
-  const opts = proveedoresPago.map(p =>
-    `<option value="${p.nombre}" ${valorActual === p.nombre ? 'selected' : ''}>${p.nombre}</option>`
-  ).join('');
+  const opts = proveedoresPago.map(p => {
+    const forzado = p.metodo_forzado === 'cuenta_corriente';
+    return `<option value="${p.nombre}" data-metodo="${p.metodo_forzado||''}" ${valorActual === p.nombre ? 'selected' : ''}>${p.nombre}${forzado ? ' ð³' : ''}</option>`;
+  }).join('');
   sel.innerHTML = `<option value="">Seleccionar proveedor...</option>${opts}`;
+}
+
+// Al cambiar proveedor: si tiene metodo_forzado=cuenta_corriente, auto-seleccionar método
+function onProveedorChange(selectId) {
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  const opt = sel.options[sel.selectedIndex];
+  const metodo = opt ? opt.getAttribute('data-metodo') : '';
+  if (metodo === 'cuenta_corriente') {
+    if (selectId === 'f-proveedor') {
+      const ep = document.getElementById('f-estado-pago');
+      if (ep) ep.value = 'cuenta_corriente';
+    } else if (selectId === 'sv-proveedor') {
+      const sp = document.getElementById('sv-pago');
+      if (sp) sp.value = 'cuenta_corriente';
+    }
+    showToast('ð³ Cuenta corriente â mÃ©todo auto-seleccionado', 'info');
+  }
 }
 
 function poblarSelectProveedores() {
@@ -2022,18 +1887,16 @@ let pedidosSemana = [];
 async function loadCalendario() {
   const cont = document.getElementById('calendario-semana');
   if (!cont) return;
-  cont.innerHTML = '<div class="loading"><div class="spinner"></div>Cargando pedidos...</div>';
+  cont.innerHTML = '<div style="text-align:center;padding:20px;font-family:var(--mono);font-size:11px;color:var(--text3)">Cargando...</div>';
   try {
-    // Buscar pedidos con fecha_llegada en los próximos 14 días del local actual
-    const tiendaMap = { palermo:'T', belgrano:'R', barrio_chino:'J', san_telmo:'S' };
-    const tiendaKey = tiendaMap[localKey] || null;
+    // Mostrar OT de los próximos 14 días + los últimos 7 días del local
     const hoy = new Date(); hoy.setHours(0,0,0,0);
-    const en14 = new Date(hoy); en14.setDate(en14.getDate()+14);
-    const hoyStr = hoy.toISOString().split('T')[0];
-    const en14Str = en14.toISOString().split('T')[0];
-
-    let q = `pedidos?fecha_llegada=gte.${hoyStr}&fecha_llegada=lte.${en14Str}&status=in.(enviado,en-camino)&order=fecha_llegada.asc`;
-    if (tiendaKey) q += `&tienda=eq.${tiendaKey}`;
+    const atras7 = new Date(hoy); atras7.setDate(atras7.getDate() - 7);
+    const en14   = new Date(hoy); en14.setDate(en14.getDate() + 14);
+    const desdeStr = atras7.toISOString().split('T')[0];
+    const hastaStr = en14.toISOString().split('T')[0];
+    let q = `ordenes_trabajo?fecha=gte.${desdeStr}&fecha=lte.${hastaStr}&order=fecha.asc`;
+    if (localKey) q += `&local=eq.${localKey}`;
     const data = await sbFetch(q);
     pedidosSemana = data || [];
     renderCalendario();
@@ -2046,10 +1909,10 @@ function renderCalendario() {
   const cont = document.getElementById('calendario-semana');
   if (!cont) return;
 
-  // Construir 7 días desde hoy
+  // Construir 21 días: 7 atrás + hoy + 13 adelante
   const dias = [];
   const hoy = new Date(); hoy.setHours(0,0,0,0);
-  for (let i = 0; i < 7; i++) {
+  for (let i = -7; i <= 13; i++) {
     const d = new Date(hoy); d.setDate(d.getDate() + i);
     dias.push(d);
   }
@@ -2060,41 +1923,49 @@ function renderCalendario() {
   const html = dias.map(dia => {
     const dateStr = dia.toISOString().split('T')[0];
     const esHoy = dia.getTime() === hoy.getTime();
-    const pedidosDia = pedidosSemana.filter(p => p.fecha_llegada === dateStr);
+    const esPasado = dia < hoy;
+    const otDia = (pedidosSemana || []).filter(o => o.fecha === dateStr);
 
-    const pedidosHtml = pedidosDia.length === 0
-      ? '<div style="font-size:11px;color:var(--text3);padding:8px 0;">Sin pedidos</div>'
-      : pedidosDia.map(p => {
-          const statusColors = { enviado:'var(--blue)', 'en-camino':'var(--yellow)' };
-          const color = statusColors[p.status] || 'var(--text2)';
-          return `<div style="padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;margin-bottom:6px;border-left:3px solid ${color}">
-            <div style="font-size:12px;font-weight:500;color:var(--text)">${p.proveedor}</div>
-            <div style="font-size:10px;color:var(--text3);margin-top:2px;font-family:'DM Mono',monospace;">
-              ${p.pago || 'Pago no especificado'} · ${formatMoney(p.total)}
-            </div>
-            <div style="margin-top:4px;">
-              <span style="font-size:10px;padding:1px 6px;border-radius:3px;background:${color}20;color:${color};font-family:'DM Mono',monospace;">${p.status === 'en-camino' ? 'En camino' : 'Enviado'}</span>
+    const otHtml = otDia.length === 0
+      ? '<div style="font-size:10px;color:var(--text3);padding:6px 0;opacity:0.5;">—</div>'
+      : otDia.map(o => {
+          const pagoColor = { efectivo:'var(--green)', transferencia:'var(--blue)', mp:'var(--blue)',
+            qr:'var(--blue)', cuenta_corriente:'var(--yellow)' }[o.estado_pago] || 'var(--text3)';
+          const pagoLabel = { efectivo:'Efec', transferencia:'Transf', mp:'MP', qr:'QR',
+            cuenta_corriente:'Cta.' }[o.estado_pago] || '—';
+          const completa = isPasadaAHistorial(o);
+          return `<div style="padding:5px 7px;background:var(--surface2);border:1px solid var(--border);border-radius:5px;margin-bottom:4px;border-left:2px solid ${pagoColor};opacity:${completa?'0.55':'1'}">
+            <div style="font-size:11px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${o.proveedor||'—'}</div>
+            <div style="font-size:10px;color:var(--text3);margin-top:1px;display:flex;gap:4px;align-items:center;">
+              <span style="color:${pagoColor}">${pagoLabel}</span>
+              <span>${o.total ? '$'+Math.round(o.total).toLocaleString('es-AR') : ''}</span>
+              ${completa ? '<span style="color:var(--green)">✓</span>' : ''}
             </div>
           </div>`;
         }).join('');
 
-    return `<div style="flex:1;min-width:120px;background:var(--surface);border:1px solid ${esHoy ? 'var(--accent)' : 'var(--border)'};border-radius:8px;padding:12px;${esHoy ? 'box-shadow:0 0 0 1px var(--accent-dim)' : ''}">
-      <div style="margin-bottom:10px;">
-        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;">${diasSemana[dia.getDay()]}</div>
-        <div style="font-size:18px;font-weight:700;font-family:'Syne',sans-serif;color:${esHoy ? 'var(--accent)' : 'var(--text)'};">${dia.getDate()}</div>
-        <div style="font-size:10px;color:var(--text3);">${meses[dia.getMonth()]}</div>
+    const borderCol = esHoy ? 'var(--accent)' : esPasado ? 'var(--border2)' : 'var(--border)';
+    const bgCol = esHoy ? 'rgba(232,197,71,0.04)' : 'var(--surface)';
+    return `<div style="flex:0 0 130px;background:${bgCol};border:1px solid ${borderCol};border-radius:8px;padding:10px;${esHoy?'box-shadow:0 0 0 1px var(--accent-dim)':''}">
+      <div style="margin-bottom:8px;">
+        <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;">${diasSemana[dia.getDay()]}</div>
+        <div style="font-size:16px;font-weight:700;font-family:'Syne',sans-serif;color:${esHoy?'var(--accent)':esPasado?'var(--text3)':'var(--text)'};">${dia.getDate()}</div>
+        <div style="font-size:9px;color:var(--text3);">${meses[dia.getMonth()]}</div>
       </div>
-      ${pedidosHtml}
+      ${otHtml}
     </div>`;
   }).join('');
 
-  cont.innerHTML = `<div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;">${html}</div>
-    <div style="margin-top:12px;display:flex;gap:16px;font-size:11px;color:var(--text3);">
-      <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--blue);margin-right:4px;"></span>Enviado</span>
-      <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--yellow);margin-right:4px;"></span>En camino</span>
-    </div>`;
+  cont.innerHTML = `<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;scroll-snap-type:x mandatory;">
+    ${html}
+  </div>
+  <div style="margin-top:10px;display:flex;gap:16px;font-size:11px;color:var(--text3);flex-wrap:wrap;">
+    <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--yellow);margin-right:4px;"></span>Cta. Corriente</span>
+    <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--green);margin-right:4px;"></span>Efectivo</span>
+    <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--blue);margin-right:4px;"></span>Transf/MP/QR</span>
+    <span style="opacity:0.6">✓ = pasó al historial</span>
+  </div>`;
 }
-
 
 // Extrae el file ID de una URL de Google Drive
 function driveIdFromUrl(url) {
@@ -2119,7 +1990,7 @@ async function loadHistorialOT() {
     let q = 'ordenes_trabajo?order=fecha.desc,created_at.desc&limit=150';
     if (localKey) q += '&local=eq.'+localKey;
     const data = await sbFetch(q) || [];
-    historialOT = data.filter(o => isComplete(o) || ['efectivo','transferencia','mp','qr','ya_pagado'].includes(o.estado_pago));
+    historialOT = data.filter(o => isPasadaAHistorial(o));
     renderHistorialOT();
   } catch(e) { showToast('Error al cargar historial','error'); }
 }

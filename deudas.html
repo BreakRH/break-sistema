@@ -239,7 +239,6 @@ select option { background: #111; }
       <div class="tabs">
         <button class="tab-btn active" onclick="switchEmpTab('registrar',this)">Registrar</button>
         <button class="tab-btn" onclick="switchEmpTab('historial',this)">Mi historial</button>
-        <button class="tab-btn" onclick="switchEmpTab('retiros',this)">Retiros</button>
       </div>
       <div id="emp-tab-registrar" class="tab-panel active">
         <div class="card">
@@ -275,40 +274,6 @@ select option { background: #111; }
           <div class="entry-list" id="emp-historial"></div>
         </div>
       </div>
-      <div id="emp-tab-retiros" class="tab-panel">
-        <div class="card">
-          <div class="card-title">Registrar retiro de efectivo</div>
-          <div class="form-grid">
-            <div class="field-group full">
-              <div class="field-label">¿Quién retira?</div>
-              <input type="text" id="ret-quien" placeholder="Nombre de quien retira el efectivo" />
-            </div>
-            <div class="field-group">
-              <div class="field-label">Monto (ARS)</div>
-              <input type="number" id="ret-monto" placeholder="0" min="1" />
-            </div>
-            <div class="field-group">
-              <div class="field-label">Notas (opcional)</div>
-              <input type="text" id="ret-notas" placeholder="Motivo del retiro..." />
-            </div>
-          </div>
-          <button class="btn btn-primary" style="margin-top:14px" onclick="retiroStep1()">
-            Continuar →
-          </button>
-        </div>
-        <div class="card" id="ret-confirm-card" style="display:none;border-color:rgba(224,85,85,0.4)">
-          <div class="card-title" style="color:var(--red)">⚠ Confirmá el retiro</div>
-          <div id="ret-confirm-body" style="font-family:var(--mono);font-size:14px;line-height:1.8;margin-bottom:16px"></div>
-          <div style="display:flex;gap:8px">
-            <button class="btn btn-ghost" style="flex:1" onclick="retiroCancel()">Cancelar</button>
-            <button class="btn btn-primary" style="flex:1;background:var(--red);color:#fff" onclick="retiroConfirmar()">Confirmar retiro</button>
-          </div>
-        </div>
-        <div class="card" style="margin-top:8px">
-          <div class="card-title">Mis retiros del turno</div>
-          <div class="entry-list" id="emp-retiros-list"><p style="color:var(--muted);font-size:13px;font-family:var(--mono)">Cargando...</p></div>
-        </div>
-      </div>
     </div>
 
     <!-- VISTA ADMIN -->
@@ -316,7 +281,6 @@ select option { background: #111; }
       <div class="tabs">
         <button class="tab-btn active" onclick="switchAdminTab('resumen',this)">Resumen</button>
         <button class="tab-btn" onclick="switchAdminTab('log',this)">Log global</button>
-        <button class="tab-btn" onclick="switchAdminTab('retiros',this)">Retiros</button>
         <button class="tab-btn" onclick="switchAdminTab('config',this)">Cuentas</button>
       </div>
 
@@ -335,37 +299,7 @@ select option { background: #111; }
         </div>
       </div>
 
-      <div id="admin-tab-retiros" class="tab-panel">
-        <div class="card">
-          <div class="card-title">Filtrar retiros</div>
-          <div class="form-grid">
-            <div class="field-group">
-              <div class="field-label">Período</div>
-              <select id="adm-ret-periodo" onchange="adminLoadRetiros()">
-                <option value="hoy">Hoy</option>
-                <option value="semana">Esta semana</option>
-                <option value="mes" selected>Este mes</option>
-                <option value="todo">Todo</option>
-              </select>
-            </div>
-            <div class="field-group">
-              <div class="field-label">Local</div>
-              <select id="adm-ret-local" onchange="adminLoadRetiros()">
-                <option value="">Todos los locales</option>
-                <option value="palermo">Thames · Palermo</option>
-                <option value="belgrano">Roosevelt · Belgrano</option>
-                <option value="barrio_chino">Juramento · B. Chino</option>
-                <option value="san_telmo">Independencia · S. Telmo</option>
-              </select>
-            </div>
-          </div>
-        </div>
-        <div class="stats-row" id="adm-ret-stats"></div>
-        <div class="card">
-          <div class="card-title" id="adm-ret-list-title">Retiros</div>
-          <div class="entry-list" id="adm-ret-list"><p style="color:var(--muted);font-size:13px;font-family:var(--mono)">Seleccioná un período para cargar.</p></div>
-        </div>
-      </div>
+
 
       <div id="admin-tab-config" class="tab-panel">
         <div class="card">
@@ -474,7 +408,7 @@ window.addEventListener('message', function(e) {
   if (!e.data || e.data.type !== 'break-context') return;
   const ctx = e.data;
   if (ctx.local) { currentLocal = ctx.local; applyLocalContext(); }
-  // Solo admin hace auto-login — empleado/encargado ven el splash limpio y eligen ellos
+  // Si el hub ya autenticó como admin, saltar el splash de PIN
   if (ctx.rol === 'admin') {
     const tryAutoLogin = () => {
       if (document.getElementById('loading-overlay') &&
@@ -791,7 +725,6 @@ function switchEmpTab(tab, btn) {
   btn.classList.add('active');
   document.getElementById('emp-tab-' + tab).classList.add('active');
   if (tab === 'historial') renderEmpHistorial();
-  if (tab === 'retiros')   renderEmpRetiros();
 }
 
 // ══════════════════════════════════════════════
@@ -944,134 +877,6 @@ function switchAdminTab(tab, btn) {
   document.querySelectorAll('#view-admin .tab-panel').forEach(p => p.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('admin-tab-' + tab).classList.add('active');
-  if (tab === 'retiros') adminLoadRetiros();
-}
-
-// ══════════════════════════════════════════════
-// RETIROS — EMPLEADO
-// ══════════════════════════════════════════════
-let retiroPendiente = null;
-
-function switchEmpRetiros() {
-  renderEmpRetiros();
-}
-
-async function renderEmpRetiros() {
-  const list = document.getElementById('emp-retiros-list');
-  if (!list) return;
-  const hoy = new Date().toISOString().split('T')[0];
-  const rows = await sbGet('retiros', `fecha=eq.${hoy}&local=eq.${currentLocal}&order=created_at.desc`);
-  if (!rows || rows.length === 0) {
-    list.innerHTML = '<p style="color:var(--muted);font-size:13px;font-family:var(--mono)">Sin retiros hoy en este local.</p>';
-    return;
-  }
-  list.innerHTML = rows.map(r => `
-    <div class="entry-item">
-      <div class="entry-left">
-        <div class="entry-desc">${r.quien_retiro}</div>
-        <div class="entry-meta">${r.turno} · ${r.hora ? r.hora.slice(0,5) : ''}${r.notas ? ' · ' + r.notas : ''}</div>
-      </div>
-      <div class="entry-amount pos">${fmt(r.monto)}</div>
-    </div>`).join('');
-}
-
-function retiroStep1() {
-  const quien = document.getElementById('ret-quien').value.trim();
-  const monto = parseFloat(document.getElementById('ret-monto').value);
-  const notas = document.getElementById('ret-notas').value.trim();
-  if (!quien) { showToast('Ingresá quién retira', true); return; }
-  if (!monto || monto <= 0) { showToast('Monto inválido', true); return; }
-  retiroPendiente = { quien, monto: Math.round(monto), notas };
-  document.getElementById('ret-confirm-body').innerHTML =
-    `Quien retira: <strong>${quien}</strong><br>` +
-    `Monto: <strong style="color:var(--red)">${fmt(Math.round(monto))}</strong><br>` +
-    (notas ? `Notas: <strong>${notas}</strong>` : '');
-  document.getElementById('ret-confirm-card').style.display = 'block';
-  document.getElementById('ret-confirm-card').scrollIntoView({ behavior: 'smooth' });
-}
-
-function retiroCancel() {
-  retiroPendiente = null;
-  document.getElementById('ret-confirm-card').style.display = 'none';
-}
-
-async function retiroConfirmar() {
-  if (!retiroPendiente) return;
-  showLoading();
-  const hoy = new Date().toISOString().split('T')[0];
-  const hora = new Date().toTimeString().slice(0,8);
-  const turnoEl = document.getElementById('inp-turno');
-  const body = {
-    local:       currentLocal,
-    turno:       turnoEl ? turnoEl.value : 'sin_turno',
-    empleado_id: currentUserId || null,
-    monto:       retiroPendiente.monto,
-    quien_retiro: retiroPendiente.quien,
-    notas:       retiroPendiente.notas || null,
-    fecha:       hoy,
-    hora:        hora
-  };
-  await sbPost('retiros', body);
-  retiroPendiente = null;
-  document.getElementById('ret-confirm-card').style.display = 'none';
-  document.getElementById('ret-quien').value = '';
-  document.getElementById('ret-monto').value = '';
-  document.getElementById('ret-notas').value = '';
-  hideLoading();
-  showToast('Retiro registrado ✓');
-  renderEmpRetiros();
-}
-
-// ══════════════════════════════════════════════
-// RETIROS — ADMIN
-// ══════════════════════════════════════════════
-async function adminLoadRetiros() {
-  const periodo = document.getElementById('adm-ret-periodo').value;
-  const localFilt = document.getElementById('adm-ret-local').value;
-  const list = document.getElementById('adm-ret-list');
-  const stats = document.getElementById('adm-ret-stats');
-  list.innerHTML = '<p style="color:var(--muted);font-size:13px;font-family:var(--mono)">Cargando...</p>';
-  stats.innerHTML = '';
-
-  const hoy = new Date();
-  const pad = x => String(x).padStart(2,'0');
-  const fmtDate = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-  let fechaDesde = null;
-  if (periodo === 'hoy') {
-    fechaDesde = fmtDate(hoy);
-  } else if (periodo === 'semana') {
-    const d = new Date(hoy); d.setDate(hoy.getDate() - hoy.getDay());
-    fechaDesde = fmtDate(d);
-  } else if (periodo === 'mes') {
-    fechaDesde = `${hoy.getFullYear()}-${pad(hoy.getMonth()+1)}-01`;
-  }
-
-  let params = 'order=created_at.desc';
-  if (fechaDesde) params += `&fecha=gte.${fechaDesde}`;
-  if (localFilt)  params += `&local=eq.${localFilt}`;
-
-  const rows = await sbGet('retiros', params);
-  if (!rows || rows.length === 0) {
-    list.innerHTML = '<p style="color:var(--muted);font-size:13px;font-family:var(--mono)">Sin retiros en este período.</p>';
-    return;
-  }
-
-  const total = rows.reduce((a,r) => a + r.monto, 0);
-  const LOCAL_NOM = { palermo:'Palermo', belgrano:'Belgrano', barrio_chino:'B. Chino', san_telmo:'S. Telmo' };
-  stats.innerHTML = `
-    <div class="stat-card"><div class="stat-label">Total retirado</div><div class="stat-val red">${fmt(total)}</div></div>
-    <div class="stat-card"><div class="stat-label">Cantidad</div><div class="stat-val">${rows.length}</div></div>
-    <div class="stat-card"><div class="stat-label">Promedio</div><div class="stat-val">${fmt(Math.round(total/rows.length))}</div></div>`;
-
-  document.getElementById('adm-ret-list-title').textContent = `${rows.length} retiro${rows.length !== 1 ? 's' : ''}`;
-  list.innerHTML = rows.map(r => `
-    <div class="entry-item">
-      <div class="entry-left">
-        <div class="entry-desc">${r.quien_retiro}</div>
-        <div class="entry-meta">${LOCAL_NOM[r.local] || r.local} · ${r.turno} · ${r.fecha} ${r.hora ? r.hora.slice(0,5) : ''}${r.notas ? ' · ' + r.notas : ''}</div>
-      </div>
-      <div class="entry-amount pos">${fmt(r.monto)}</div>
-    </div>`).join('');
 }
 
 // ══════════════════════════════════════════════
