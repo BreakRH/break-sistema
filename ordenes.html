@@ -495,6 +495,17 @@
         <button class="btn btn-ghost btn-sm" onclick="loadOrdenes()">↺ Actualizar</button>
       </div>
     </div>
+    <!-- Filtro por tienda — visible solo para admin/supervisor -->
+    <div id="filter-tienda-wrap" style="display:none;margin-bottom:14px;">
+      <div class="filter-group" id="filter-tienda">
+        <span style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;padding:8px 4px;align-self:center;">Tienda:</span>
+        <button class="filter-chip active" data-tienda="" onclick="setFiltroTienda('',this)">Todas</button>
+        <button class="filter-chip" data-tienda="palermo" onclick="setFiltroTienda('palermo',this)">🌿 Palermo</button>
+        <button class="filter-chip" data-tienda="belgrano" onclick="setFiltroTienda('belgrano',this)">🏛️ Belgrano</button>
+        <button class="filter-chip" data-tienda="barrio_chino" onclick="setFiltroTienda('barrio_chino',this)">🏮 B. Chino</button>
+        <button class="filter-chip" data-tienda="san_telmo" onclick="setFiltroTienda('san_telmo',this)">🎭 San Telmo</button>
+      </div>
+    </div>
     <div class="table-wrap">
       <table>
         <thead>
@@ -503,6 +514,7 @@
             <th>N° Factura</th>
             <th>Proveedor</th>
             <th>Origen</th>
+            <th id="th-tienda" style="display:none;">Tienda</th>
             <th>Pago</th>
             <th>Total</th>
             <th>Progreso</th>
@@ -673,7 +685,8 @@
             <option value="transferencia">Transferencia</option>
             <option value="mp">Mercado Pago</option>
             <option value="qr">QR</option>
-            <option value="cuenta_corriente">Cuenta Corriente</option>
+            <!-- cuenta_corriente: se muestra solo para admin/encargado/supervisor via JS -->
+            <option value="cuenta_corriente" id="f-estado-pago-cta" style="display:none;">Cuenta Corriente</option>
           </select>
         </div>
 
@@ -716,31 +729,6 @@
         <div class="form-group span-2">
           <label class="form-label">Observaciones de recepción</label>
           <textarea class="form-textarea" id="f-observaciones" placeholder="Ej: Faltaron 3 unidades de Brahma, precio de Quilmes subió $150..."></textarea>
-        </div>
-
-        <!-- Recepción operativa -->
-        <div class="section-divider">
-          <span class="section-divider-label">Recepción</span>
-          <div class="section-divider-line"></div>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Cant. pedida</label>
-          <input class="form-input" type="number" id="f-cant-pedida" placeholder="0" min="0">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Cant. recibida</label>
-          <input class="form-input" type="number" id="f-cant-recibida" placeholder="0" min="0">
-        </div>
-
-        <div class="form-group span-2">
-          <label class="form-label">Artículos extra recibidos</label>
-          <input class="form-input" type="text" id="f-extras" placeholder="Ej: 2 Fernet 750ml, 6 Sprite lata...">
-        </div>
-
-        <div class="form-group span-2">
-          <label class="form-label">Observaciones de recepción</label>
-          <textarea class="form-textarea" id="f-obs-recepcion" placeholder="Diferencias, faltantes, cambios de precio, etc."></textarea>
         </div>
 
         <!-- Checkboxes -->
@@ -941,6 +929,7 @@ let rolActual = 'empleado'; // 'empleado' | 'encargado' | 'admin'
 let empleadoNombre = '';
 let ordenes = [];
 let filtroActivo = 'todos';
+let filtroTienda = ''; // '' = todas (solo admin/supervisor)
 let editingId = null;
 let modalOrdenId = null;
 
@@ -950,9 +939,17 @@ window.addEventListener('message', e => {
     localKey = e.data.local || '';
     localName = e.data.localName || localKey;
     rolActual = e.data.rol || 'empleado';
+    // Mostrar "Cuenta Corriente" solo a admin/encargado/supervisor
+    const puedeVerCtaCte = (rolActual === 'admin' || rolActual === 'encargado' || rolActual === 'supervisor');
+    const ctaOpt = document.getElementById('f-estado-pago-cta');
+    if (ctaOpt) ctaOpt.style.display = puedeVerCtaCte ? '' : 'none';
     empleadoNombre = e.data.empleado || '';
-    empleadoNombre = e.data.empleado || '';
-    empleadoNombre = e.data.empleado || '';
+    // Columna Tienda y filtro por tienda: solo admin/supervisor
+    const esMultiTienda = (rolActual === 'admin' || rolActual === 'supervisor');
+    const thTienda = document.getElementById('th-tienda');
+    if (thTienda) thTienda.style.display = esMultiTienda ? '' : 'none';
+    const filterTiendaWrap = document.getElementById('filter-tienda-wrap');
+    if (filterTiendaWrap) filterTiendaWrap.style.display = esMultiTienda ? '' : 'none';
     console.log('[ordenes] postMessage recibido, rolActual:', rolActual);
     updateHeader();
     loadOrdenes();
@@ -974,17 +971,10 @@ if (urlParams.get('local')) {
   updateHeader();
   loadOrdenes();
 } else {
-  // fallback: esperar postMessage o usar localStorage
-  const stored = localStorage.getItem('break_local');
-  if (stored) {
-    localKey = stored;
-    localName = capitalizeLocal(localKey);
-    updateHeader();
-    loadOrdenes();
-  } else {
-    updateHeader();
-    loadOrdenes();
-  }
+  // Sin postMessage ni URL param: mostrar estado de espera, NO hacer fetch
+  updateHeader();
+  document.getElementById('tabla-body').innerHTML =
+    '<tr><td colspan="9"><div class="loading" style="color:var(--text3);">Esperando contexto de tienda...</div></td></tr>';
 }
 
 // Fecha/hora inicial en form
@@ -1003,6 +993,12 @@ function updateHeader() {
 
 // ─── LOAD ────────────────────────────────────────────────────
 async function loadOrdenes() {
+  // Guard: no cargar sin tienda confirmada (salvo supervisor que ve todas)
+  if (!localKey && rolActual !== 'supervisor' && rolActual !== 'admin') {
+    document.getElementById('tabla-body').innerHTML =
+      '<tr><td colspan="9"><div class="loading" style="color:var(--text3);">Esperando contexto de tienda...</div></td></tr>';
+    return;
+  }
   try {
     let query = 'ordenes_trabajo?order=fecha.desc,created_at.desc';
     // Supervisor ve todas las tiendas; los demás filtran por su local
@@ -1046,11 +1042,20 @@ function renderStats() {
 }
 
 // ─── TABLA ───────────────────────────────────────────────────
+const LOCAL_LABELS = { palermo:'🌿 Palermo', belgrano:'🏛️ Belgrano', barrio_chino:'🏮 B. Chino', san_telmo:'🎭 San Telmo' };
+
 function renderTabla() {
   const search = document.getElementById('search-input').value.toLowerCase();
+  const esMultiTienda = (rolActual === 'admin' || rolActual === 'supervisor');
+  const colspan = esMultiTienda ? 10 : 9;
   let data = ordenes;
 
-  // Excluir del filtro base las que ya pasaron al historial (pagadas/completas sin cta. cte.)
+  // Filtro por tienda (admin/supervisor)
+  if (esMultiTienda && filtroTienda) {
+    data = data.filter(o => o.local === filtroTienda);
+  }
+
+  // Filtro por estado
   if (filtroActivo === 'cuenta_corriente') {
     data = data.filter(o => o.estado_pago === 'cuenta_corriente');
   } else if (filtroActivo === 'pendiente') {
@@ -1058,7 +1063,6 @@ function renderTabla() {
   } else if (filtroActivo === 'por_recibir') {
     data = data.filter(o => !o.registrado && !isPagadoInmediato(o));
   } else {
-    // admin/supervisor ven cuenta_corriente + incompletas; empleados no ven archivadas
     if (rolActual === 'admin' || rolActual === 'supervisor') {
       data = data.filter(o => !isPagadoInmediato(o));
     } else {
@@ -1074,20 +1078,28 @@ function renderTabla() {
   const tbody = document.getElementById('tabla-body');
   if (!data.length) {
     const emptyMsg = filtroActivo === 'por_recibir' ? 'No hay pedidos pendientes de recibir' : 'No hay órdenes';
-    tbody.innerHTML = `<tr><td colspan="9"><div class="empty"><div class="empty-icon">📄</div><div class="empty-text">${emptyMsg}</div></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="${colspan}"><div class="empty"><div class="empty-icon">📄</div><div class="empty-text">${emptyMsg}</div></div></td></tr>`;
     return;
   }
 
   tbody.innerHTML = data.map(o => {
     const checks = checkCount(o);
     const dots = buildDots(o);
+    const tiendaCell = esMultiTienda
+      ? `<td><span class="badge badge-gray" style="font-size:10px;">${LOCAL_LABELS[o.local] || o.local || '—'}</span></td>`
+      : '';
+    // Fecha vencimiento para cuenta_corriente
+    const vencInfo = (o.estado_pago === 'cuenta_corriente' && o.fecha_vencimiento_pago)
+      ? `<br><span style="font-size:10px;color:var(--yellow);">Vence: ${formatDateDisplay(o.fecha_vencimiento_pago)}</span>`
+      : '';
     return `
       <tr style="cursor:pointer;" onclick="openDetalle('${o.id}')">
         <td style="white-space:nowrap;">${formatDateDisplay(o.fecha)}<br><span style="font-size:10px;color:var(--text3);">${o.hora||''}</span></td>
         <td style="font-weight:500;">${o.nro_factura||'<span style="color:var(--text3);font-size:11px;">Sin factura</span>'}</td>
         <td>${o.proveedor||'—'}</td>
         <td>${getOrigenBadge(o)}</td>
-        <td>${badgePago(o.estado_pago)}</td>
+        ${tiendaCell}
+        <td>${badgePago(o.estado_pago)}${vencInfo}</td>
         <td style="font-weight:500;color:var(--accent);">${formatMoney(o.total)}</td>
         <td>
           <div style="display:flex;align-items:center;gap:6px;">
@@ -1105,36 +1117,39 @@ function renderTabla() {
 }
 
 function renderTablaError() {
-  document.getElementById('tabla-body').innerHTML = `<tr><td colspan="9"><div class="empty"><div class="empty-icon">⚠</div><div class="empty-text">Error al cargar datos</div></div></td></tr>`;
+  const colspan = (rolActual === 'admin' || rolActual === 'supervisor') ? 10 : 9;
+  document.getElementById('tabla-body').innerHTML = `<tr><td colspan="${colspan}"><div class="empty"><div class="empty-icon">⚠</div><div class="empty-text">Error al cargar datos</div></div></td></tr>`;
 }
 
 function buildDots(o) {
-  const fields = ['repuesto','registrado','activo_pya','activo_mp','activo_rappi','check_factura','check_nocturno','revision_precios'];
-  return `<div class="progress-dots">${fields.map(f => `<div class="dot ${o[f] ? 'done' : ''}"></div>`).join('')}</div>`;
+  const fields = ['repuesto','registrado','activo_pya','activo_mp','activo_rappi'];
+  const allDone = fields.every(f => o[f]) && o.pagado_confirmado;
+  return `<div class="progress-dots">${fields.map(f => `<div class="dot ${o[f] ? 'done' : ''}"></div>`).join('')}<div class="dot ${o.pagado_confirmado ? 'done' : ''}"></div></div>`;
 }
 
 function checkCount(o) {
-  const fields = ['repuesto','registrado','activo_pya','activo_mp','activo_rappi','check_factura','check_nocturno','revision_precios'];
-  const done = fields.filter(f => o[f]).length;
-  return { done, total: fields.length };
+  const fields = ['repuesto','registrado','activo_pya','activo_mp','activo_rappi'];
+  const done = fields.filter(f => o[f]).length + (o.pagado_confirmado ? 1 : 0);
+  return { done, total: fields.length + 1 };
 }
 
 function isComplete(o) {
-  const fields = ['repuesto','registrado','activo_pya','activo_mp','activo_rappi','check_factura','check_nocturno','revision_precios'];
-  // Para avisos rápidos (sin nro_factura) considerar completo si tiene pago confirmado
-  if (!o.nro_factura) return isPagadoInmediato(o);
-  return fields.every(f => o[f] === true);
+  const fields = ['repuesto','registrado','activo_pya','activo_mp','activo_rappi'];
+  // Si no tiene nro_factura solo cuenta el pagado_confirmado para aviso rápido
+  if (!o.nro_factura) return isPagadoInmediato(o) && !!o.pagado_confirmado;
+  return fields.every(f => o[f] === true) && !!o.pagado_confirmado;
 }
 
 function isPagadoInmediato(o) {
   return ['efectivo','transferencia','mp','qr'].includes(o.estado_pago);
 }
 
-// Una OT "pasa al historial" si está pagada con método inmediato O si tiene todos
-// los checks completados. cuenta_corriente SIEMPRE queda en lista hasta confirmar pago.
+// Una OT pasa al historial cuando:
+// - pago inmediato (efectivo/transf/mp/qr) + todos los checks + pagado_confirmado=true
+// - cuenta_corriente: NUNCA pasa al historial desde este módulo (lo gestiona pagos.html)
 function isPasadaAHistorial(o) {
   if (o.estado_pago === 'cuenta_corriente') return false;
-  if (isPagadoInmediato(o)) return true;
+  if (isPagadoInmediato(o)) return isComplete(o); // isComplete ya exige pagado_confirmado
   return isComplete(o);
 }
 
@@ -1168,6 +1183,11 @@ function openDetalle(id) {
     { key:'activo_mp', label:'Activado MP' },
     { key:'activo_rappi', label:'Activado Rappi' },
   ];
+  // Check 'Pagado' para OT con pago inmediato (no cuenta_corriente ni sin método)
+  const _esCta = o.estado_pago === 'cuenta_corriente' || !o.estado_pago;
+  if (!_esCta) {
+    checks.push({ key:'pagado_confirmado', label:'✅ Pagado — confirmar', pagoKey: true });
+  }
   // Revisión de precios: solo visible para admin/supervisor
   if (rolActual === 'admin' || rolActual === 'supervisor') {
     checks.push({ key:'revision_precios', label:'❖ Revisión de precios', adminOnly:true });
@@ -1206,7 +1226,7 @@ function openDetalle(id) {
           <div class="check-item ${o[c.key] ? 'checked' : ''}"
                id="modal-check-${c.key}"
                onclick="toggleCheckModal('${o.id}', '${c.key}', this)"
-               style="cursor:pointer;${c.adminOnly ? 'border-color:var(--accent);' : ''}">
+               style="cursor:pointer;${c.adminOnly ? 'border-color:var(--accent);' : ''}${c.pagoKey ? 'border-color:var(--green);border-width:1.5px;' : ''}">
             <div class="check-box"><span class="check-box-tick">✓</span></div>
             <span class="check-label">${c.label}</span>
           </div>
@@ -1255,6 +1275,29 @@ function buildPagoSection(o) {
     ? `<div style="font-size:11px;color:var(--text3);margin-bottom:12px;">Método planificado al pedir: <strong style="color:var(--text);">${METODO_LABELS[o.pago_planificado]||o.pago_planificado}</strong></div>`
     : (esPendiente ? `<div style="font-size:11px;color:var(--text3);margin-bottom:12px;">Pendiente de pago: <strong style="color:var(--yellow);">Cuenta Corriente</strong></div>` : '');
 
+  // Semáforo de vencimiento para cuenta_corriente
+  let vencLabel = '';
+  if (esPendiente && o.fecha_vencimiento_pago) {
+    const hoy = new Date(); hoy.setHours(0,0,0,0);
+    const venc = new Date(o.fecha_vencimiento_pago + 'T00:00:00');
+    const diff = Math.round((venc - hoy) / 86400000);
+    let semColor = 'var(--green)'; let semIcon = '🟢';
+    if (diff < 0)  { semColor = 'var(--red)';    semIcon = '🔴'; }
+    else if (diff <= 3) { semColor = 'var(--yellow)'; semIcon = '🟡'; }
+    const diffTxt = diff < 0 ? `Venció hace ${Math.abs(diff)} días` : diff === 0 ? 'Vence hoy' : `Vence en ${diff} días`;
+    vencLabel = `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(0,0,0,0.2);border:1px solid ${semColor};border-radius:6px;margin-bottom:12px;">
+      <span style="font-size:14px;">${semIcon}</span>
+      <div>
+        <div style="font-size:11px;color:var(--text3);">Fecha de vencimiento</div>
+        <div style="font-size:12px;color:${semColor};font-weight:600;">${formatDateDisplay(o.fecha_vencimiento_pago)} — ${diffTxt}</div>
+      </div>
+    </div>`;
+  } else if (esPendiente) {
+    // Sin plazo configurado para el proveedor
+    const prov = proveedoresPago.find(p => p.nombre === o.proveedor);
+    vencLabel = `<div style="font-size:11px;color:var(--text3);margin-bottom:12px;">⚠ Sin plazo configurado para este proveedor — la OT aparece en Cuentas por Pagar sin fecha de vencimiento.</div>`;
+  }
+
   const metodoActual = (!esPendiente && o.metodo_confirmado) ? o.metodo_confirmado
     : (!esPendiente && o.estado_pago && o.estado_pago !== 'cuenta_corriente') ? o.estado_pago : '';
   const montoActual  = (!esPendiente && o.monto_pagado != null) ? o.monto_pagado : '';
@@ -1265,6 +1308,7 @@ function buildPagoSection(o) {
     <div class="detail-section" style="border:1px solid ${borderColor};border-radius:var(--r2);padding:16px 20px;background:${bgColor};">
       <div class="detail-section-title" style="color:${titleColor};">${titleText}</div>
       ${planLabel}
+      ${vencLabel}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
         <div>
           <div class="detail-item-label" style="margin-bottom:6px;">Método</div>
@@ -1306,6 +1350,8 @@ async function confirmarPago(ordenId) {
   if (!metodo) { showToast('Seleccioná el método de pago', 'error'); return; }
 
   const monto = montoRaw ? parseFloat(montoRaw) : null;
+  const orden = ordenes.find(o => o.id === ordenId);
+
   const payload = {
     estado_pago: metodo,
     metodo_confirmado: metodo,
@@ -1313,6 +1359,14 @@ async function confirmarPago(ordenId) {
     updated_at: new Date().toISOString(),
   };
   if (monto !== null) payload.monto_pagado = monto;
+
+  // Fecha de vencimiento según plazo del proveedor (solo para cuenta_corriente)
+  if (metodo === 'cuenta_corriente') {
+    const fv = calcFechaVencimiento(orden?.fecha || null, orden?.proveedor || '');
+    payload.fecha_vencimiento_pago = fv || null;
+  } else {
+    payload.fecha_vencimiento_pago = null; // pago inmediato: limpiar vencimiento
+  }
 
   try {
     await sbFetch(`ordenes_trabajo?id=eq.${ordenId}`, {
@@ -1326,6 +1380,7 @@ async function confirmarPago(ordenId) {
       orden.metodo_confirmado = metodo;
       orden.recepcion = recepcion;
       if (monto !== null) orden.monto_pagado = monto;
+      orden.fecha_vencimiento_pago = payload.fecha_vencimiento_pago || null;
     }
     renderTabla();
     renderStats();
@@ -1495,7 +1550,7 @@ function resetForm() {
   document.getElementById('f-observaciones').value = '';
 
   // Reset checks
-  const checkIds = ['c-repuesto','c-registrado','c-activo-pya','c-activo-mp','c-activo-rappi','c-check-factura','c-check-nocturno','c-revision-precios'];
+  const checkIds = ['c-repuesto','c-registrado','c-activo-pya','c-activo-mp','c-activo-rappi','c-revision-precios'];
   checkIds.forEach(id => {
     const el = document.getElementById(id);
     if (el) {
@@ -1584,7 +1639,22 @@ function toggleCheck(el) {
   if (cb) cb.checked = !cb.checked;
 }
 
+// Calcula fecha de vencimiento de pago en cuenta corriente según plazo del proveedor
+function calcFechaVencimiento(fechaFactura, nombreProveedor) {
+  const prov = proveedoresPago.find(p => p.nombre === nombreProveedor);
+  const plazo = (prov && prov.plazo_dias) ? parseInt(prov.plazo_dias) : 0;
+  if (!plazo) return null; // sin plazo configurado = sin vencimiento automático
+  const base = fechaFactura ? new Date(fechaFactura + 'T00:00:00') : new Date();
+  base.setDate(base.getDate() + plazo);
+  return base.toISOString().split('T')[0];
+}
+
 async function submitOT() {
+  // Guard: no permitir submit sin tienda confirmada
+  if (!localKey) {
+    showToast('Esperando contexto de tienda — volvé a abrir el módulo', 'error');
+    return;
+  }
   const nro = document.getElementById('f-nro').value.trim();
   const proveedor = document.getElementById('f-proveedor').value.trim();
   const tipo = document.getElementById('f-tipo').value;
@@ -1621,6 +1691,14 @@ async function submitOT() {
     revision_precios: document.getElementById('c-revision-precios')?.checked || false,
     updated_at: new Date().toISOString(),
   };
+
+  // Fecha de vencimiento: calculada solo para cuenta_corriente según plazo del proveedor
+  if (estadoPago === 'cuenta_corriente') {
+    const fv = calcFechaVencimiento(payload.fecha, proveedor);
+    if (fv) payload.fecha_vencimiento_pago = fv;
+  } else {
+    payload.fecha_vencimiento_pago = null; // limpiar si se cambia el método
+  }
 
   try {
     if (editingId) {
@@ -1711,7 +1789,14 @@ async function eliminarOTdesdeModal() {
 // ─── FILTERS ─────────────────────────────────────────────────
 function setFilter(f, el) {
   filtroActivo = f;
-  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll('#filter-estado .filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderTabla();
+}
+
+function setFiltroTienda(tienda, el) {
+  filtroTienda = tienda;
+  document.querySelectorAll('#filter-tienda .filter-chip').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
   renderTabla();
 }
@@ -1739,7 +1824,7 @@ function _llenarSelectProv(selectId, valorActual) {
   if (!sel) return;
   const opts = proveedoresPago.map(p => {
     const forzado = p.metodo_forzado === 'cuenta_corriente';
-    return `<option value="${p.nombre}" data-metodo="${p.metodo_forzado||''}" ${valorActual === p.nombre ? 'selected' : ''}>${p.nombre}${forzado ? ' ð³' : ''}</option>`;
+    return `<option value="${p.nombre}" data-metodo="${p.metodo_forzado||''}" ${valorActual === p.nombre ? 'selected' : ''}>${p.nombre}${forzado ? ' 💳' : ''}</option>`;
   }).join('');
   sel.innerHTML = `<option value="">Seleccionar proveedor...</option>${opts}`;
 }
@@ -1758,7 +1843,9 @@ function onProveedorChange(selectId) {
       const sp = document.getElementById('sv-pago');
       if (sp) sp.value = 'cuenta_corriente';
     }
-    showToast('ð³ Cuenta corriente â mÃ©todo auto-seleccionado', 'info');
+    const prov = proveedoresPago.find(p => p.nombre === (opt ? opt.value : ''));
+    const plazo = (prov && prov.plazo_dias) ? prov.plazo_dias + ' días' : 'sin plazo configurado';
+    showToast('💳 Cuenta corriente — ' + plazo + ' de plazo', 'success');
   }
 }
 
@@ -1987,9 +2074,13 @@ function otFotoHtml(url) {
 let historialOT = [];
 async function loadHistorialOT() {
   try {
-    let q = 'ordenes_trabajo?order=fecha.desc,created_at.desc&limit=150';
+    // Cargar solo OT con pago inmediato Y pagado_confirmado=true (excluir cuenta_corriente)
+    let q = 'ordenes_trabajo?order=fecha.desc,created_at.desc&limit=300';
     if (localKey) q += '&local=eq.'+localKey;
+    q += '&estado_pago=in.(efectivo,transferencia,mp,qr)';
+    q += '&pagado_confirmado=eq.true';
     const data = await sbFetch(q) || [];
+    // Doble filtro en JS: isComplete garantiza checks operativos completos
     historialOT = data.filter(o => isPasadaAHistorial(o));
     renderHistorialOT();
   } catch(e) { showToast('Error al cargar historial','error'); }
@@ -2003,20 +2094,16 @@ function renderHistorialOT() {
   if (!data.length) { tbody.innerHTML='<tr><td colspan="7"><div class="empty"><div class="empty-icon">📋</div><div class="empty-text">Sin OT en historial</div></div></td></tr>'; return; }
   tbody.innerHTML = data.map(o=>{
     const checks=checkCount(o);
-    return '<tr><td>'+formatDateDisplay(o.fecha)+'</td><td style="color:var(--text2);font-size:11px;">'+(o.proveedor||'—')+'</td><td style="color:var(--text2);font-size:11px;">'+(o.nro_factura||'—')+'</td><td style="font-size:11px;">'+(o.recepcion||'—')+'</td><td style="color:var(--accent);font-weight:500;">'+formatMoney(o.total)+'</td><td>'+badgePago(o.estado_pago)+'</td><td><div style="display:flex;align-items:center;gap:4px;">'+buildDots(o)+'<span style="font-size:10px;color:var(--text3);">'+checks.done+'/'+checks.total+'</span></div></td></tr>';
+    return '<tr><td>'+formatDateDisplay(o.fecha)+'</td><td style="color:var(--text2);font-size:11px;">'+(o.proveedor||'—')+'</td><td style="color:var(--text2);font-size:11px;">'+(o.nro_factura||'—')+'</td><td style="font-size:11px;">'+(o.recepcion||'—')+'</td><td style="color:var(--accent);font-weight:500;">'+formatMoney(o.total)+'</td><td>'+badgePago(o.estado_pago)+'</td><td><div style="display:flex;align-items:center;gap:4px;">'+buildDots(o)+'<span style="font-size:10px;color:var(--green);">✓ Pagado</span></div></td></tr>';
   }).join('');
 }
 
 // ─── ORIGEN BADGE ─────────────────────────────────────────────
 function getOrigenBadge(o) {
-  const LOCAL_LABELS = { palermo: '🌿 Palermo', belgrano: '🏛️ Belgrano', barrio_chino: '🏮 B. Chino', san_telmo: '🎭 San Telmo' };
-  const localBadge = (rolActual === 'supervisor' && o.local)
-    ? `<span class="badge badge-gray" style="font-size:9px;margin-left:3px;">${LOCAL_LABELS[o.local] || o.local}</span>`
-    : '';
   const origenBadge = o.pedido_id
     ? '<span class="badge badge-accent" style="font-size:9px;">📦 Pedido</span>'
     : '<span class="badge badge-gray" style="font-size:9px;">Manual</span>';
-  return origenBadge + localBadge;
+  return origenBadge;
 }
 
 
@@ -2236,4 +2323,3 @@ async function _driveGetOrCreateFolder(name, parentId) {
   </div>
 </div>
 </body>
-</html>
