@@ -1059,15 +1059,12 @@ function renderTabla() {
   if (filtroActivo === 'cuenta_corriente') {
     data = data.filter(o => o.estado_pago === 'cuenta_corriente');
   } else if (filtroActivo === 'pendiente') {
-    data = data.filter(o => !isComplete(o) && !isPagadoInmediato(o));
+    data = data.filter(o => !isComplete(o));
   } else if (filtroActivo === 'por_recibir') {
-    data = data.filter(o => !o.registrado && !isPagadoInmediato(o));
+    data = data.filter(o => !o.registrado);
   } else {
-    if (rolActual === 'admin' || rolActual === 'supervisor') {
-      data = data.filter(o => !isPagadoInmediato(o));
-    } else {
-      data = data.filter(o => !isPasadaAHistorial(o));
-    }
+    // "Todos": excluir solo las que ya pasaron al historial (completas + pagado_confirmado)
+    data = data.filter(o => !isPasadaAHistorial(o));
   }
 
   if (search) data = data.filter(o =>
