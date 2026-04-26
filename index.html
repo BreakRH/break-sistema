@@ -1896,7 +1896,8 @@
     <div class="module-card" id="card-ordenes"
          style="--card-accent:var(--blue);--icon-bg:var(--blue-bg)"
          onclick="openModule('ordenes')">
-      <div class="module-badge badge-new">nuevo</div>
+      <div class="module-badge badge-new" id="badge-ordenes-new">nuevo</div>
+      <div class="module-badge badge-alert" id="badge-ordenes-alert" style="display:none"></div>
       <div class="module-icon">🧾</div>
       <div class="module-name">Orden de Trabajo</div>
       <div class="module-desc">facturas · recepción · activación</div>
@@ -3046,18 +3047,26 @@ async function deCheckDevice() {
   try {
     const rows = await sbFetch('config?clave=eq.' + DE_TOKENS_CFG + '&select=valor');
     if (!rows || !rows.length) {
-      // Si todavía no hay lista configurada en Supabase,
-      // aceptamos cualquier token (modo bootstrap — primer setup).
-      return true;
+      return true; // modo bootstrap
     }
     const rawVal = rows[0].valor;
-    let tokensValidos = [];
-    try { tokensValidos = JSON.parse(rawVal); } catch(e) { tokensValidos = []; }
-    if (!Array.isArray(tokensValidos)) tokensValidos = [];
-    return tokensValidos.includes(localToken);
+    let tokens = [];
+    try { tokens = JSON.parse(rawVal); } catch(e) { tokens = []; }
+    if (!Array.isArray(tokens)) tokens = [];
+
+    // Soporte formato nuevo {token,local,...} y viejo (string)
+    const encontrado = tokens.find(t =>
+      typeof t === 'object' ? t.token === localToken : t === localToken
+    );
+    if (!encontrado) return false;
+
+    // Si tiene local forzado, guardarlo para que init() lo use
+    if (typeof encontrado === 'object' && encontrado.local) {
+      window._DE_LOCAL_FORZADO = encontrado.local;
+      window._DE_LOCAL_NOMBRE  = encontrado.localNombre || null;
+    }
+    return true;
   } catch(e) {
-    // Sin conexión: confiamos en el token local (evita bloquear dispositivos
-    // válidos por problemas de red temporales).
     console.warn('[DE] Sin conexión — confiando en token local');
     return true;
   }
@@ -3201,6 +3210,36 @@ async function init() {
     // Ocultar loading
     document.getElementById('loading-overlay').classList.add('hidden');
 
+    // ── LOCAL FORZADO POR DISPOSITIVO ───────────────
+    // Si el dispositivo tiene local asignado, bloquear selector de tienda
+    if (window._DE_LOCAL_FORZADO) {
+      const _LOCALES_NOM = {palermo:'Thames · Palermo',belgrano:'Roosevelt · Belgrano',barrio_chino:'Juramento · B. Chino',san_telmo:'Independencia · S. Telmo'};
+      const _nombreLocal = window._DE_LOCAL_NOMBRE || _LOCALES_NOM[window._DE_LOCAL_FORZADO] || window._DE_LOCAL_FORZADO;
+      // Override lsSelTipo: empleado/encargado saltean pantalla de tienda
+      window.lsSelTipo = function(tipo) {
+        lsState.tipo = tipo;
+        if (tipo === 'admin' || tipo === 'repartidor' || tipo === 'supervisor') {
+          lsState.local = null; lsState.localName = null;
+          lsMostrarClave();
+        } else {
+          lsSelTienda(window._DE_LOCAL_FORZADO, _nombreLocal);
+        }
+      };
+      // Inyectar badge en pantalla de tienda (visible si llegan por lsBack)
+      const _tiendaStep = document.getElementById('ls-tienda');
+      if (_tiendaStep) {
+        _tiendaStep.querySelectorAll('.login-option-btn').forEach(btn => { btn.style.display = 'none'; });
+        if (!document.getElementById('ls-local-fijo-badge')) {
+          const badge = document.createElement('div');
+          badge.id = 'ls-local-fijo-badge';
+          badge.style.cssText = 'background:rgba(200,241,53,0.1);border:0.5px solid rgba(200,241,53,0.3);border-radius:10px;padding:12px 16px;font-family:var(--mono);font-size:12px;color:var(--accent);text-align:center;margin:8px 0;';
+          badge.innerHTML = '📍 Este dispositivo está fijo en<br><strong style="font-size:14px;">' + _nombreLocal + '</strong>';
+          _tiendaStep.appendChild(badge);
+        }
+      }
+    }
+    // ── FIN LOCAL FORZADO ───────────────────────────────────────────
+
     // v8: verificar sesión de login existente
     const auth = lsGetAuth();
     if (auth) {
@@ -3291,6 +3330,23 @@ window.addEventListener('message', (e) => {
   if (d.tipo === 'badge-tareas') {
     const badge = document.getElementById('badge-tareas');
     if (badge) { const p = d.pendientes || 0; badge.textContent = p > 0 ? p : ''; badge.style.display = p > 0 ? 'flex' : 'none'; }
+  }
+  if (d.tipo === 'ot-no-llego') {
+    // Solo mostrar badge si el aviso pertenece al local activo (o si no se especifica local)
+    if (d.local && state.local && d.local !== state.local) return;
+    const alertBadge = document.getElementById('badge-ordenes-alert');
+    const newBadge   = document.getElementById('badge-ordenes-new');
+    if (!alertBadge) return;
+    const count = d.count || 0;
+    if (count > 0) {
+      alertBadge.textContent = count;
+      alertBadge.style.display = 'flex';
+      if (newBadge) newBadge.style.display = 'none';
+    } else {
+      alertBadge.textContent = '';
+      alertBadge.style.display = 'none';
+      if (newBadge) newBadge.style.display = '';
+    }
   }
 });
 
@@ -3388,6 +3444,11 @@ function ordenesOpen() {
   goTo('ordenes');
   const badge = document.getElementById('badge-ordenes-local');
   if (badge) badge.textContent = LOCALES[state.local] || '--';
+  // Limpiar badge de no-llego al abrir el módulo (PRD §6)
+  const alertBadge = document.getElementById('badge-ordenes-alert');
+  const newBadge   = document.getElementById('badge-ordenes-new');
+  if (alertBadge) { alertBadge.textContent = ''; alertBadge.style.display = 'none'; }
+  if (newBadge)   { newBadge.style.display = ''; }
   const iframe = document.getElementById('ordenes-iframe');
   const ctx = {
     type: 'break-context',

@@ -755,19 +755,19 @@ async function loadAll() {
 
 async function loadOrdenes() {
   try {
-    // Bug #5+#6: cuenta_corriente reemplaza a por_pagar
-    let q = 'ordenes_trabajo?estado_pago=eq.cuenta_corriente&order=fecha.asc';
+    // PRD §5: solo cuenta_corriente NO pagadas (pagado_confirmado=false)
+    let q = 'ordenes_trabajo?estado_pago=eq.cuenta_corriente&pagado_confirmado=eq.false&order=fecha.asc';
     if (localKey) q += `&local=eq.${localKey}`;
     console.log('[pagos] loadOrdenes query:', q);
     ordenes = await sbFetch(q) || [];
     console.log('[pagos] ordenes cuenta_corriente cargadas:', ordenes.length);
 
-    // Historial: todo lo que NO sea cuenta_corriente (pagado con método inmediato)
-    let qh = 'ordenes_trabajo?order=updated_at.desc&limit=100';
+    // Historial: SOLO OT que originalmente fueron cta_cte y ya están pagadas.
+    // estado_pago siempre permanece 'cuenta_corriente'; se distingue por pagado_confirmado.
+    let qh = 'ordenes_trabajo?estado_pago=eq.cuenta_corriente&pagado_confirmado=eq.true&order=updated_at.desc&limit=100';
     if (localKey) qh += `&local=eq.${localKey}`;
-    qh += '&estado_pago=neq.cuenta_corriente';
     const allData = await sbFetch(qh) || [];
-    historialData = allData.filter(o => o.estado_pago !== 'cuenta_corriente');
+    historialData = allData;
     console.log('[pagos] historial cargado:', historialData.length);
 
     renderPendientes();
@@ -792,8 +792,11 @@ async function loadProveedores() {
 
 // ─── CALCULAR VENCIMIENTO ────────────────────────────────────
 function calcVencimiento(orden) {
-  // Si hay override (aplazar), usarlo siempre
+  // PRD §5: si existe fecha_vencimiento_pago (calculada por ordenes.html al crear/confirmar), usarla
+  if (orden.fecha_vencimiento_pago) return new Date(orden.fecha_vencimiento_pago + 'T00:00:00');
+  // Override manual (aplazar vencimiento)
   if (orden.fecha_vencimiento_override) return new Date(orden.fecha_vencimiento_override + 'T00:00:00');
+  // Fallback: calcular desde fecha + plazo del proveedor
   if (!orden.proveedor || !orden.fecha) return null;
   const needle = orden.proveedor.toLowerCase().trim();
   const prov = proveedores.find(p => {
@@ -987,8 +990,10 @@ async function confirmarPago() {
   const fechaPago = document.getElementById('pagar-fecha')?.value || new Date().toISOString().split('T')[0];
 
   const payload = {
-    estado_pago: metodo,
+    // estado_pago NO se cambia: una OT cta_cte permanece como cta_cte siempre.
+    // El método con que se pagó queda registrado en metodo_confirmado.
     metodo_confirmado: metodo,
+    pagado_confirmado: true,   // PRD §5 + §4.5: requerido para archivar al historial
     updated_at: new Date().toISOString(),
   };
   // Guardar nro transferencia en campo notas si existe (o en nro_factura si vacío)
@@ -1032,7 +1037,8 @@ function renderHistorial() {
   }
 
   const pagoBadge = (p) => {
-    const map = { efectivo:['green','Efectivo'], transferencia:['blue','Transf.'], mp:['blue','MP'], qr:['blue','QR'], cuenta_corriente:['yellow','Cta. Cte.'] };
+    // En el historial todas las OT son cta_cte. Lo que mostramos es CON QUÉ se pagó (metodo_confirmado).
+    const map = { efectivo:['green','Efectivo'], transf_qr:['blue','Transf./QR'], transferencia:['blue','Transf.'], mp:['blue','MP'], qr:['blue','QR'], cuenta_corriente:['yellow','Cta. Cte.'] };
     const [cls, lbl] = map[p] || ['gray', p||'—'];
     return `<span class="badge badge-${cls}">${lbl}</span>`;
   };
@@ -1047,7 +1053,7 @@ function renderHistorial() {
       <td style="font-weight:500;">${o.proveedor||'—'}</td>
       <td style="color:var(--text2);">${o.nro_factura||'—'}</td>
       <td>${tipoBadge(o.tipo_comprobante)}</td>
-      <td>${pagoBadge(o.estado_pago)}</td>
+      <td>${pagoBadge(o.metodo_confirmado || o.estado_pago)}</td>
       <td style="color:var(--accent);font-weight:500;">${formatMoney(o.total)}</td>
       <td style="font-size:11px;color:var(--text2);">${localLabel(o.local)}</td>
     </tr>

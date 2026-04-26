@@ -588,9 +588,7 @@
             <select class="form-select" id="sv-pago">
               <option value="">Seleccionar...</option>
               <option value="efectivo">Efectivo</option>
-              <option value="transferencia">Transferencia</option>
-              <option value="mp">Mercado Pago</option>
-              <option value="qr">QR</option>
+              <option value="transf_qr">Transferencia / QR</option>
               <option value="cuenta_corriente">Cuenta Corriente</option>
             </select>
           </div>
@@ -682,9 +680,7 @@
           <select class="form-select" id="f-estado-pago">
             <option value="">Seleccionar...</option>
             <option value="efectivo">Efectivo</option>
-            <option value="transferencia">Transferencia</option>
-            <option value="mp">Mercado Pago</option>
-            <option value="qr">QR</option>
+            <option value="transf_qr">Transferencia / QR</option>
             <!-- cuenta_corriente: se muestra solo para admin/encargado/supervisor via JS -->
             <option value="cuenta_corriente" id="f-estado-pago-cta" style="display:none;">Cuenta Corriente</option>
           </select>
@@ -1138,14 +1134,18 @@ function isComplete(o) {
 }
 
 function isPagadoInmediato(o) {
-  return ['efectivo','transferencia','mp','qr'].includes(o.estado_pago);
+  return ['efectivo','transf_qr'].includes(o.estado_pago);
 }
 
-// Una OT pasa al historial cuando:
-// - pago inmediato (efectivo/transf/mp/qr) + todos los checks + pagado_confirmado=true
-// - cuenta_corriente: NUNCA pasa al historial desde este módulo (lo gestiona pagos.html)
+// Una OT pasa al historial cuando (PRD v38 sección 4.5):
+// - tipo_ot='aviso' (cualquier estado_llegada): NUNCA — debe convertirse primero
+// - cuenta_corriente + pagado_confirmado=true: SI (archivado desde pagos.html)
+// - cuenta_corriente + pagado_confirmado=false: NO (queda en lista y en pagos.html)
+// - efectivo/transf_qr + todos los checks + pagado_confirmado=true: SI
+// - efectivo/transf_qr + checks incompletos o sin pagado_confirmado: NO
 function isPasadaAHistorial(o) {
-  if (o.estado_pago === 'cuenta_corriente') return false;
+  if (o.tipo_ot === 'aviso') return false;
+  if (o.estado_pago === 'cuenta_corriente') return !!o.pagado_confirmado;
   if (isPagadoInmediato(o)) return isComplete(o); // isComplete ya exige pagado_confirmado
   return isComplete(o);
 }
@@ -1159,8 +1159,8 @@ function badgeTipo(t) {
 }
 
 function badgePago(p) {
-  const map    = { efectivo:'green', transferencia:'blue', mp:'blue', qr:'blue', cuenta_corriente:'yellow' };
-  const labels = { efectivo:'Efectivo', transferencia:'Transf.', mp:'MP', qr:'QR', cuenta_corriente:'Cta. Cte.' };
+  const map    = { efectivo:'green', transf_qr:'blue', cuenta_corriente:'yellow' };
+  const labels = { efectivo:'Efectivo', transf_qr:'Transf/QR', cuenta_corriente:'Cta. Cte.' };
   const cls = map[p] || 'gray';
   return `<span class="badge badge-${cls}">${labels[p]||p||'—'}</span>`;
 }
@@ -1256,8 +1256,8 @@ function openDetalle(id) {
 
 // ─── SECCIÓN PAGO MODAL (6.3) ────────────────────────────────
 function buildPagoSection(o) {
-  const METODO_LABELS = { efectivo:'Efectivo', transferencia:'Transferencia', mp:'Mercado Pago', qr:'QR', cuenta_corriente:'Cuenta Corriente' };
-  const METODO_COLOR  = { efectivo:'var(--green)', transferencia:'var(--blue)', mp:'var(--blue)', qr:'var(--blue)', cuenta_corriente:'var(--yellow)' };
+  const METODO_LABELS = { efectivo:'Efectivo', transf_qr:'Transferencia / QR', cuenta_corriente:'Cuenta Corriente' };
+  const METODO_COLOR  = { efectivo:'var(--green)', transf_qr:'var(--blue)', cuenta_corriente:'var(--yellow)' };
   const estadoLabel   = METODO_LABELS[o.estado_pago] || o.estado_pago || '—';
   const estadoColor   = METODO_COLOR[o.estado_pago]  || 'var(--text3)';
 
@@ -1312,10 +1312,8 @@ function buildPagoSection(o) {
           <select id="modal-metodo-pago" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:8px 10px;color:var(--text);font-size:13px;outline:none;">
             <option value="">Seleccionar...</option>
             <option value="efectivo" ${metodoActual==='efectivo'?'selected':''}>Efectivo</option>
-            <option value="transferencia" ${metodoActual==='transferencia'?'selected':''}>Transferencia</option>
-            <option value="mp" ${metodoActual==='mp'?'selected':''}>Mercado Pago</option>
-            <option value="qr" ${metodoActual==='qr'?'selected':''}>QR</option>
-            ${(rolActual==='admin'||rolActual==='encargado') ? `<option value="cuenta_corriente" ${metodoActual==='cuenta_corriente'?'selected':''}>Cuenta Corriente</option>` : ''}
+            <option value="transf_qr" ${metodoActual==='transf_qr'?'selected':''}>Transferencia / QR</option>
+            ${(rolActual==='admin'||rolActual==='encargado'||rolActual==='supervisor') ? `<option value="cuenta_corriente" ${metodoActual==='cuenta_corriente'?'selected':''}>Cuenta Corriente</option>` : ''}
           </select>
         </div>
         <div>
@@ -1686,6 +1684,8 @@ async function submitOT() {
     activo_mp: document.getElementById('c-activo-mp').checked,
     activo_rappi: document.getElementById('c-activo-rappi').checked,
     revision_precios: document.getElementById('c-revision-precios')?.checked || false,
+    tipo_ot: 'completa',
+    estado_llegada: 'llego',
     updated_at: new Date().toISOString(),
   };
 
@@ -1910,6 +1910,8 @@ async function submitSupervisorOT() {
     proveedor,
     total: monto,
     estado_pago: pago,
+    tipo_ot: 'aviso',
+    estado_llegada: 'esperado',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
   };
@@ -2013,9 +2015,9 @@ function renderCalendario() {
     const otHtml = otDia.length === 0
       ? '<div style="font-size:10px;color:var(--text3);padding:6px 0;opacity:0.5;">—</div>'
       : otDia.map(o => {
-          const pagoColor = { efectivo:'var(--green)', transferencia:'var(--blue)', mp:'var(--blue)',
-            qr:'var(--blue)', cuenta_corriente:'var(--yellow)' }[o.estado_pago] || 'var(--text3)';
-          const pagoLabel = { efectivo:'Efec', transferencia:'Transf', mp:'MP', qr:'QR',
+          const pagoColor = { efectivo:'var(--green)', transf_qr:'var(--blue)',
+            cuenta_corriente:'var(--yellow)' }[o.estado_pago] || 'var(--text3)';
+          const pagoLabel = { efectivo:'Efec', transf_qr:'Tr/QR',
             cuenta_corriente:'Cta.' }[o.estado_pago] || '—';
           const completa = isPasadaAHistorial(o);
           return `<div style="padding:5px 7px;background:var(--surface2);border:1px solid var(--border);border-radius:5px;margin-bottom:4px;border-left:2px solid ${pagoColor};opacity:${completa?'0.55':'1'}">
@@ -2074,7 +2076,7 @@ async function loadHistorialOT() {
     // Cargar solo OT con pago inmediato Y pagado_confirmado=true (excluir cuenta_corriente)
     let q = 'ordenes_trabajo?order=fecha.desc,created_at.desc&limit=300';
     if (localKey) q += '&local=eq.'+localKey;
-    q += '&estado_pago=in.(efectivo,transferencia,mp,qr)';
+    q += '&estado_pago=in.(efectivo,transf_qr)';
     q += '&pagado_confirmado=eq.true';
     const data = await sbFetch(q) || [];
     // Doble filtro en JS: isComplete garantiza checks operativos completos
