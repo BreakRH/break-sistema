@@ -216,6 +216,29 @@
   .badge-gray { background: var(--surface3); color: var(--text2); }
   .badge-accent { background: var(--accent-dim); color: var(--accent); }
 
+  /* AVISOS — filas y botones */
+  tr.aviso-row td { background: rgba(232,197,71,0.06); border-top: 1px solid rgba(232,197,71,0.18); }
+  tr.aviso-row:hover td { background: rgba(232,197,71,0.10); }
+  tr.aviso-row.aviso-no-llego td { background: rgba(229,62,62,0.07); border-top-color: rgba(229,62,62,0.22); }
+  tr.aviso-row.aviso-no-llego:hover td { background: rgba(229,62,62,0.12); }
+  .aviso-actions { display:flex; gap:6px; flex-wrap:wrap; }
+  .btn-aviso-llego, .btn-aviso-no-llego {
+    padding: 5px 9px;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: var(--mono);
+    border: 1px solid;
+    background: transparent;
+    transition: all 0.15s;
+  }
+  .btn-aviso-llego { color: var(--green); border-color: var(--green); }
+  .btn-aviso-llego:hover { background: var(--green-dim); }
+  .btn-aviso-no-llego { color: var(--red); border-color: var(--red); }
+  .btn-aviso-no-llego:hover { background: var(--red-dim); }
+
   /* PROGRESS DOTS */
   .progress-dots { display: flex; gap: 3px; align-items: center; }
   .dot {
@@ -598,6 +621,11 @@
             <input class="form-input" type="number" id="sv-monto" placeholder="0.00">
           </div>
 
+          <div class="form-group span-2">
+            <label class="form-label">Notas (opcional)</label>
+            <textarea class="form-input" id="sv-notas" rows="2" placeholder="Detalles del aviso, contacto, productos esperados..."></textarea>
+          </div>
+
         </div>
 
         <div style="display:flex;gap:8px;margin-top:20px;">
@@ -850,6 +878,66 @@
   </div>
 </div>
 
+<!-- MODAL: CONVERSIÓN AVISO → OT COMPLETA -->
+<div class="modal-overlay" id="modal-conversion">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Confirmar llegada · Completar OT</div>
+      <button class="modal-close" onclick="closeModalConversion()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="conv-resumen" style="margin-bottom:18px;padding:12px;background:var(--surface2);border-radius:6px;font-size:12px;color:var(--text2);"></div>
+
+      <div class="form-grid">
+
+        <div class="form-group span-2">
+          <label class="form-label">N° de factura / remito</label>
+          <input class="form-input" type="text" id="conv-nro-factura" placeholder="Ej: 0001-00012345">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Tipo comprobante</label>
+          <select class="form-select" id="conv-tipo-comp">
+            <option value="remito">Remito</option>
+            <option value="factura_a">Factura A</option>
+            <option value="factura_b">Factura B</option>
+            <option value="nota_credito">Nota de Crédito</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Monto real</label>
+          <input class="form-input" type="number" id="conv-total" placeholder="0.00">
+        </div>
+
+        <div class="form-group span-2">
+          <label class="form-label">Método de pago</label>
+          <select class="form-select" id="conv-pago">
+            <option value="efectivo">Efectivo</option>
+            <option value="transf_qr">Transferencia / QR</option>
+            <option value="cuenta_corriente" id="conv-pago-cta">Cuenta Corriente</option>
+          </select>
+        </div>
+
+        <div class="form-group span-2">
+          <label class="form-label">Recibido por</label>
+          <input class="form-input" type="text" id="conv-recepcion" placeholder="Nombre de quien recibe">
+        </div>
+
+        <div class="form-group span-2">
+          <label class="form-label">Observaciones de recepción (opcional)</label>
+          <textarea class="form-input" id="conv-obs" rows="2" placeholder="Faltantes, productos en mal estado, etc."></textarea>
+        </div>
+
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModalConversion()">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmarConversion()">✓ Confirmar llegada</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL: DETALLE OT -->
 <div class="modal-overlay" id="modal-detalle">
   <div class="modal">
@@ -1068,14 +1156,26 @@ function renderTabla() {
     (o.proveedor||'').toLowerCase().includes(search)
   );
 
+  // Avisos primero, luego OT completas (PRD §4.7 — sección visual separada)
+  data = data.slice().sort((a, b) => {
+    const aAviso = a.tipo_ot === 'aviso' ? 0 : 1;
+    const bAviso = b.tipo_ot === 'aviso' ? 0 : 1;
+    return aAviso - bAviso;
+  });
+
   const tbody = document.getElementById('tabla-body');
   if (!data.length) {
     const emptyMsg = filtroActivo === 'por_recibir' ? 'No hay pedidos pendientes de recibir' : 'No hay órdenes';
     tbody.innerHTML = `<tr><td colspan="${colspan}"><div class="empty"><div class="empty-icon">📄</div><div class="empty-text">${emptyMsg}</div></div></td></tr>`;
+    notificarAvisosNoLlego();
     return;
   }
 
   tbody.innerHTML = data.map(o => {
+    // ── Branch: AVISOS (tipo_ot === 'aviso') ────────────────
+    if (o.tipo_ot === 'aviso') return renderFilaAviso(o, esMultiTienda);
+
+    // ── Branch: OT completa (render existente) ──────────────
     const checks = checkCount(o);
     const dots = buildDots(o);
     const tiendaCell = esMultiTienda
@@ -1107,6 +1207,43 @@ function renderTabla() {
       </tr>
     `;
   }).join('');
+
+  // PRD §4.7 — siempre notificar al hub (incluso count=0 para limpiar badge)
+  notificarAvisosNoLlego();
+}
+
+// Render de fila aviso (tipo_ot='aviso') — PRD §4.2
+function renderFilaAviso(o, esMultiTienda) {
+  const noLlego = o.estado_llegada === 'no_llego';
+  const rowCls  = noLlego ? 'aviso-row aviso-no-llego' : 'aviso-row';
+  const tiendaCell = esMultiTienda
+    ? `<td><span class="badge badge-gray" style="font-size:10px;">${LOCAL_LABELS[o.local] || o.local || '—'}</span></td>`
+    : '';
+  const estadoBadge = noLlego
+    ? '<span class="badge badge-red">❌ No llegó</span>'
+    : '<span class="badge badge-yellow">⏳ Esperado</span>';
+  const origenBadge = '<span class="badge badge-yellow" style="font-size:9px;">⏳ Aviso</span>';
+  // Botones según estado: si no llegó, permite reabrir como llegado; si esperado, ambas opciones
+  const acciones = noLlego
+    ? `<button class="btn-aviso-llego" onclick="event.stopPropagation();abrirModalConversion('${o.id}')">✓ Llegó</button>`
+    : `<button class="btn-aviso-llego" onclick="event.stopPropagation();abrirModalConversion('${o.id}')">✓ Llegó</button>
+       <button class="btn-aviso-no-llego" onclick="event.stopPropagation();marcarNoLlego('${o.id}')">✕ No llegó</button>`;
+  return `
+    <tr class="${rowCls}" style="cursor:pointer;" onclick="openDetalle('${o.id}')">
+      <td style="white-space:nowrap;">${formatDateDisplay(o.fecha)}<br><span style="font-size:10px;color:var(--text3);">estimada</span></td>
+      <td><span style="color:var(--text3);font-size:11px;font-style:italic;">Aviso pendiente</span></td>
+      <td style="font-weight:500;">${o.proveedor||'—'}</td>
+      <td>${origenBadge}</td>
+      ${tiendaCell}
+      <td>${badgePago(o.estado_pago)}</td>
+      <td style="font-weight:500;color:var(--accent);">${formatMoney(o.total)}</td>
+      <td>${estadoBadge}</td>
+      <td style="color:var(--text2);font-size:11px;">—</td>
+      <td onclick="event.stopPropagation();">
+        <div class="aviso-actions">${acciones}</div>
+      </td>
+    </tr>
+  `;
 }
 
 function renderTablaError() {
@@ -1898,6 +2035,7 @@ async function submitSupervisorOT() {
   const fecha      = document.getElementById('sv-fecha').value;
   const pago       = document.getElementById('sv-pago').value;
   const monto      = parseFloat(document.getElementById('sv-monto').value) || 0;
+  const notas      = (document.getElementById('sv-notas')?.value || '').trim();
 
   if (!local)     { showToast('Seleccioná el local', 'error'); return; }
   if (!proveedor) { showToast('Seleccioná el proveedor', 'error'); return; }
@@ -1910,6 +2048,7 @@ async function submitSupervisorOT() {
     proveedor,
     total: monto,
     estado_pago: pago,
+    notas: notas || null,
     tipo_ot: 'aviso',
     estado_llegada: 'esperado',
     created_at: new Date().toISOString(),
@@ -1925,10 +2064,132 @@ async function submitSupervisorOT() {
     document.getElementById('sv-fecha').value     = today();
     document.getElementById('sv-pago').value      = '';
     document.getElementById('sv-monto').value     = '';
+    const svNotas = document.getElementById('sv-notas');
+    if (svNotas) svNotas.value = '';
     switchTab('lista');
     loadOrdenes();
   } catch(e) {
     showToast('Error al crear: ' + e.message, 'error');
+  }
+}
+
+// ─── AVISOS — flujo Llegó / No llegó (PRD §4.2, §4.7) ────────
+
+// Notifica al hub el count de avisos no_llego del local activo.
+// Se llama al final de renderTabla() y al marcar un aviso como no_llego.
+// Siempre se envía (incluso count=0) para que index pueda limpiar el badge.
+function notificarAvisosNoLlego() {
+  if (!localKey) return; // sin contexto, no notificamos
+  const count = (ordenes || []).filter(o =>
+    o.tipo_ot === 'aviso' &&
+    o.estado_llegada === 'no_llego' &&
+    o.local === localKey
+  ).length;
+  try {
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({ tipo: 'ot-no-llego', count, local: localKey }, '*');
+    }
+  } catch(e) { console.warn('[ordenes] postMessage no-llego falló', e); }
+}
+
+async function marcarNoLlego(id) {
+  if (!confirm('¿Marcar este aviso como NO LLEGÓ?\nSe notificará al hub.')) return;
+  try {
+    await sbFetch(`ordenes_trabajo?id=eq.${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        estado_llegada: 'no_llego',
+        updated_at: new Date().toISOString()
+      })
+    });
+    showToast('Aviso marcado como NO llegó', 'warn');
+    // Update local + re-render (renderTabla llamará notificarAvisosNoLlego)
+    const idx = ordenes.findIndex(o => o.id === id);
+    if (idx >= 0) ordenes[idx].estado_llegada = 'no_llego';
+    renderTabla();
+    renderStats();
+  } catch(e) {
+    showToast('Error: ' + e.message, 'error');
+  }
+}
+
+let _convOrdenId = null;
+
+function abrirModalConversion(id) {
+  const o = ordenes.find(x => x.id === id);
+  if (!o) { showToast('OT no encontrada', 'error'); return; }
+  _convOrdenId = id;
+  // Precargar campos con datos del aviso
+  document.getElementById('conv-nro-factura').value = o.nro_factura || '';
+  document.getElementById('conv-tipo-comp').value   = o.tipo_comprobante || 'remito';
+  document.getElementById('conv-total').value       = o.total || '';
+  document.getElementById('conv-pago').value        = o.estado_pago || 'efectivo';
+  document.getElementById('conv-recepcion').value   = empleadoNombre || '';
+  document.getElementById('conv-obs').value         = '';
+  // Permiso cta cte: ocultar opción a empleado (PRD §4.4)
+  const ctaOpt = document.getElementById('conv-pago-cta');
+  if (ctaOpt) ctaOpt.style.display = (rolActual === 'empleado') ? 'none' : '';
+  // Resumen
+  document.getElementById('conv-resumen').innerHTML =
+    `<strong style="color:var(--text);">${o.proveedor || '—'}</strong> · ` +
+    `${LOCAL_LABELS[o.local] || o.local || '—'} · ` +
+    `Estimado: ${formatDateDisplay(o.fecha)} · ` +
+    `<span style="color:var(--accent);">${formatMoney(o.total)}</span>` +
+    (o.notas ? `<br><span style="font-size:11px;">📝 ${o.notas}</span>` : '');
+  document.getElementById('modal-conversion').classList.add('open');
+}
+
+function closeModalConversion() {
+  document.getElementById('modal-conversion').classList.remove('open');
+  _convOrdenId = null;
+}
+
+async function confirmarConversion() {
+  if (!_convOrdenId) return;
+  const nro       = document.getElementById('conv-nro-factura').value.trim();
+  const tipoComp  = document.getElementById('conv-tipo-comp').value;
+  const total     = parseFloat(document.getElementById('conv-total').value) || 0;
+  const pago      = document.getElementById('conv-pago').value;
+  const recepcion = document.getElementById('conv-recepcion').value.trim();
+  const obs       = document.getElementById('conv-obs').value.trim();
+
+  if (!nro)       { showToast('Ingresá el N° de factura', 'error'); return; }
+  if (!total)     { showToast('Ingresá el monto real', 'error'); return; }
+  if (!recepcion) { showToast('Indicá quién recibió', 'error'); return; }
+
+  const o = ordenes.find(x => x.id === _convOrdenId);
+  if (!o) { showToast('OT no encontrada', 'error'); return; }
+
+  const payload = {
+    tipo_ot: 'completa',
+    estado_llegada: 'llego',
+    nro_factura: nro,
+    tipo_comprobante: tipoComp,
+    total,
+    estado_pago: pago,
+    recepcion,
+    obs_recepcion: obs || null,
+    hora: nowTime(),
+    updated_at: new Date().toISOString()
+  };
+
+  // Cuenta corriente: calcular fecha de vencimiento
+  if (pago === 'cuenta_corriente') {
+    payload.fecha_vencimiento_pago = calcFechaVencimiento(o.fecha, o.proveedor);
+  } else {
+    payload.fecha_vencimiento_pago = null;
+  }
+
+  try {
+    await sbFetch(`ordenes_trabajo?id=eq.${_convOrdenId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload)
+    });
+    showToast('OT completada — aviso convertido', 'success');
+    closeModalConversion();
+    await loadOrdenes(); // reload + renderTabla → notifica hub (count baja)
+  } catch(e) {
+    showToast('Error al confirmar: ' + e.message, 'error');
   }
 }
 

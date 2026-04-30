@@ -284,6 +284,22 @@
         <input class="code-digit" type="number" maxlength="1" inputmode="numeric" id="d5" autocomplete="off">
       </div>
 
+      <div style="margin-bottom:16px;">
+        <div class="box-label" style="margin-bottom:6px;">Nombre del dispositivo</div>
+        <input type="text" id="inp-nombre" placeholder="Ej: Celular mostrador, iPad caja..."
+          style="width:100%;background:var(--bg3);border:0.5px solid var(--border2);border-radius:8px;padding:10px 12px;color:var(--text);font-size:14px;outline:none;box-sizing:border-box;font-family:var(--mono);">
+      </div>
+      <div style="margin-bottom:20px;">
+        <div class="box-label" style="margin-bottom:6px;">Tienda asignada</div>
+        <select id="inp-local"
+          style="width:100%;background:var(--bg3);border:0.5px solid var(--border2);border-radius:8px;padding:10px 12px;color:var(--text);font-size:14px;outline:none;box-sizing:border-box;font-family:var(--mono);">
+          <option value="">Sin tienda fija (multi-tienda)</option>
+          <option value="palermo">Thames · Palermo</option>
+          <option value="belgrano">Roosevelt · Belgrano</option>
+          <option value="barrio_chino">Juramento · B. Chino</option>
+          <option value="san_telmo">Independencia · S. Telmo</option>
+        </select>
+      </div>
       <button class="btn-primary" id="btn-verificar" onclick="verificarCodigo()" disabled>
         Verificar código
       </button>
@@ -518,16 +534,28 @@
         localStorage.setItem(DE_TOKEN_KEY, token);
       }
 
+      // Leer nombre y local del formulario
+      const nombre  = (document.getElementById('inp-nombre')?.value || '').trim() || 'Dispositivo';
+      const local   = document.getElementById('inp-local')?.value || '';
+      const ua      = navigator.userAgent.substring(0, 120);
+      const fecha   = new Date().toLocaleDateString('es-AR', {day:'2-digit',month:'2-digit',year:'numeric'});
+      const localNombre = {palermo:'Thames · Palermo',belgrano:'Roosevelt · Belgrano',barrio_chino:'Juramento · B. Chino',san_telmo:'Independencia · S. Telmo'}[local] || '';
+
       // Cargar lista actual de tokens
       let tokensActuales = [];
       try {
         const tRows = await sbFetch(`config?clave=eq.${DE_TOKENS_CFG}&select=valor`);
-        if (tRows && tRows.length) tokensActuales = JSON.parse(tRows[0].valor) || [];
+        if (tRows && tRows.length) {
+          const parsed = JSON.parse(tRows[0].valor) || [];
+          // Normalizar formato viejo (string) a objeto
+          tokensActuales = parsed.map(t => typeof t === 'string' ? { token: t, local: '', nombre: '', ua: '', fecha: '' } : t);
+        }
       } catch(e) {}
 
-      // Agregar token si no está
-      if (!tokensActuales.includes(token)) {
-        tokensActuales.push(token);
+      // Agregar token como objeto si no está
+      const yaExiste = tokensActuales.some(t => t.token === token);
+      if (!yaExiste) {
+        tokensActuales.push({ token, nombre, local, localNombre, ua, fecha });
         await sbFetch('config', {
           method: 'POST',
           body: JSON.stringify({ clave: DE_TOKENS_CFG, valor: JSON.stringify(tokensActuales) }),

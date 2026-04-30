@@ -23,6 +23,51 @@
   }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 15px; min-height: 100vh; }
+  /* Cambio 1 (PRD §3.2 parte 2): padding-top sólo cuando turno.html corre como hub full
+     (empleado/encargado). El header rojo es fixed y reservaría espacio si no. */
+  body.pt-fullscreen { padding-top: 48px; }
+
+  /* ── HEADER (Cambio 1, PRD §3.2 parte 2) ── */
+  .pt-logout-header {
+    display: none;
+    position: fixed; top: 0; left: 0; right: 0; height: 48px; z-index: 200;
+    background: var(--bg2); color: var(--text);
+    border-bottom: 0.5px solid var(--border);
+    align-items: center; justify-content: space-between;
+    padding: 0 14px; gap: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+    font-family: var(--sans);
+  }
+  .pt-logout-header.active { display: flex; }
+  .pt-logout-header .pt-lh-info {
+    font-size: 12px; font-family: var(--mono); color: var(--text2);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0;
+  }
+  .pt-logout-header .pt-lh-btn {
+    flex-shrink: 0;
+    background: var(--red);
+    border: 1px solid var(--red);
+    color: #000;
+    border-radius: 8px;
+    padding: 7px 14px;
+    font-family: var(--mono);
+    font-size: 12px; font-weight: 700;
+    cursor: pointer;
+    transition: filter 0.15s;
+  }
+  .pt-logout-header .pt-lh-btn:hover { filter: brightness(1.12); }
+  .pt-logout-header .pt-lh-btn:active { filter: brightness(0.92); }
+
+  /* ── BANNER PESTAÑA DUPLICADA (Cambio 1, PRD §3.2 parte 3) ── */
+  .pt-tab-dup-banner {
+    position: fixed; top: 48px; left: 0; right: 0; z-index: 199;
+    background: rgba(232,93,74,0.95); color: #fff;
+    text-align: center; padding: 10px 14px;
+    font-family: var(--mono); font-size: 12px; font-weight: 600;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    letter-spacing: 0.02em;
+  }
+  body.pt-fullscreen.pt-tab-dup { padding-top: 86px; }
 
   /* ── LOADING ── */
   #loading-overlay {
@@ -56,6 +101,10 @@
     border-bottom: 0.5px solid var(--border); padding: 14px 20px;
     display: flex; align-items: center; gap: 12px;
   }
+  /* Cambio 1 (PRD §3.2 parte 2): cuando turno.html corre como hub full
+     (empleado/encargado), el header rojo pisa el top y los topbars sticky
+     internos arrancan a 48px para no taparlo. */
+  body.pt-fullscreen .topbar { top: 48px; }
   .topbar-back {
     width: 44px; height: 44px; border: 0.5px solid var(--border2); border-radius: 10px;
     background: var(--bg3); display: flex; align-items: center; justify-content: center;
@@ -309,9 +358,67 @@
   .pt-calc-op:hover { background: rgba(232,197,71,0.08); }
   .pt-calc-danger { color: var(--red); border-color: rgba(232,93,74,0.3); }
   .pt-calc-danger:hover { background: var(--red-bg); }
+
+  /* ── PILLS DE NAVEGACIÓN RÁPIDA (módulos) ── */
+  .pt-pills-bar {
+    position: sticky; top: 72px; z-index: 90;
+    background: var(--bg);
+    border-bottom: 0.5px solid var(--border);
+    padding: 10px 16px;
+    display: flex; gap: 8px;
+    overflow-x: auto; overflow-y: hidden;
+    scrollbar-width: none; -webkit-overflow-scrolling: touch;
+  }
+  .pt-pills-bar::-webkit-scrollbar { display: none; }
+  .pt-pill {
+    flex-shrink: 0;
+    background: var(--bg3); border: 0.5px solid var(--border2); color: var(--text2);
+    border-radius: 20px; padding: 6px 13px;
+    font-family: var(--mono); font-size: 11px; font-weight: 500;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    cursor: pointer; transition: all 0.12s; white-space: nowrap;
+  }
+  .pt-pill:hover { background: var(--bg4); color: var(--text); border-color: rgba(255,255,255,0.22); }
+  .pt-pill:active { transform: scale(0.96); }
+  .pt-pill.active {
+    background: rgba(232,197,71,0.10); color: var(--accent);
+    border-color: rgba(232,197,71,0.45); cursor: default;
+  }
+  .pt-pill.active:hover { background: rgba(232,197,71,0.10); transform: none; }
+
+  /* v40 — Banner read-only para turno abierto por otro empleado */
+  .pt-readonly-banner {
+    display: none;
+    margin: 8px 12px 0;
+    padding: 10px 14px;
+    background: rgba(240,136,74,0.10);
+    border: 0.5px solid rgba(240,136,74,0.45);
+    border-radius: var(--radius-md);
+    color: var(--orange);
+    font-size: 12px; font-weight: 500;
+    text-align: center;
+  }
+  .pt-readonly-banner.show { display: block; }
+  .pt-readonly-banner .ro-strong { font-weight: 700; }
+
+  /* Inputs/buttons deshabilitados dentro del panel cuando readOnly */
+  .pt-readonly .pt-content input:disabled,
+  .pt-readonly .pt-content select:disabled,
+  .pt-readonly .pt-content textarea:disabled,
+  .pt-readonly .pt-content button:disabled {
+    opacity: 0.55; cursor: not-allowed;
+  }
 </style>
 </head>
 <body>
+
+<!-- Cambio 1 (PRD §3.2 parte 2): header rojo permanente con Logout.
+     Solo se activa cuando turno.html corre como hub full (empleado/encargado).
+     El bootstrap desde URL params (parte 1.5) le agrega .active al detectar contexto válido. -->
+<div id="pt-logout-header" class="pt-logout-header">
+  <div class="pt-lh-info" id="pt-lh-info">Turno</div>
+  <button class="pt-lh-btn" onclick="ptCerrarSesion()">↩ Salir</button>
+</div>
 
 <div id="loading-overlay">
   <div class="spinner"></div>
@@ -374,8 +481,16 @@
 <div class="screen" id="screen-panel-turno">
   <div class="topbar">
     <div class="topbar-back" onclick="ptCancelarAlarmas();goBack()">←</div>
-    <span class="topbar-title" id="pt-topbar-title">Control/Cierre de Turno</span>
+    <span class="topbar-title" id="pt-topbar-title">Control de Turno</span>
     <span class="topbar-badge" id="pt-topbar-badge">—</span>
+  </div>
+
+  <!-- Pills de navegación rápida — render dinámico por rol (ptRenderPills) -->
+  <div class="pt-pills-bar" id="pt-pills-bar"></div>
+
+  <!-- v40 — Banner read-only: turno abierto por otro empleado -->
+  <div class="pt-readonly-banner" id="pt-readonly-banner">
+    <span>Turno abierto por <span class="ro-strong" id="pt-readonly-nombre">—</span> · solo lectura</span>
   </div>
 
   <div class="pt-content">
@@ -385,6 +500,60 @@
       <div class="pt-info-right">
         <div class="pt-turno-pill" id="pt-turno-pill">—</div>
         <div class="pt-tiempo-label" id="pt-tiempo-turno">0h 0min</div>
+      </div>
+    </div>
+
+    <!-- Retiros de efectivo — fija arriba, no colapsable -->
+    <div class="pt-section" id="pt-retiros-section" style="background:var(--bg2);border:0.5px solid rgba(255,68,68,0.25);border-radius:var(--radius-lg);overflow:hidden;">
+      <div class="pt-section-header" style="padding:12px 16px;border-bottom:0.5px solid rgba(255,68,68,0.15);">
+        <div class="pt-section-title">
+          <div class="pt-dot" style="background:var(--red)"></div>
+          Retiros de efectivo
+        </div>
+        <span id="pt-retiros-badge" style="font-family:var(--mono);font-size:10px;color:var(--red);font-weight:600;"></span>
+      </div>
+      <div class="pt-section-body" id="pt-body-retiros" style="padding:14px 16px;">
+
+        <!-- Formulario registro -->
+        <div id="pt-ret-form">
+          <div class="form-section-title" style="margin-bottom:10px">Registrar retiro</div>
+          <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;">
+            <div>
+              <div style="font-size:11px;color:var(--text3);margin-bottom:4px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.05em;">Quien retira</div>
+              <input type="text" id="pt-ret-quien" placeholder="Nombre de quien retira" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box;">
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+              <div>
+                <div style="font-size:11px;color:var(--text3);margin-bottom:4px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.05em;">Monto (ARS)</div>
+                <input type="number" id="pt-ret-monto" placeholder="0" min="1" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box;">
+              </div>
+              <div>
+                <div style="font-size:11px;color:var(--text3);margin-bottom:4px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.05em;">Notas (opcional)</div>
+                <input type="text" id="pt-ret-notas" placeholder="Motivo..." style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box;">
+              </div>
+            </div>
+          </div>
+          <button onclick="ptRetiroStep1()" style="width:100%;background:var(--red);border:none;color:#fff;padding:12px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--mono);">Continuar &#8594;</button>
+        </div>
+
+        <!-- Confirmacion -->
+        <div id="pt-ret-confirm" style="display:none;margin-top:14px;background:rgba(255,68,68,.08);border:1px solid rgba(255,68,68,.25);border-radius:10px;padding:14px;">
+          <div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:8px;">&#9888; Confirmar retiro</div>
+          <div id="pt-ret-confirm-body" style="font-family:var(--mono);font-size:13px;line-height:1.8;margin-bottom:12px;"></div>
+          <div style="display:flex;gap:8px;">
+            <button onclick="ptRetiroCancel()" style="flex:1;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:10px;border-radius:8px;font-size:13px;cursor:pointer;">Cancelar</button>
+            <button onclick="ptRetiroConfirmar()" style="flex:1;background:var(--red);border:none;color:#fff;padding:10px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">Confirmar</button>
+          </div>
+        </div>
+
+        <!-- Lista retiros del turno -->
+        <div style="margin-top:16px;">
+          <div style="font-size:11px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Retiros de hoy en este local</div>
+          <div id="pt-retiros-list" style="display:flex;flex-direction:column;gap:6px;">
+            <div style="font-family:var(--mono);font-size:11px;color:var(--text3);">Cargando...</div>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -565,8 +734,26 @@
           <div id="pt-caja-calculadora" style="display:none;margin-bottom:10px">
             <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:8px">Usá la calculadora para sumar los billetes. El tape acumula las operaciones.</div>
             <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:14px 16px;">
+              <!-- Panel resumen: tape + a sumar (en vivo) + proyectado (Chat 3 / Bug 6b) -->
+              <div style="background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius);padding:10px 12px;margin-bottom:8px">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px">
+                  <span style="font-family:var(--mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em">Tape acumulado</span>
+                  <span id="pt-calc-tape-now" style="font-family:var(--mono);font-size:14px;color:var(--text2);font-weight:600">$0</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px">
+                  <div style="display:flex;flex-direction:column;gap:2px;min-width:0;flex:1">
+                    <span style="font-family:var(--mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em">+ A sumar ahora</span>
+                    <span id="pt-calc-to-add-detail" style="font-family:var(--mono);font-size:11px;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-height:14px">—</span>
+                  </div>
+                  <span id="pt-calc-to-add" style="font-family:var(--mono);font-size:14px;color:var(--accent);font-weight:600;white-space:nowrap">$0</span>
+                </div>
+                <div style="border-top:0.5px solid var(--border2);padding-top:6px;display:flex;justify-content:space-between;align-items:center;gap:8px">
+                  <span style="font-family:var(--mono);font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;font-weight:600">= Proyectado</span>
+                  <span id="pt-calc-proyectado" style="font-family:var(--mono);font-size:22px;color:var(--green);font-weight:700;line-height:1">$0</span>
+                </div>
+              </div>
               <div id="pt-calc-tape" style="min-height:52px;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius);padding:8px 10px;font-family:var(--mono);font-size:11px;color:var(--text3);margin-bottom:10px;overflow-y:auto;max-height:90px;text-align:right;line-height:1.7"></div>
-              <div id="pt-calc-display" style="background:var(--bg);border:1px solid var(--accent);border-radius:var(--radius);padding:10px 14px;font-family:var(--mono);font-size:28px;font-weight:600;color:var(--accent);text-align:right;margin-bottom:10px;min-height:52px;display:flex;align-items:center;justify-content:flex-end;letter-spacing:.04em">0</div>
+              <div id="pt-calc-display" style="background:var(--bg);border:1px solid var(--accent);border-radius:var(--radius);padding:10px 14px;font-family:var(--mono);font-size:26px;font-weight:600;color:var(--accent);text-align:right;margin-bottom:10px;min-height:52px;display:flex;align-items:center;justify-content:flex-end;letter-spacing:.02em;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">0</div>
               <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
                 <button class="pt-calc-btn" onclick="ptCalcNum('7')">7</button><button class="pt-calc-btn" onclick="ptCalcNum('8')">8</button><button class="pt-calc-btn" onclick="ptCalcNum('9')">9</button><button class="pt-calc-btn pt-calc-op" onclick="ptCalcOp('/')">÷</button>
                 <button class="pt-calc-btn" onclick="ptCalcNum('4')">4</button><button class="pt-calc-btn" onclick="ptCalcNum('5')">5</button><button class="pt-calc-btn" onclick="ptCalcNum('6')">6</button><button class="pt-calc-btn pt-calc-op" onclick="ptCalcOp('*')">×</button>
@@ -703,57 +890,6 @@
     </div>
 
 
-    <!-- Retiros de efectivo -->
-    <div class="pt-section" id="pt-retiros-section">
-      <div class="pt-section-header collapsible" onclick="ptToggleSection('pt-body-retiros',this)">
-        <div class="pt-section-title"><div class="pt-dot" style="background:var(--red)"></div>Retiros de efectivo<span class="pt-collapse-arrow" id="pt-arr-retiros">&#9662;</span></div>
-        <span id="pt-retiros-badge" style="font-family:var(--mono);font-size:10px;color:var(--text3)"></span>
-      </div>
-      <div class="pt-section-body collapsed" id="pt-body-retiros">
-
-        <!-- Formulario registro -->
-        <div id="pt-ret-form">
-          <div class="form-section-title" style="margin-bottom:10px">Registrar retiro</div>
-          <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;">
-            <div>
-              <div style="font-size:11px;color:var(--text3);margin-bottom:4px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.05em;">Quien retira</div>
-              <input type="text" id="pt-ret-quien" placeholder="Nombre de quien retira" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box;">
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-              <div>
-                <div style="font-size:11px;color:var(--text3);margin-bottom:4px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.05em;">Monto (ARS)</div>
-                <input type="number" id="pt-ret-monto" placeholder="0" min="1" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box;">
-              </div>
-              <div>
-                <div style="font-size:11px;color:var(--text3);margin-bottom:4px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.05em;">Notas (opcional)</div>
-                <input type="text" id="pt-ret-notas" placeholder="Motivo..." style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box;">
-              </div>
-            </div>
-          </div>
-          <button onclick="ptRetiroStep1()" style="width:100%;background:var(--red);border:none;color:#fff;padding:12px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--mono);">Continuar &#8594;</button>
-        </div>
-
-        <!-- Confirmacion -->
-        <div id="pt-ret-confirm" style="display:none;margin-top:14px;background:rgba(255,68,68,.08);border:1px solid rgba(255,68,68,.25);border-radius:10px;padding:14px;">
-          <div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:8px;">&#9888; Confirmar retiro</div>
-          <div id="pt-ret-confirm-body" style="font-family:var(--mono);font-size:13px;line-height:1.8;margin-bottom:12px;"></div>
-          <div style="display:flex;gap:8px;">
-            <button onclick="ptRetiroCancel()" style="flex:1;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:10px;border-radius:8px;font-size:13px;cursor:pointer;">Cancelar</button>
-            <button onclick="ptRetiroConfirmar()" style="flex:1;background:var(--red);border:none;color:#fff;padding:10px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">Confirmar</button>
-          </div>
-        </div>
-
-        <!-- Lista retiros del turno -->
-        <div style="margin-top:16px;">
-          <div style="font-size:11px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Retiros de hoy en este local</div>
-          <div id="pt-retiros-list" style="display:flex;flex-direction:column;gap:6px;">
-            <div style="font-family:var(--mono);font-size:11px;color:var(--text3);">Cargando...</div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-
   </div>
 </div>
 
@@ -826,6 +962,9 @@ let state = {
   local: null, localName: null,
   rol: null, empleado: null, empleado_id: null,
   turno: null,
+  // v40 — Turno único por (local, fecha, turno)
+  readOnly: false,        // true cuando el usuario NO es el dueño del turno abierto
+  aperturaActiva: null,   // fila de aperturas_turno (id, empleado_nombre, etc.) si hay turno abierto hoy
 };
 let _hubOrigin = null; // origin del hub padre
 
@@ -869,6 +1008,208 @@ function showToast(msg, type = '') {
   t.className = `show ${type}`;
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => { t.className = ''; }, 3000);
+}
+
+// ═══════════════════════════════════════
+// PERSISTENCIA HÍBRIDA — borrador del turno
+// localStorage instantáneo + Supabase con debounce 7s.
+// Tabla: turnos_borrador (UNIQUE local, fecha, turno).
+// Carga al inicio: Supabase > localStorage > vacío.
+// ═══════════════════════════════════════
+const PT_DEBOUNCE_MS = 7000;
+let _ptDebTimer = null;
+let _ptSyncing = false;
+let _ptDirty   = false;
+let _ptLocalSavedAt = null; // timestamp ISO del snap aplicado desde localStorage
+
+function _ptHoyISO() { return new Date().toISOString().split('T')[0]; }
+function _ptLSKey() {
+  if (!state.local || !state.turno) return null;
+  // Mantener clave compuesta tradicional (local + turno + fecha)
+  return `break_turno_state_${state.local}_${state.turno}_${_ptHoyISO()}`;
+}
+
+// Construye el snapshot completo del borrador a partir de ptData + DOM.
+function ptBuildSnap() {
+  const _billetes = {};
+  ['ptb10','ptb20','ptb50','ptb100','ptb200','ptb500','ptb1000','ptb2000','ptb10000','ptb20000'].forEach(id => {
+    _billetes[id] = document.getElementById(id)?.value || '0';
+  });
+  const _pacasChica = {};
+  ['ptpa-p100','ptpa-p200','ptpa-p500','ptpa-p1000','ptpa-p10000'].forEach(id => {
+    _pacasChica[id] = document.getElementById(id)?.value || '';
+  });
+  const _cajaGrande = {};
+  ['ptcg-pa100','ptcg-pa200','ptcg-pa500','ptcg-pa1000','ptcg-pa10000',
+   'ptcg-bu10000','ptcg-bu50000','ptcg-bu100000','ptcg-cc1','ptcg-cc2',
+   'ptcg-cn1','ptcg-cv1','ptcg-cn2','ptcg-cv2'].forEach(id => {
+    _cajaGrande[id] = document.getElementById(id)?.value || '';
+  });
+  return {
+    checks:           ptData.checks,
+    subChecks:        ptData.subChecks,
+    hielosCiclos:     ptData.hielosCiclos,
+    recargaCalculada: ptData.recargaCalculada,
+    _totalDeudas:     ptData._totalDeudas,
+    cierreGuardado:   false,
+    _savedSistema:    document.getElementById('ptmed-sistema')?.value || '',
+    _savedObs:        document.getElementById('pt-obs-cierre')?.value || '',
+    _savedModo:       (typeof ptModoConteo !== 'undefined') ? ptModoConteo : null,
+    _savedRapidoEf:     document.getElementById('pt-rapido-ef')?.value || '',
+    _savedRapidoGrande: document.getElementById('pt-rapido-grande')?.value || '',
+    _calcTapeTotal:   (typeof _calcTapeTotal !== 'undefined') ? _calcTapeTotal : null,
+    _billetes,
+    _pacasChica,
+    _cajaGrande,
+  };
+}
+
+// Escritura instantánea a localStorage (cada keystroke vía delegación).
+function ptPersistirLocal() {
+  const k = _ptLSKey();
+  if (!k) return;
+  if (ptData.cierreGuardado) return;
+  try {
+    const snap = ptBuildSnap();
+    snap._savedAt = new Date().toISOString();
+    _ptLocalSavedAt = snap._savedAt;
+    localStorage.setItem(k, JSON.stringify(snap));
+  } catch(e) { /* QuotaExceededError u otro: silencioso */ }
+}
+
+// Schedule sync a Supabase con debounce.
+function ptSchedulePersist() {
+  if (!state.local || !state.turno) return;
+  if (ptData.cierreGuardado) return;
+  ptPersistirLocal();
+  _ptDirty = true;
+  if (_ptDebTimer) clearTimeout(_ptDebTimer);
+  _ptDebTimer = setTimeout(ptSyncSupabase, PT_DEBOUNCE_MS);
+}
+
+// Sync remoto: UPSERT a turnos_borrador. Idempotente sobre (local, fecha, turno).
+async function ptSyncSupabase() {
+  if (_ptSyncing) return;
+  if (!state.local || !state.turno) return;
+  if (ptData.cierreGuardado) return;
+  _ptSyncing = true;
+  _ptDirty   = false;
+  try {
+    const snap = ptBuildSnap();
+    snap._savedAt = _ptLocalSavedAt || new Date().toISOString();
+    const payload = {
+      local:        state.local,
+      fecha:        _ptHoyISO(),
+      turno:        state.turno,
+      empleado_id:  state.empleado_id || null,
+      borrador_json: snap,
+      updated_at:   new Date().toISOString(),
+    };
+    await sbFetch('turnos_borrador?on_conflict=local,fecha,turno', {
+      method: 'POST',
+      headers: { 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify(payload),
+    });
+  } catch(e) {
+    console.warn('[turno] sync borrador falló (queda en localStorage):', e);
+  } finally {
+    _ptSyncing = false;
+    // Si llegaron cambios mientras sincronizábamos, reagendar
+    if (_ptDirty) {
+      if (_ptDebTimer) clearTimeout(_ptDebTimer);
+      _ptDebTimer = setTimeout(ptSyncSupabase, PT_DEBOUNCE_MS);
+    }
+  }
+}
+
+// Carga sólo del borrador remoto (sin fallback). Útil para resolver conflictos
+// con el snap local ya aplicado.
+async function ptCargarBorradorRemoto() {
+  if (!state.local || !state.turno) return null;
+  try {
+    const fecha = _ptHoyISO();
+    const rows = await sbFetch(
+      `turnos_borrador?local=eq.${state.local}&fecha=eq.${fecha}&turno=eq.${state.turno}&select=borrador_json,updated_at&limit=1`
+    );
+    if (rows && rows[0] && rows[0].borrador_json) {
+      const snap = typeof rows[0].borrador_json === 'string'
+        ? JSON.parse(rows[0].borrador_json)
+        : rows[0].borrador_json;
+      // Inyectar updated_at del row si no está en el snap (compat con snaps viejos)
+      if (!snap._savedAt && rows[0].updated_at) snap._savedAt = rows[0].updated_at;
+      return snap;
+    }
+  } catch(e) {
+    console.warn('[turno] cargar borrador remoto falló:', e);
+  }
+  return null;
+}
+
+// Carga inicial: Supabase > localStorage > null.
+// Devuelve el snap restaurable o null si no hay borrador válido.
+async function ptCargarBorrador() {
+  const k = _ptLSKey();
+  if (!state.local || !state.turno) return null;
+  // 1) Supabase (autoritativo)
+  try {
+    const fecha = _ptHoyISO();
+    const rows = await sbFetch(
+      `turnos_borrador?local=eq.${state.local}&fecha=eq.${fecha}&turno=eq.${state.turno}&select=borrador_json,updated_at&limit=1`
+    );
+    if (rows && rows[0] && rows[0].borrador_json) {
+      const snap = typeof rows[0].borrador_json === 'string'
+        ? JSON.parse(rows[0].borrador_json)
+        : rows[0].borrador_json;
+      // Espejar a localStorage para coherencia offline
+      if (k) { try { localStorage.setItem(k, JSON.stringify(snap)); } catch(_){} }
+      return snap;
+    }
+  } catch(e) {
+    console.warn('[turno] cargar borrador remoto falló, fallback a localStorage:', e);
+  }
+  // 2) localStorage
+  if (k) {
+    try {
+      const raw = localStorage.getItem(k);
+      if (raw) {
+        const snap = JSON.parse(raw);
+        if (snap && !snap.cierreGuardado) return snap;
+      }
+    } catch(_) {}
+  }
+  return null;
+}
+
+// Limpieza completa al cerrar el turno.
+async function ptLimpiarBorrador() {
+  const k = _ptLSKey();
+  if (k) { try { localStorage.removeItem(k); } catch(_){} }
+  if (_ptDebTimer) { clearTimeout(_ptDebTimer); _ptDebTimer = null; }
+  if (!state.local || !state.turno) return;
+  try {
+    const fecha = _ptHoyISO();
+    await sbFetch(
+      `turnos_borrador?local=eq.${state.local}&fecha=eq.${fecha}&turno=eq.${state.turno}`,
+      { method: 'DELETE' }
+    );
+  } catch(e) { /* silencioso: la fila se sobrescribirá en el próximo turno */ }
+}
+
+// Hook global: cualquier input/change dentro del panel-turno dispara debounce.
+function ptInstalarHooksPersistencia() {
+  // v40 — En modo read-only el usuario NO puede modificar el turno.
+  // No instalamos hooks de persistencia para no pisar el borrador del dueño.
+  if (state.readOnly) return;
+  const root = document.getElementById('screen-panel-turno');
+  if (!root || root.dataset.persistHooks === '1') return;
+  root.dataset.persistHooks = '1';
+  const handler = () => ptSchedulePersist();
+  root.addEventListener('input',  handler, { passive: true });
+  root.addEventListener('change', handler, { passive: true });
+  // Sync best-effort al salir/recargar la pestaña
+  window.addEventListener('beforeunload', () => {
+    try { ptPersistirLocal(); } catch(_) {}
+  });
 }
 
 // ═══════════════════════════════════════
@@ -938,7 +1279,7 @@ function goBack() {
 // CONTRATO postMessage con index.html (PRD §5.3)
 // NUNCA usar localStorage como fuente de rol
 // ═══════════════════════════════════════
-window.addEventListener('message', (e) => {
+window.addEventListener('message', async (e) => {
   const d = e.data;
   if (!d || d.type !== 'break-context') return;
 
@@ -958,19 +1299,63 @@ window.addEventListener('message', (e) => {
   state.empleado_id = d.empleado_id || 'admin';
   state.turno       = d.turno       || 'manana';
 
+  // Reset de flags de read-only en cada llegada de contexto
+  state.readOnly        = false;
+  state.aperturaActiva  = null;
+
   // Ocultar pantalla de espera
   document.getElementById('screen-waiting').style.display = 'none';
   document.getElementById('loading-overlay').classList.add('hidden');
 
   // Lanzar flujo correcto según rol
   if (state.rol === 'empleado' || state.rol === 'encargado') {
-    ptShowApertura();
+    // v40 — Idempotencia: si ya hay un turno activo HOY para (local, turno),
+    // saltear la pantalla de apertura y entrar directo al panel.
+    // - Si el dueño es el mismo empleado: modo edición normal (no read-only).
+    // - Si es OTRO empleado: modo read-only.
+    // Si no hay apertura activa: flujo normal de apertura (mostrar pantalla).
+    let aperturaActiva = null;
+    if (state.turno) {
+      aperturaActiva = await ptBuscarAperturaActiva(state.turno);
+    }
+    if (aperturaActiva) {
+      state.aperturaActiva = aperturaActiva;
+      const esMismoEmpleado = String(aperturaActiva.empleado_id || '') === String(state.empleado_id || '');
+      state.readOnly = !esMismoEmpleado;
+      ptInitCore();
+      goTo('panel-turno');
+      ptAplicarReadOnly(aperturaActiva.empleado_nombre || `Emp. ${aperturaActiva.empleado_id || '—'}`);
+    } else {
+      ptShowApertura();
+    }
   } else {
     // admin, supervisor, etc. — ir directo al panel sin apertura
     ptInitCore();
     goTo('panel-turno');
   }
 });
+
+// ═══════════════════════════════════════
+// v40 — APERTURA ACTIVA: helper para detectar turno ya abierto
+// Devuelve la fila de aperturas_turno si hay un turno activo HOY para
+// (state.local, state.turno) sin cerrar. null si no hay.
+// ═══════════════════════════════════════
+async function ptBuscarAperturaActiva(turno) {
+  if (!state.local || !turno) return null;
+  try {
+    const hoy = new Date().toISOString().split('T')[0];
+    const url = `aperturas_turno?local=eq.${encodeURIComponent(state.local)}`
+              + `&turno=eq.${encodeURIComponent(turno)}`
+              + `&fecha=eq.${hoy}`
+              + `&cerrado_at=is.null`
+              + `&order=apertura_at.desc&limit=1`;
+    const rows = await sbFetch(url);
+    return rows?.[0] || null;
+  } catch(e) {
+    console.warn('[turno] ptBuscarAperturaActiva:', e);
+    return null;
+  }
+}
 
 // ═══════════════════════════════════════
 // APERTURA DE TURNO
@@ -1033,6 +1418,34 @@ async function ptConfirmarApertura() {
 
   state.turno = _apTurnoSel;
 
+  // v40 — Re-chequear apertura activa antes del INSERT.
+  // Si entre el flow de selección y el confirm alguien más abrió el turno,
+  // entrar en modo correspondiente sin duplicar registro.
+  const yaAbierto = await ptBuscarAperturaActiva(state.turno);
+  if (yaAbierto) {
+    state.aperturaActiva = yaAbierto;
+    const esMismo = String(yaAbierto.empleado_id || '') === String(state.empleado_id || '');
+    state.readOnly = !esMismo;
+    if (_hubOrigin) {
+      window.parent.postMessage({
+        tipo: 'turno-abierto',
+        empleado_nombre: yaAbierto.empleado_nombre || state.empleado,
+        turno: state.turno,
+        local: state.local,
+      }, _hubOrigin);
+    }
+    ptInitCore();
+    goTo('panel-turno');
+    ptAplicarReadOnly(yaAbierto.empleado_nombre || `Emp. ${yaAbierto.empleado_id || '—'}`);
+    showToast(esMismo
+      ? `Turno ya abierto · retomando edición`
+      : `Turno abierto por ${yaAbierto.empleado_nombre || 'otro empleado'} · solo lectura`,
+      esMismo ? 'success' : 'error');
+    return;
+  }
+
+  // No hay apertura activa: insertar normalmente.
+  let insertOk = false;
   try {
     await sbFetch('aperturas_turno', {
       method: 'POST',
@@ -1042,7 +1455,29 @@ async function ptConfirmarApertura() {
         fecha: new Date().toISOString().split('T')[0], apertura_at: new Date().toISOString(),
       }])
     });
-  } catch(e) { console.warn('No se pudo guardar apertura:', e); }
+    insertOk = true;
+  } catch(e) {
+    // El UNIQUE parcial uniq_apertura_activa puede dispararse por carrera con otro
+    // empleado abriendo simultáneamente. Reconsultamos y tratamos como ya-abierto.
+    console.warn('No se pudo guardar apertura:', e);
+    const carrera = await ptBuscarAperturaActiva(state.turno);
+    if (carrera) {
+      state.aperturaActiva = carrera;
+      const esMismo = String(carrera.empleado_id || '') === String(state.empleado_id || '');
+      state.readOnly = !esMismo;
+      ptInitCore();
+      goTo('panel-turno');
+      ptAplicarReadOnly(carrera.empleado_nombre || `Emp. ${carrera.empleado_id || '—'}`);
+      showToast(`Turno ya abierto por ${carrera.empleado_nombre || 'otro empleado'}`, 'error');
+      return;
+    }
+  }
+
+  // Cargar la apertura recién creada para tener el id (necesario para cerrarla luego)
+  if (insertOk) {
+    state.aperturaActiva = await ptBuscarAperturaActiva(state.turno);
+    state.readOnly = false;
+  }
 
   // Notificar al hub que el turno fue abierto
   if (_hubOrigin) {
@@ -1057,6 +1492,42 @@ async function ptConfirmarApertura() {
   ptInitCore();
   goTo('panel-turno');
   showToast(`Turno ${TURNO_NOM_AP[state.turno]} abierto ✓`, 'success');
+}
+
+// ═══════════════════════════════════════
+// v40 — READ-ONLY: aplicar/quitar modo solo-lectura al panel
+// Deshabilita inputs/selects/textarea/buttons dentro de .pt-content,
+// oculta el botón de Cerrar turno, muestra el banner.
+// Las pills (.pt-pills-bar) y el back (.topbar) quedan funcionales.
+// ═══════════════════════════════════════
+function ptAplicarReadOnly(nombreDueno) {
+  const screen = document.getElementById('screen-panel-turno');
+  const banner = document.getElementById('pt-readonly-banner');
+  const btnCerrar = document.getElementById('pt-btn-cerrar');
+  const lblNombre = document.getElementById('pt-readonly-nombre');
+
+  if (!state.readOnly) {
+    // Modo edición normal: limpiar lock si quedaba puesto
+    if (screen) screen.classList.remove('pt-readonly');
+    if (banner) banner.classList.remove('show');
+    if (btnCerrar) btnCerrar.style.display = '';
+    return;
+  }
+
+  // Modo solo-lectura
+  if (screen) screen.classList.add('pt-readonly');
+  if (lblNombre) lblNombre.textContent = nombreDueno || '—';
+  if (banner) banner.classList.add('show');
+  if (btnCerrar) btnCerrar.style.display = 'none';
+
+  // Deshabilitar todos los controles de la zona editable.
+  const content = screen ? screen.querySelector('.pt-content') : null;
+  if (content) {
+    content.querySelectorAll('input, select, textarea, button').forEach(el => {
+      // No deshabilitar elementos dentro de las pills (están fuera de .pt-content)
+      el.disabled = true;
+    });
+  }
 }
 
 // ═══════════════════════════════════════
@@ -1080,6 +1551,51 @@ let ptData = {
   _totalDeudas: 0, checks: {}, subChecks: {}, recargaCalculada: null,
 };
 
+// Aplica un snap de borrador al DOM y dispara recálculos.
+// Asume que el snap ya fue mergeado en ptData.
+function _ptAplicarSnapAlDOM(snap) {
+  if (!snap) return;
+  Object.keys(snap.checks || {}).forEach(k => {
+    if (snap.checks[k] !== null && snap.checks[k] !== undefined) {
+      ptSetCheck(k, snap.checks[k] === true ? 'ok' : 'no', true);
+    }
+  });
+  const sistemaEl = document.getElementById('ptmed-sistema');
+  if (sistemaEl && snap._savedSistema) sistemaEl.value = snap._savedSistema;
+  const obsEl = document.getElementById('pt-obs-cierre');
+  if (obsEl && snap._savedObs) obsEl.value = snap._savedObs;
+  if (snap._billetes) {
+    Object.entries(snap._billetes).forEach(([id, val]) => {
+      const el = document.getElementById(id); if (el) el.value = val;
+    });
+  }
+  if (snap._pacasChica) {
+    Object.entries(snap._pacasChica).forEach(([id, val]) => {
+      const el = document.getElementById(id); if (el) el.value = val;
+    });
+  }
+  if (snap._cajaGrande) {
+    Object.entries(snap._cajaGrande).forEach(([id, val]) => {
+      const el = document.getElementById(id); if (el) el.value = val;
+    });
+  }
+  if (snap._savedRapidoEf !== undefined) {
+    const efEl = document.getElementById('pt-rapido-ef');
+    if (efEl) efEl.value = snap._savedRapidoEf;
+  }
+  if (snap._savedRapidoGrande !== undefined) {
+    const grEl = document.getElementById('pt-rapido-grande');
+    if (grEl) grEl.value = snap._savedRapidoGrande;
+  }
+  if (snap._calcTapeTotal !== undefined) {
+    _calcTapeTotal = snap._calcTapeTotal;
+    ptCalcUpdateTapeTotal();
+  }
+  ptRecalc();
+  if (ptModoConteo === 'rapido')      ptRecalcRapido();
+  if (ptModoConteo === 'calculadora') ptCalcUpdateCajaNeta();
+}
+
 function ptInitCore() {
   ptData.turnoInicio    = new Date();
   ptData.cierreGuardado = false;
@@ -1093,12 +1609,14 @@ function ptInitCore() {
   const _stateKey = `break_turno_state_${state.local}_${state.turno}_${new Date().toISOString().split('T')[0]}`;
   const _savedRaw = localStorage.getItem(_stateKey);
   let _restored = false;
+  _ptLocalSavedAt = null;
   if (_savedRaw) {
     try {
       const saved = JSON.parse(_savedRaw);
       if (saved && !saved.cierreGuardado) {
         // Restaurar ptData (sin sobrescribir el turnoInicio recién seteado)
         Object.assign(ptData, saved, { turnoInicio: ptData.turnoInicio, cierreGuardado: false, clockInt: null, taskTimers: [] });
+        _ptLocalSavedAt = saved._savedAt || null;
         _restored = true;
       }
     } catch(e) { console.warn('[turno] No se pudo restaurar estado:', e); }
@@ -1122,55 +1640,51 @@ function ptInitCore() {
 
   ptRecalc();
   ptInitChecks();
+  ptInitNavGrid();
+  ptRenderPills();
 
   // Si hay estado restaurado, re-renderizar checks y valores de caja
   if (_restored) {
-    Object.keys(ptData.checks).forEach(k => {
-      if (ptData.checks[k] !== null && ptData.checks[k] !== undefined) {
-        ptSetCheck(k, ptData.checks[k] === true ? 'ok' : 'no', true);
-      }
-    });
-    if (sistemaEl && ptData._savedSistema) sistemaEl.value = ptData._savedSistema;
-    const obsEl = document.getElementById('pt-obs-cierre');
-    if (obsEl && ptData._savedObs) obsEl.value = ptData._savedObs;
-
-    // Restaurar billetes caja chica
-    if (ptData._billetes) {
-      Object.entries(ptData._billetes).forEach(([id, val]) => {
-        const el = document.getElementById(id); if (el) el.value = val;
-      });
-    }
-    // Restaurar pacas caja chica
-    if (ptData._pacasChica) {
-      Object.entries(ptData._pacasChica).forEach(([id, val]) => {
-        const el = document.getElementById(id); if (el) el.value = val;
-      });
-    }
-    // Restaurar caja grande
-    if (ptData._cajaGrande) {
-      Object.entries(ptData._cajaGrande).forEach(([id, val]) => {
-        const el = document.getElementById(id); if (el) el.value = val;
-      });
-    }
-    // Restaurar modo rápido
-    if (ptData._savedRapidoEf !== undefined) {
-      const efEl = document.getElementById('pt-rapido-ef');
-      if (efEl) efEl.value = ptData._savedRapidoEf;
-    }
-    if (ptData._savedRapidoGrande !== undefined) {
-      const grEl = document.getElementById('pt-rapido-grande');
-      if (grEl) grEl.value = ptData._savedRapidoGrande;
-    }
-    // Restaurar modo calculadora
-    if (ptData._calcTapeTotal !== undefined) {
-      _calcTapeTotal = ptData._calcTapeTotal;
-      ptCalcUpdateTapeTotal();
-    }
-    // Recalcular todo con los valores restaurados
-    ptRecalc();
-    if (ptModoConteo === 'rapido') ptRecalcRapido();
-    if (ptModoConteo === 'calculadora') ptCalcUpdateCajaNeta();
+    _ptAplicarSnapAlDOM(ptData);
   }
+
+  // Instalar hooks de persistencia híbrida (localStorage + Supabase debounce)
+  ptInstalarHooksPersistencia();
+
+  // Cargar borrador remoto (Supabase) en paralelo. Reglas:
+  //  1) Si el usuario ya editó algo en este nuevo render → no pisar.
+  //  2) Si hay snap local con _savedAt y el remoto es más viejo (o igual) → no pisar.
+  //  3) Solo aplicamos cuando el remoto es estrictamente más nuevo o cuando no hay local.
+  (async () => {
+    try {
+      const remote = await ptCargarBorradorRemoto();
+      if (!remote) return;
+      if (_ptDirty) return;
+      if (ptData.cierreGuardado) return;
+      // Comparación temporal: local gana si es ≥ remoto.
+      const remoteAt = remote._savedAt || null;
+      if (_ptLocalSavedAt && (!remoteAt || _ptLocalSavedAt >= remoteAt)) {
+        return; // local es igual o más nuevo: no pisar
+      }
+      // Fusionar el snap remoto en ptData (preservando timers/turnoInicio actuales)
+      Object.assign(ptData, remote, {
+        turnoInicio:    ptData.turnoInicio,
+        cierreGuardado: false,
+        clockInt:       ptData.clockInt,
+        taskTimers:     ptData.taskTimers,
+      });
+      if (remote._savedModo && remote._savedModo !== ptModoConteo) {
+        ptModoConteo = remote._savedModo;
+        try { localStorage.setItem('ptModoConteo', ptModoConteo); } catch(_){}
+        ptInitModoConteo();
+      }
+      _ptAplicarSnapAlDOM(remote);
+      _ptLocalSavedAt = remoteAt; // ahora el local refleja el remoto
+      // Espejar a localStorage para coherencia
+      const k = _ptLSKey();
+      if (k) { try { localStorage.setItem(k, JSON.stringify(remote)); } catch(_){} }
+    } catch(e) { console.warn('[turno] cargar borrador remoto falló:', e); }
+  })();
 
   // Pre-cargar stock_actual del último cierre
   (async () => {
@@ -1193,38 +1707,13 @@ function ptInitCore() {
     } catch(e) { console.warn('ptInitCore recargas:', e); }
   })();
 
-  // Deudas del local — replicar lógica de deudas.html (incluir store null y vacío, PRD §4.6)
-  (async () => {
-    try {
-      const localKey = state.local || '';
-      const el = document.getElementById('pt-deudas-local');
-      if (!el || !localKey) return;
-      const [entradasLocal, entradasNull, entradasVacio, cuentas] = await Promise.all([
-        sbFetch(`entradas?store=eq.${localKey}&select=cid,monto`),
-        sbFetch(`entradas?store=is.null&select=cid,monto`),
-        sbFetch(`entradas?store=eq.&select=cid,monto`),
-        sbFetch(`cuentas?select=id,nombre,tipo`),
-      ]);
-      const todasEntradas = [...(entradasLocal||[]), ...(entradasNull||[]), ...(entradasVacio||[])];
-      const total = todasEntradas.reduce((a,e) => a + (e.monto||0), 0);
-      const fmt2 = n => '$' + Math.abs(n).toLocaleString('es-AR');
-      if (total <= 0) {
-        el.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center"><span style="color:var(--green);font-weight:600">📋 Deudas del local</span><span style="color:var(--green);font-family:var(--mono);font-size:16px;font-weight:700">$0</span></div>';
-      } else {
-        el.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--mono);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text2)">📋 Deudas del local</span><span style="color:var(--red);font-family:var(--mono);font-size:18px;font-weight:700">' + fmt2(total) + '</span></div>';
-      }
-      ptData._totalDeudas = total;
-      ptRecalcCajaNeta();
-      // Bug #3: actualizar modo activo también
-      if (ptModoConteo === 'rapido')       ptRecalcRapido();
-      if (ptModoConteo === 'calculadora')  ptCalcUpdateCajaNeta();
-    } catch(e) { console.warn('pt-deudas-local error', e); }
-  })();
+  // Deudas del local — primera carga (las recargas posteriores van por ptRefreshDeudas())
+  ptRefreshDeudas();
 
   // Header
   const LOCALES_SHORT = { palermo:'Thames · Palermo', belgrano:'Roosevelt · Belgrano', barrio_chino:'Juramento · B. Chino', san_telmo:'Independencia · S. Telmo' };
   const TURNO_NOM = { manana:'Mañana', tarde:'Tarde', noche:'Noche' };
-  document.getElementById('pt-topbar-title').textContent = state.empleado || 'Control/Cierre de Turno';
+  document.getElementById('pt-topbar-title').textContent = state.empleado || 'Control de Turno';
   document.getElementById('pt-topbar-badge').textContent = LOCALES_SHORT[state.local] || state.local || '';
   const pill = document.getElementById('pt-turno-pill');
   pill.textContent = TURNO_NOM[state.turno] || state.turno;
@@ -1776,6 +2265,7 @@ function ptSetModoConteo(modo) {
     if (calc)   calc.style.display   = 'block';
     if (sticky) sticky.style.display = 'none';
     ptCalcUpdateCajaNeta();
+    ptCalcUpdatePanel();
     ptCalcKeyboardSetup();
   }
 }
@@ -1784,6 +2274,142 @@ function ptSetModoConteo(modo) {
 function ptInitModoConteo() {
   ptModoConteo = localStorage.getItem('ptModoConteo') || 'detallado';
   ptSetModoConteo(ptModoConteo);
+}
+
+// ═══════════════════════════════════════
+// NAVEGACIÓN CON FLECHAS TIPO EXCEL — modo detallado (Chat 3 / Bug 6a)
+// ═══════════════════════════════════════
+// Grid lógico: cada columna es un array de IDs en orden vertical.
+// Flechas Up/Down navegan dentro de la columna; Left/Right saltan a la
+// columna lateral preservando la fila relativa. Enter = ArrowDown.
+const PT_NAV_GRID = [
+  // Col 0: billetes sueltos caja chica
+  ['ptb10','ptb20','ptb50','ptb100','ptb200','ptb500','ptb1000','ptb2000','ptb10000','ptb20000'],
+  // Col 1: pacas chica
+  ['ptpa-p100','ptpa-p200','ptpa-p500','ptpa-p1000','ptpa-p10000'],
+  // Col 2: pacas grande + custom
+  ['ptcg-pa100','ptcg-pa200','ptcg-pa500','ptcg-pa1000','ptcg-pa10000','ptcg-cc1','ptcg-cc2'],
+  // Col 3: bultos
+  ['ptcg-bu10000','ptcg-bu50000','ptcg-bu100000']
+];
+let _ptNavBound = false;
+// ═══════════════════════════════════════
+// PILLS DE NAVEGACIÓN RÁPIDA — render por rol
+// La pill activa es Control de Turno (no clickeable).
+// Las demás envían postMessage 'navegar-modulo' al hub.
+// ═══════════════════════════════════════
+const PT_PILLS_LABELS = {
+  ordenes:    'Órdenes',
+  pagos:      'Pagos',
+  deudas:     'Deudas',
+  pedidos:    'Pedidos',
+  remitos:    'Remitos',
+  inventario: 'Inventario',
+  reportes:   'Reportes',
+};
+const PT_PILLS_BY_ROL = {
+  empleado:   ['ordenes', 'deudas', 'remitos'],
+  encargado:  ['ordenes', 'deudas', 'remitos'],
+  admin:      ['ordenes', 'pagos', 'deudas', 'pedidos', 'remitos', 'inventario', 'reportes'],
+  supervisor: ['ordenes', 'pagos', 'deudas', 'pedidos', 'remitos', 'inventario', 'reportes'],
+};
+
+function ptRenderPills() {
+  const bar = document.getElementById('pt-pills-bar');
+  if (!bar) return;
+  const mods = PT_PILLS_BY_ROL[state.rol] || [];
+  const activa = '<div class="pt-pill active" aria-current="page">Control de Turno</div>';
+  const otras = mods.map(m => {
+    const label = PT_PILLS_LABELS[m] || m;
+    return `<div class="pt-pill" data-mod="${m}" onclick="ptPillClick('${m}')">${label}</div>`;
+  }).join('');
+  bar.innerHTML = activa + otras;
+}
+
+function ptPillClick(mod) {
+  // Persistir borrador antes de salir (best-effort, sincrónico via localStorage)
+  try { ptPersistirLocal(); } catch(_) {}
+  // Cancelar alarmas activas para no dejar timers colgados
+  try { ptCancelarAlarmas(); } catch(_) {}
+  // Liberar lock de pestaña duplicada antes de navegar (Cambio 1 parte 3)
+  try { if (typeof _ptLiberarLockPestana === 'function') _ptLiberarLockPestana(); } catch(_) {}
+
+  // Cambio 1 fix pills: si turno.html corre como navegación full (empleado/encargado),
+  // no hay parent. Hacemos ping-pong por index.html: ?abrir=mod&...ctx → index.html
+  // setea contexto, abre el módulo en iframe, y al cerrar vuelve a turno.html
+  // (porque _returnToTurno + rol empleado/encargado dispara redirigirATurnoEmpleado).
+  if (document.body.classList.contains('pt-fullscreen')) {
+    const params = new URLSearchParams({
+      abrir:       mod,
+      local:       state.local       || '',
+      localName:   state.localName   || '',
+      rol:         state.rol         || '',
+      empleado:    state.empleado    || '',
+      empleado_id: state.empleado_id || '',
+      turno:       state.turno       || '',
+    });
+    window.location.href = 'index.html?' + params.toString();
+    return;
+  }
+
+  // Flujo iframe (admin) — postMessage al parent como antes
+  if (!_hubOrigin) {
+    showToast('Sin contexto del hub', 'error');
+    return;
+  }
+  window.parent.postMessage({ tipo: 'navegar-modulo', modulo: mod }, _hubOrigin);
+}
+
+function ptInitNavGrid() {
+  if (_ptNavBound) return;
+  _ptNavBound = true;
+  document.addEventListener('keydown', _ptNavHandler, true);
+}
+function _ptNavHandler(e) {
+  // Solo manejar las teclas de navegación
+  const k = e.key;
+  if (k !== 'ArrowUp' && k !== 'ArrowDown' && k !== 'ArrowLeft' && k !== 'ArrowRight' && k !== 'Enter') return;
+  const active = document.activeElement;
+  if (!active || active.tagName !== 'INPUT') return;
+  const id = active.id;
+  if (!id) return;
+  // Solo si está en el grid
+  let col = -1, row = -1;
+  for (let c = 0; c < PT_NAV_GRID.length; c++) {
+    const r = PT_NAV_GRID[c].indexOf(id);
+    if (r >= 0) { col = c; row = r; break; }
+  }
+  if (col < 0) return;
+  // Solo en modo detallado
+  if (ptModoConteo !== 'detallado') return;
+  let nextCol = col, nextRow = row;
+  if (k === 'ArrowUp')          { nextRow = row - 1; }
+  else if (k === 'ArrowDown' || k === 'Enter') { nextRow = row + 1; }
+  else if (k === 'ArrowLeft') {
+    // Solo saltar si el cursor está al inicio del input
+    if (typeof active.selectionStart === 'number' && active.selectionStart > 0) return;
+    nextCol = col - 1;
+    if (nextCol < 0) return;
+    // Mapear fila proporcionalmente entre columnas de distinto tamaño
+    const ratio = row / Math.max(1, PT_NAV_GRID[col].length - 1);
+    nextRow = Math.round(ratio * (PT_NAV_GRID[nextCol].length - 1));
+  }
+  else if (k === 'ArrowRight') {
+    if (typeof active.selectionStart === 'number' && active.selectionStart < (active.value || '').length) return;
+    nextCol = col + 1;
+    if (nextCol >= PT_NAV_GRID.length) return;
+    const ratio = row / Math.max(1, PT_NAV_GRID[col].length - 1);
+    nextRow = Math.round(ratio * (PT_NAV_GRID[nextCol].length - 1));
+  }
+  if (nextRow < 0 || nextRow >= PT_NAV_GRID[nextCol].length) return;
+  const nextId = PT_NAV_GRID[nextCol][nextRow];
+  const next = document.getElementById(nextId);
+  if (next) {
+    e.preventDefault();
+    e.stopPropagation();
+    next.focus();
+    if (typeof next.select === 'function') next.select();
+  }
 }
 
 // ── MODO RÁPIDO ──────────────────────────────────
@@ -1804,14 +2430,61 @@ let _calcPrev      = null; // valor anterior
 let _calcTapeTotal = 0;    // acumulado tape
 let _calcFreshResult = false; // tras = no concatenar
 
+function _ptCalcOpSym(op) {
+  return op === '*' ? '×' : op === '/' ? '÷' : op === '-' ? '−' : op === '+' ? '+' : op;
+}
+function _ptCalcFmt(n) {
+  return '$' + (Number(n) || 0).toLocaleString('es-AR', {maximumFractionDigits:2});
+}
+function ptCalcUpdatePanel() {
+  // Calcular "lo que se va a agregar al tape al presionar =" (preview en vivo)
+  const buf = parseFloat(_calcBuffer) || 0;
+  let toAdd = 0;
+  let detalle = '—';
+  if (_calcOp === null || _calcPrev === null) {
+    // Sin operación pendiente — solo el buffer cuenta
+    toAdd = buf;
+    detalle = buf !== 0 ? _ptCalcFmt(buf) : '—';
+  } else if (_calcFreshResult) {
+    // Acaban de presionar operador — segundo operando aún no se ingresó
+    toAdd = _calcPrev;
+    detalle = `${_ptCalcFmt(_calcPrev)} ${_ptCalcOpSym(_calcOp)} …`;
+  } else {
+    // Operación armada con ambos operandos
+    toAdd = _ptCalcApply(_calcPrev, buf, _calcOp);
+    detalle = `${_ptCalcFmt(_calcPrev)} ${_ptCalcOpSym(_calcOp)} ${_ptCalcFmt(buf)} = ${_ptCalcFmt(toAdd)}`;
+  }
+  const proyectado = _calcTapeTotal + toAdd;
+  const tn = document.getElementById('pt-calc-tape-now');       if (tn) tn.textContent = _ptCalcFmt(_calcTapeTotal);
+  const ta = document.getElementById('pt-calc-to-add');         if (ta) ta.textContent = _ptCalcFmt(toAdd);
+  const td = document.getElementById('pt-calc-to-add-detail');  if (td) td.textContent = detalle;
+  const pr = document.getElementById('pt-calc-proyectado');     if (pr) pr.textContent = _ptCalcFmt(proyectado);
+}
+
 function ptCalcUpdateDisplay() {
   const el = document.getElementById('pt-calc-display');
-  if (el) el.textContent = parseFloat(_calcBuffer).toLocaleString('es-AR', {maximumFractionDigits:2});
+  if (el) {
+    const bufNum = parseFloat(_calcBuffer);
+    const bufFmt = isFinite(bufNum) ? bufNum.toLocaleString('es-AR', {maximumFractionDigits:2}) : '0';
+    if (_calcOp !== null && _calcPrev !== null) {
+      const prevFmt = _calcPrev.toLocaleString('es-AR', {maximumFractionDigits:2});
+      const opSym = _ptCalcOpSym(_calcOp);
+      // Tras presionar operador (freshResult), mostrar solo "prev op"
+      // Mientras se ingresa el segundo operando, mostrar "prev op buf"
+      el.textContent = _calcFreshResult
+        ? `${prevFmt} ${opSym}`
+        : `${prevFmt} ${opSym} ${bufFmt}`;
+    } else {
+      el.textContent = bufFmt;
+    }
+  }
+  ptCalcUpdatePanel();
 }
 function ptCalcUpdateTapeTotal() {
   document.getElementById('pt-calc-tape-total').textContent = `$${_calcTapeTotal.toLocaleString('es-AR', {maximumFractionDigits:2})}`;
   // Propagar neta
   ptCalcUpdateCajaNeta();
+  ptCalcUpdatePanel();
 }
 function ptCalcUpdateCajaNeta() {
   // Delegar cálculo unificado a ptRecalcCajaNeta
@@ -1838,6 +2511,7 @@ function ptCalcOp(op) {
   } else { _calcPrev = cur; }
   _calcOp = op;
   _calcFreshResult = true;
+  ptCalcUpdatePanel();
 }
 function ptCalcEqual() {
   if (_calcOp === null || _calcPrev === null) {
@@ -1923,6 +2597,149 @@ function ptInitCGConfig() {
   if (cfg.cv1) { const el = document.getElementById('ptcg-cv1'); if(el) el.value = cfg.cv1; }
   if (cfg.cn2) { const el = document.getElementById('ptcg-cn2'); if(el) el.value = cfg.cn2; }
   if (cfg.cv2) { const el = document.getElementById('ptcg-cv2'); if(el) el.value = cfg.cv2; }
+}
+
+// ═══════════════════════════════════════
+// DEUDAS DEL LOCAL — refresh global + diagnóstico (Chat 3 / Grupo A)
+// ═══════════════════════════════════════
+let _ptDeudasSnapshot = null;     // último resultado crudo para el panel diagnóstico
+let _ptDeudasPolling  = null;     // handle del setInterval
+let _ptDeudasRefreshing = false;  // guard anti-concurrencia
+
+async function ptRefreshDeudas(opts) {
+  opts = opts || {};
+  if (_ptDeudasRefreshing) return;
+  _ptDeudasRefreshing = true;
+  try {
+    const localKey = (typeof state !== 'undefined' && state.local) || '';
+    const el = document.getElementById('pt-deudas-local');
+    if (!el || !localKey) { _ptDeudasRefreshing = false; return; }
+    // Indicador visual sutil de refresh
+    const btnRef = document.getElementById('pt-deudas-refresh-btn');
+    if (btnRef) btnRef.style.opacity = '0.5';
+    // limit=10000 para evitar el truncado por defecto de 1000 que causa desfase (bug 1)
+    const LIMIT = '&limit=10000';
+    const [entradasLocal, entradasNull, entradasVacio, cuentas] = await Promise.all([
+      sbFetch(`entradas?store=eq.${localKey}&select=cid,monto,store${LIMIT}`),
+      sbFetch(`entradas?store=is.null&select=cid,monto,store${LIMIT}`),
+      sbFetch(`entradas?store=eq.&select=cid,monto,store${LIMIT}`),
+      sbFetch(`cuentas?select=id,nombre,tipo${LIMIT}`),
+    ]);
+    const todasEntradas = [...(entradasLocal||[]), ...(entradasNull||[]), ...(entradasVacio||[])];
+    const total = todasEntradas.reduce((a,e) => a + (e.monto||0), 0);
+    const fmt2 = n => '$' + Math.abs(n).toLocaleString('es-AR');
+    if (total <= 0) {
+      el.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span style="color:var(--green);font-weight:600">📋 Deudas del local</span><div style="display:flex;gap:6px;align-items:center"><button id="pt-deudas-refresh-btn" onclick="ptRefreshDeudas({manual:true})" title="Recargar deudas" style="background:transparent;border:0.5px solid var(--border2);color:var(--text3);cursor:pointer;font-size:11px;padding:2px 7px;border-radius:4px">🔄</button>' + ((state.rol==='admin'||state.rol==='supervisor') ? '<button onclick="ptShowDeudasDebug()" title="Diagnóstico de deudas" style="background:transparent;border:0.5px solid var(--border2);color:var(--text3);cursor:pointer;font-size:11px;padding:2px 7px;border-radius:4px">🔍</button>' : '') + '<span style="color:var(--green);font-family:var(--mono);font-size:16px;font-weight:700">$0</span></div></div>';
+    } else {
+      el.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span style="font-family:var(--mono);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text2)">📋 Deudas del local</span><div style="display:flex;gap:6px;align-items:center"><button id="pt-deudas-refresh-btn" onclick="ptRefreshDeudas({manual:true})" title="Recargar deudas" style="background:transparent;border:0.5px solid var(--border2);color:var(--text3);cursor:pointer;font-size:11px;padding:2px 7px;border-radius:4px">🔄</button>' + ((state.rol==='admin'||state.rol==='supervisor') ? '<button onclick="ptShowDeudasDebug()" title="Diagnóstico de deudas" style="background:transparent;border:0.5px solid var(--border2);color:var(--text3);cursor:pointer;font-size:11px;padding:2px 7px;border-radius:4px">🔍</button>' : '') + '<span style="color:var(--red);font-family:var(--mono);font-size:18px;font-weight:700">' + fmt2(total) + '</span></div></div>';
+    }
+    ptData._totalDeudas = total;
+    // Snapshot crudo para diagnóstico
+    _ptDeudasSnapshot = {
+      ts: new Date().toISOString(),
+      localKey,
+      counts: { local: (entradasLocal||[]).length, null: (entradasNull||[]).length, vacio: (entradasVacio||[]).length, cuentas: (cuentas||[]).length },
+      total,
+      entradas: todasEntradas,
+      cuentas: cuentas || []
+    };
+    ptRecalcCajaNeta();
+    if (ptModoConteo === 'rapido')      ptRecalcRapido();
+    if (ptModoConteo === 'calculadora') ptCalcUpdateCajaNeta();
+    if (opts.manual) {
+      // Feedback visual al usuario
+      const flash = document.getElementById('pt-deudas-refresh-btn');
+      if (flash) { flash.textContent = '✓'; setTimeout(() => { flash.textContent = '🔄'; flash.style.opacity = '1'; }, 700); }
+    } else if (btnRef) {
+      btnRef.style.opacity = '1';
+    }
+  } catch(e) {
+    console.warn('ptRefreshDeudas error', e);
+    const btnRef = document.getElementById('pt-deudas-refresh-btn');
+    if (btnRef) btnRef.style.opacity = '1';
+  } finally {
+    _ptDeudasRefreshing = false;
+  }
+}
+
+// Auto-refresh cuando la pestaña vuelve al foco (caso típico: vino de deudas.html en otra pestaña)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && document.getElementById('pt-deudas-local')) {
+    ptRefreshDeudas();
+  }
+});
+
+// Polling cada 60s mientras la pestaña esté visible
+function ptStartDeudasPolling() {
+  if (_ptDeudasPolling) return;
+  _ptDeudasPolling = setInterval(() => {
+    if (document.visibilityState === 'visible' && document.getElementById('pt-deudas-local')) {
+      ptRefreshDeudas();
+    }
+  }, 60000);
+}
+ptStartDeudasPolling();
+
+// Panel de diagnóstico (solo admin/supervisor)
+function ptShowDeudasDebug() {
+  if (!_ptDeudasSnapshot) { alert('Aún no hay datos cargados.'); return; }
+  const s = _ptDeudasSnapshot;
+  // Agrupar entradas por cuenta
+  const cuentasMap = {};
+  s.cuentas.forEach(c => { cuentasMap[c.id] = c; });
+  const porCuenta = {};
+  s.entradas.forEach(e => {
+    const cid = e.cid || 'sin_cuenta';
+    if (!porCuenta[cid]) porCuenta[cid] = { cid, count: 0, total: 0, store_local: 0, store_null: 0, store_vacio: 0 };
+    porCuenta[cid].count++;
+    porCuenta[cid].total += (e.monto || 0);
+    if (e.store === s.localKey) porCuenta[cid].store_local++;
+    else if (e.store === null || e.store === undefined) porCuenta[cid].store_null++;
+    else porCuenta[cid].store_vacio++;
+  });
+  const filas = Object.values(porCuenta).sort((a,b) => b.total - a.total).map(r => {
+    const c = cuentasMap[r.cid] || { nombre: '(sin cuenta '+r.cid+')', tipo: '—' };
+    return `<tr><td style="padding:4px 8px">${c.nombre}</td><td style="padding:4px 8px;color:var(--text3)">${c.tipo||'—'}</td><td style="padding:4px 8px;text-align:right;font-family:var(--mono)">${r.count}</td><td style="padding:4px 8px;text-align:right;font-family:var(--mono);color:${r.total>0?'var(--red)':'var(--green)'}">$${r.total.toLocaleString('es-AR')}</td><td style="padding:4px 8px;font-family:var(--mono);font-size:10px;color:var(--text3)">L:${r.store_local} N:${r.store_null} V:${r.store_vacio}</td></tr>`;
+  }).join('');
+  const html = `
+    <div id="pt-deudas-debug-modal" style="position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)this.remove()">
+      <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:20px;max-width:900px;width:100%;max-height:85vh;overflow-y:auto">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <div>
+            <div style="font-family:var(--mono);font-size:14px;font-weight:700;color:var(--text1)">🔍 Diagnóstico — Deudas del local</div>
+            <div style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-top:2px">Local: <strong style="color:var(--accent)">${s.localKey}</strong> · Snapshot: ${new Date(s.ts).toLocaleTimeString('es-AR')}</div>
+          </div>
+          <button onclick="document.getElementById('pt-deudas-debug-modal').remove()" style="background:transparent;border:0.5px solid var(--border2);color:var(--text2);padding:6px 12px;border-radius:6px;cursor:pointer">✕ Cerrar</button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px">
+          <div style="background:var(--bg3);padding:10px;border-radius:6px;border:0.5px solid var(--border2)"><div style="font-size:10px;color:var(--text3)">store = ${s.localKey}</div><div style="font-family:var(--mono);font-size:18px;color:var(--text1);font-weight:700">${s.counts.local}</div></div>
+          <div style="background:var(--bg3);padding:10px;border-radius:6px;border:0.5px solid var(--border2)"><div style="font-size:10px;color:var(--text3)">store IS NULL</div><div style="font-family:var(--mono);font-size:18px;color:var(--text1);font-weight:700">${s.counts.null}</div></div>
+          <div style="background:var(--bg3);padding:10px;border-radius:6px;border:0.5px solid var(--border2)"><div style="font-size:10px;color:var(--text3)">store = '' (vacío)</div><div style="font-family:var(--mono);font-size:18px;color:var(--text1);font-weight:700">${s.counts.vacio}</div></div>
+          <div style="background:var(--bg3);padding:10px;border-radius:6px;border:0.5px solid var(--border2)"><div style="font-size:10px;color:var(--text3)">cuentas catálogo</div><div style="font-family:var(--mono);font-size:18px;color:var(--text1);font-weight:700">${s.counts.cuentas}</div></div>
+        </div>
+        <div style="background:var(--bg3);padding:10px 14px;border-radius:6px;border:0.5px solid var(--border2);margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
+          <span style="font-family:var(--mono);font-size:12px;color:var(--text2)">TOTAL deudas calculado</span>
+          <span style="font-family:var(--mono);font-size:22px;font-weight:700;color:${s.total>0?'var(--red)':'var(--green)'}">$${s.total.toLocaleString('es-AR')}</span>
+        </div>
+        <div style="overflow-x:auto;border:0.5px solid var(--border2);border-radius:6px">
+          <table style="width:100%;border-collapse:collapse;font-size:12px">
+            <thead><tr style="background:var(--bg3);border-bottom:1px solid var(--border2)">
+              <th style="padding:8px;text-align:left;font-family:var(--mono);color:var(--text2)">Cuenta</th>
+              <th style="padding:8px;text-align:left;font-family:var(--mono);color:var(--text2)">Tipo</th>
+              <th style="padding:8px;text-align:right;font-family:var(--mono);color:var(--text2)"># Entradas</th>
+              <th style="padding:8px;text-align:right;font-family:var(--mono);color:var(--text2)">Subtotal</th>
+              <th style="padding:8px;text-align:left;font-family:var(--mono);color:var(--text2)">Origen</th>
+            </tr></thead>
+            <tbody>${filas || '<tr><td colspan="5" style="padding:20px;text-align:center;color:var(--text3)">Sin entradas</td></tr>'}</tbody>
+          </table>
+        </div>
+        <div style="margin-top:12px;font-size:10px;color:var(--text3);font-family:var(--mono);line-height:1.5">
+          <strong>Origen:</strong> L = entradas con store=${s.localKey} · N = entradas con store NULL · V = entradas con store vacío<br>
+          Si alguno de los counts es exactamente <strong>1000</strong>, hay truncado de Supabase y faltan entradas (revisar limit).
+        </div>
+      </div>
+    </div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
 }
 
 function ptRecalcCajaNeta() {
@@ -2148,8 +2965,26 @@ async function ptCerrar() {
     }
 
     ptData.cierreGuardado = true;
-    // Bug #2: invalidar estado guardado al confirmar cierre
+    // Bug #2: invalidar estado guardado al confirmar cierre + limpiar borrador remoto
     try { localStorage.removeItem(`break_turno_state_${state.local}_${state.turno}_${new Date().toISOString().split('T')[0]}`); } catch(e){}
+    ptLimpiarBorrador().catch(() => {});
+
+    // v40 — Cerrar la apertura asociada en aperturas_turno.
+    // Buscamos por (local, fecha, turno) con cerrado_at IS NULL para evitar depender
+    // de state.aperturaActiva (puede no haberse hidratado en sesiones de admin/supervisor).
+    try {
+      const hoy = payload.fecha;
+      const patchUrl = `aperturas_turno?local=eq.${encodeURIComponent(state.local)}`
+                     + `&turno=eq.${encodeURIComponent(state.turno)}`
+                     + `&fecha=eq.${hoy}`
+                     + `&cerrado_at=is.null`;
+      await sbFetch(patchUrl, {
+        method: 'PATCH',
+        body: JSON.stringify({ cerrado_at: new Date().toISOString() })
+      });
+      state.aperturaActiva = null;
+    } catch(e) { console.warn('[turno] No se pudo cerrar apertura:', e); }
+
     document.getElementById('pt-cierre-form').style.display = 'none';
     document.getElementById('pt-confirmado').style.display = 'block';
     showToast('Turno cerrado ✓', 'success');
@@ -2161,6 +2996,7 @@ async function ptCerrar() {
     ptData.cierreGuardado = true;
     // Bug #2: también limpiar si se guardó con error de conexión
     try { localStorage.removeItem(`break_turno_state_${state.local}_${state.turno}_${new Date().toISOString().split('T')[0]}`); } catch(e2){}
+    ptLimpiarBorrador().catch(() => {});
     document.getElementById('pt-cierre-form').style.display = 'none';
     document.getElementById('pt-confirmado').style.display = 'block';
     showToast('Turno cerrado (sin conexión)', '');
@@ -2226,6 +3062,204 @@ function ptCancelarAlarmas() { ptNotifTimers.forEach(t => clearTimeout(t)); ptNo
 // El módulo arranca siempre esperando el postMessage del hub.
 // NUNCA inicializa desde localStorage.
 document.getElementById('loading-overlay').classList.add('hidden');
+
+// ═══════════════════════════════════════
+// Cambio 1 (PRD §3.2 parte 1.5): bootstrap desde URL params.
+// Cuando turno.html se carga como navegación full (no iframe) — caso empleado/encargado
+// post-Cambio 1 — index.html no puede hacer postMessage. En vez de eso pasa el contexto
+// vía URL: ?local=...&rol=...&empleado=...&empleado_id=...&turno=...&localName=...
+// Acá detectamos esos params y disparamos un postMessage sintético al propio window
+// para reusar el handler 'message' existente sin duplicar lógica.
+// Si no hay URL params, queda el flujo original (espera de postMessage del hub iframe).
+// ═══════════════════════════════════════
+(function ptBootstrapDesdeURL() {
+  try {
+    const qs = new URLSearchParams(window.location.search);
+    if (!qs.get('rol')) return; // no hay params → flujo iframe normal
+    const ctx = {
+      type:        'break-context',
+      local:       qs.get('local')       || '',
+      localName:   qs.get('localName')   || '',
+      rol:         qs.get('rol')         || '',
+      empleado:    qs.get('empleado')    || '',
+      empleado_id: qs.get('empleado_id') || '',
+      turno:       qs.get('turno')       || '',
+    };
+
+    // ── Cambio 1 parte 2: activar header rojo + marcar body fullscreen ──
+    document.body.classList.add('pt-fullscreen');
+    const hdr = document.getElementById('pt-logout-header');
+    if (hdr) hdr.classList.add('active');
+    const info = document.getElementById('pt-lh-info');
+    if (info) {
+      const turnoLbl = ({ manana:'Mañana', tarde:'Tarde', noche:'Noche' })[ctx.turno] || ctx.turno || '';
+      info.textContent = (ctx.empleado || '—') + ' · ' + (ctx.localName || '—') + (turnoLbl ? ' · ' + turnoLbl : '');
+    }
+
+    // Disparar al final del tick para que el handler 'message' ya esté registrado.
+    setTimeout(() => {
+      try { window.postMessage(ctx, window.location.origin); } catch(_) {}
+    }, 0);
+
+    // ── Cambio 1 parte 3: detección de pestañas duplicadas (post-bootstrap) ──
+    // Esperar a que el state quede inyectado por el handler 'message' antes de chequear.
+    setTimeout(() => {
+      try { _ptCheckTabDuplicada(ctx); } catch(e) { console.warn('[turno] check tab dup falló:', e); }
+    }, 80);
+  } catch(e) { console.warn('[turno] bootstrap URL falló:', e); }
+})();
+
+// ═══════════════════════════════════════
+// Cambio 1 (PRD §3.2 parte 2): cerrar sesión desde el header rojo.
+// Limpia las claves de sesión y vuelve a index.html (donde renderiza el login).
+// ═══════════════════════════════════════
+function ptCerrarSesion() {
+  if (!confirm('¿Cerrar sesión?')) return;
+  try {
+    // Liberar lock de pestaña (parte 3) si soy dueña antes de irme
+    if (typeof _ptLiberarLockPestana === 'function') _ptLiberarLockPestana();
+  } catch(_) {}
+  try {
+    localStorage.removeItem('break_auth');
+    localStorage.removeItem('break_session');
+  } catch(_) {}
+  window.location.href = 'index.html';
+}
+
+// ═══════════════════════════════════════
+// Cambio 1 (PRD §3.2 parte 3): detección de pestañas duplicadas.
+// Estrategia híbrida:
+//   1) BroadcastChannel('break-turno-tab') para handshake instantáneo entre pestañas.
+//   2) Flag localStorage con timestamp (heartbeat 30s) como fallback robusto.
+// La 1ra pestaña en abrirse es la dueña; cualquier pestaña posterior (con mismo
+// local/turno) entra en modo read-only y muestra banner 'Turno abierto en otra pestaña'.
+// ═══════════════════════════════════════
+const _ptTabSid = Math.random().toString(36).slice(2) + '-' + Date.now();
+let _ptTabIsOwner = true;
+let _ptTabChannel = null;
+let _ptTabHeartbeat = null;
+
+function _ptTabLockKey(ctx) {
+  const local = (ctx && ctx.local) || state.local;
+  const turno = (ctx && ctx.turno) || state.turno;
+  if (!local || !turno) return null;
+  const hoy = new Date().toISOString().split('T')[0];
+  return 'break_turno_owner_' + local + '_' + turno + '_' + hoy;
+}
+
+function _ptMarcarDueña(ctx) {
+  const k = _ptTabLockKey(ctx);
+  if (!k) return;
+  try {
+    localStorage.setItem(k, JSON.stringify({ sid: _ptTabSid, t: Date.now() }));
+  } catch(_) {}
+}
+
+function _ptLiberarLockPestana() {
+  if (!_ptTabIsOwner) return;
+  if (_ptTabHeartbeat) { clearInterval(_ptTabHeartbeat); _ptTabHeartbeat = null; }
+  const k = _ptTabLockKey();
+  if (k) {
+    try {
+      const raw = localStorage.getItem(k);
+      if (raw) {
+        const cur = JSON.parse(raw);
+        // Solo borro si soy yo el dueño registrado (evita pisar a otra pestaña que tomó el lock)
+        if (cur && cur.sid === _ptTabSid) localStorage.removeItem(k);
+      }
+    } catch(_) {}
+  }
+  if (_ptTabChannel) {
+    try { _ptTabChannel.postMessage({ type: 'released', sid: _ptTabSid, local: state.local, turno: state.turno }); } catch(_) {}
+  }
+}
+
+function _ptEntrarReadOnlyPestañaDuplicada() {
+  _ptTabIsOwner = false;
+  state.readOnly = true;
+  // Banner visual
+  if (!document.getElementById('pt-tab-dup-banner')) {
+    const banner = document.createElement('div');
+    banner.id = 'pt-tab-dup-banner';
+    banner.className = 'pt-tab-dup-banner';
+    banner.textContent = '⚠ Turno abierto en otra pestaña — vista de solo lectura';
+    document.body.appendChild(banner);
+    document.body.classList.add('pt-tab-dup');
+  }
+  // Reusar el read-only existente si ya hay handler (apertura activa de otro empleado)
+  // o aplicar bloqueo defensivo: deshabilitar inputs/buttons interactivos del panel.
+  try {
+    if (typeof ptAplicarReadOnly === 'function') {
+      ptAplicarReadOnly('Otra pestaña');
+    } else {
+      document.querySelectorAll('#screen-panel-turno input, #screen-panel-turno button, #screen-panel-turno select, #screen-panel-turno textarea')
+        .forEach(el => { try { el.disabled = true; } catch(_){} });
+    }
+  } catch(_) {}
+}
+
+async function _ptCheckTabDuplicada(ctx) {
+  // Solo aplica para empleado/encargado en navegación full
+  if (!ctx || (ctx.rol !== 'empleado' && ctx.rol !== 'encargado')) return;
+  if (!ctx.local || !ctx.turno) return;
+
+  // 1) Fallback localStorage: si hay un dueño activo (heartbeat reciente), soy duplicada
+  const k = _ptTabLockKey(ctx);
+  if (k) {
+    try {
+      const raw = localStorage.getItem(k);
+      if (raw) {
+        const owner = JSON.parse(raw);
+        const ageMs = Date.now() - (owner && owner.t || 0);
+        // Considero "vivo" si el heartbeat es de los últimos 45s (heartbeat real cada 30s)
+        if (owner && owner.sid && owner.sid !== _ptTabSid && ageMs < 45000) {
+          _ptEntrarReadOnlyPestañaDuplicada();
+          return;
+        }
+      }
+    } catch(_) {}
+  }
+
+  // 2) BroadcastChannel: handshake con otras pestañas vivas
+  let respondida = false;
+  if (typeof BroadcastChannel !== 'undefined') {
+    try {
+      _ptTabChannel = new BroadcastChannel('break-turno-tab');
+      _ptTabChannel.onmessage = (ev) => {
+        const m = ev && ev.data;
+        if (!m || m.local !== ctx.local || m.turno !== ctx.turno || m.sid === _ptTabSid) return;
+        if (m.type === 'claim' && _ptTabIsOwner) {
+          // Otra pestaña preguntando — le respondo que estoy viva
+          try { _ptTabChannel.postMessage({ type: 'busy', sid: _ptTabSid, local: ctx.local, turno: ctx.turno }); } catch(_) {}
+        } else if (m.type === 'busy') {
+          respondida = true;
+        } else if (m.type === 'released') {
+          // Otra pestaña se cerró — si todavía no me marqué dueña, podría serlo ahora,
+          // pero el flujo de bootstrap ya pasó. No hago nada acá (la próxima recarga
+          // tomará el lock). Esto evita race conditions complicadas.
+        }
+      };
+      _ptTabChannel.postMessage({ type: 'claim', sid: _ptTabSid, local: ctx.local, turno: ctx.turno });
+    } catch(_) {}
+  }
+
+  // Esperar respuestas (~150ms es suficiente para BroadcastChannel local)
+  await new Promise(r => setTimeout(r, 150));
+
+  if (respondida) {
+    _ptEntrarReadOnlyPestañaDuplicada();
+    return;
+  }
+
+  // 3) Soy la dueña → marcar lock + heartbeat + cleanup
+  _ptMarcarDueña(ctx);
+  _ptTabHeartbeat = setInterval(() => {
+    if (_ptTabIsOwner) _ptMarcarDueña(ctx);
+  }, 30000);
+
+  window.addEventListener('beforeunload', _ptLiberarLockPestana);
+}
+
 </script>
 </body>
 </html>
