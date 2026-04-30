@@ -401,6 +401,115 @@
   .pt-readonly-banner.show { display: block; }
   .pt-readonly-banner .ro-strong { font-weight: 700; }
 
+  /* v42 — Botón "Liberar turno" dentro del banner read-only (solo admin con PIN) */
+  .pt-ro-libbtn {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 6px 14px;
+    background: var(--orange);
+    color: #1a1a1a;
+    font-weight: 700;
+    font-size: 11px;
+    border: none;
+    border-radius: var(--radius-sm, 6px);
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .pt-ro-libbtn:hover { filter: brightness(1.1); }
+  .pt-ro-libbtn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  /* v42 — Modal PIN para liberar turno */
+  .pt-lib-modal-bg {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.65);
+    z-index: 9000;
+    align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .pt-lib-modal-bg.show { display: flex; }
+  .pt-lib-modal {
+    background: var(--bg2);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 18px 18px 16px;
+    width: 100%; max-width: 360px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  }
+  .pt-lib-modal h3 {
+    margin: 0 0 6px;
+    font-size: 15px; font-weight: 700;
+    color: var(--text);
+  }
+  .pt-lib-modal .pt-lib-sub {
+    font-size: 11px; color: var(--text3);
+    margin-bottom: 14px; line-height: 1.5;
+  }
+  .pt-lib-modal .pt-lib-warn {
+    background: rgba(231,90,90,0.10);
+    border: 0.5px solid rgba(231,90,90,0.45);
+    border-radius: var(--radius-sm, 6px);
+    padding: 8px 10px;
+    color: var(--red);
+    font-size: 11px;
+    margin-bottom: 12px;
+    line-height: 1.4;
+  }
+  .pt-lib-modal label {
+    display: block;
+    font-size: 11px; color: var(--text3);
+    margin: 8px 0 4px;
+    font-weight: 600;
+  }
+  .pt-lib-modal input,
+  .pt-lib-modal textarea {
+    width: 100%;
+    padding: 9px 10px;
+    background: var(--bg);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-sm, 6px);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    box-sizing: border-box;
+  }
+  .pt-lib-modal textarea {
+    resize: vertical;
+    min-height: 50px;
+    font-family: inherit;
+    font-size: 12px;
+  }
+  .pt-lib-modal .pt-lib-err {
+    color: var(--red);
+    font-size: 11px;
+    min-height: 14px;
+    margin-top: 4px;
+  }
+  .pt-lib-modal .pt-lib-actions {
+    display: flex; gap: 8px;
+    margin-top: 14px;
+  }
+  .pt-lib-modal button {
+    flex: 1;
+    padding: 9px 12px;
+    border-radius: var(--radius-sm, 6px);
+    font-size: 12px; font-weight: 600;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .pt-lib-modal .pt-lib-cancel {
+    background: var(--bg3, #2a2a2a);
+    color: var(--text2);
+    border: 0.5px solid var(--border);
+  }
+  .pt-lib-modal .pt-lib-ok {
+    background: var(--orange);
+    color: #1a1a1a;
+    font-weight: 700;
+  }
+  .pt-lib-modal .pt-lib-ok:disabled { opacity: 0.55; cursor: not-allowed; }
+
   /* Inputs/buttons deshabilitados dentro del panel cuando readOnly */
   .pt-readonly .pt-content input:disabled,
   .pt-readonly .pt-content select:disabled,
@@ -491,6 +600,9 @@
   <!-- v40 — Banner read-only: turno abierto por otro empleado -->
   <div class="pt-readonly-banner" id="pt-readonly-banner">
     <span>Turno abierto por <span class="ro-strong" id="pt-readonly-nombre">—</span> · solo lectura</span>
+    <div id="pt-readonly-libwrap" style="display:none;margin-top:8px">
+      <button type="button" class="pt-ro-libbtn" onclick="ptAbrirLiberarModal()">Liberar turno (admin)</button>
+    </div>
   </div>
 
   <div class="pt-content">
@@ -1505,12 +1617,14 @@ function ptAplicarReadOnly(nombreDueno) {
   const banner = document.getElementById('pt-readonly-banner');
   const btnCerrar = document.getElementById('pt-btn-cerrar');
   const lblNombre = document.getElementById('pt-readonly-nombre');
+  const libWrap = document.getElementById('pt-readonly-libwrap');
 
   if (!state.readOnly) {
     // Modo edición normal: limpiar lock si quedaba puesto
     if (screen) screen.classList.remove('pt-readonly');
     if (banner) banner.classList.remove('show');
     if (btnCerrar) btnCerrar.style.display = '';
+    if (libWrap) libWrap.style.display = 'none';
     return;
   }
 
@@ -1519,6 +1633,14 @@ function ptAplicarReadOnly(nombreDueno) {
   if (lblNombre) lblNombre.textContent = nombreDueno || '—';
   if (banner) banner.classList.add('show');
   if (btnCerrar) btnCerrar.style.display = 'none';
+
+  // v42 — Botón "Liberar turno" solo si hay apertura activa real (con id).
+  // Esto distingue read-only por OTRO empleado (state.aperturaActiva con id)
+  // del read-only por pestaña duplicada (state.aperturaActiva = null).
+  if (libWrap) {
+    const tieneApertura = !!(state.aperturaActiva && state.aperturaActiva.id);
+    libWrap.style.display = tieneApertura ? 'block' : 'none';
+  }
 
   // Deshabilitar todos los controles de la zona editable.
   const content = screen ? screen.querySelector('.pt-content') : null;
@@ -2308,8 +2430,8 @@ const PT_PILLS_LABELS = {
   reportes:   'Reportes',
 };
 const PT_PILLS_BY_ROL = {
-  empleado:   ['ordenes', 'deudas', 'remitos'],
-  encargado:  ['ordenes', 'deudas', 'remitos'],
+  empleado:   ['ordenes', 'deudas', 'remitos', 'reportes'],
+  encargado:  ['ordenes', 'deudas', 'remitos', 'reportes'],
   admin:      ['ordenes', 'pagos', 'deudas', 'pedidos', 'remitos', 'inventario', 'reportes'],
   supervisor: ['ordenes', 'pagos', 'deudas', 'pedidos', 'remitos', 'inventario', 'reportes'],
 };
@@ -3057,6 +3179,148 @@ function ptProgramarAlarmas() {
 function ptCancelarAlarmas() { ptNotifTimers.forEach(t => clearTimeout(t)); ptNotifTimers = []; }
 
 // ═══════════════════════════════════════
+// v42 — LIBERAR TURNO (admin only)
+// Permite que un admin libere un turno apertura mal — apertura por error,
+// nombre equivocado, turno colgado de día anterior. Solo PATCH cerrado_at,
+// NO crea cierre. El slot (local, fecha, turno) queda libre para nueva apertura.
+// Trazabilidad: campos liberada_por_id, liberada_por_nombre, liberada_at,
+// liberada_motivo (requiere ALTER TABLE — si no existen, el PATCH funciona igual
+// pero sin auditoría).
+// ═══════════════════════════════════════
+function ptAbrirLiberarModal() {
+  // Solo si efectivamente hay una apertura activa de OTRO empleado
+  if (!state.aperturaActiva || !state.aperturaActiva.id) {
+    showToast('No hay apertura activa que liberar', 'error');
+    return;
+  }
+  const dueno = state.aperturaActiva.empleado_nombre || ('Emp. ' + (state.aperturaActiva.empleado_id || '—'));
+  const lbl = document.getElementById('pt-lib-dueno');
+  if (lbl) lbl.textContent = dueno;
+
+  const pin = document.getElementById('pt-lib-pin');
+  const mot = document.getElementById('pt-lib-motivo');
+  const err = document.getElementById('pt-lib-err');
+  if (pin) pin.value = '';
+  if (mot) mot.value = '';
+  if (err) err.textContent = '';
+
+  const bg = document.getElementById('pt-lib-modal-bg');
+  if (bg) bg.classList.add('show');
+  setTimeout(() => { try { pin && pin.focus(); } catch(_) {} }, 50);
+}
+
+function ptCerrarLiberarModal() {
+  const bg = document.getElementById('pt-lib-modal-bg');
+  if (bg) bg.classList.remove('show');
+}
+
+function ptCerrarLiberarModalBG(e) {
+  // Click en el fondo (no en el modal interno) — cerrar
+  if (e && e.target && e.target.id === 'pt-lib-modal-bg') ptCerrarLiberarModal();
+}
+
+async function ptConfirmarLiberar() {
+  const pinEl = document.getElementById('pt-lib-pin');
+  const motEl = document.getElementById('pt-lib-motivo');
+  const errEl = document.getElementById('pt-lib-err');
+  const okBtn = document.getElementById('pt-lib-ok-btn');
+  if (!pinEl || !errEl || !okBtn) return;
+
+  const pinIngresado = (pinEl.value || '').trim();
+  const motivo = (motEl ? motEl.value : '').trim().slice(0, 200);
+
+  if (!pinIngresado) {
+    errEl.textContent = 'Ingresá el PIN de administrador';
+    return;
+  }
+  if (!state.aperturaActiva || !state.aperturaActiva.id) {
+    errEl.textContent = 'No hay apertura activa para liberar';
+    return;
+  }
+
+  okBtn.disabled = true;
+  errEl.textContent = '';
+
+  try {
+    // 1) Validar PIN admin contra config.admin_pin
+    let adminPinReal = null;
+    try {
+      const rows = await sbFetch('config?clave=eq.admin_pin&select=valor');
+      if (rows && rows.length) adminPinReal = rows[0].valor;
+    } catch(e) {
+      console.warn('[turno] No se pudo leer admin_pin:', e);
+    }
+    // Fallback: si no hay PIN configurado en DB, NO permitir liberar
+    if (!adminPinReal) {
+      errEl.textContent = 'PIN de admin no configurado en sistema';
+      okBtn.disabled = false;
+      return;
+    }
+    if (pinIngresado !== adminPinReal) {
+      errEl.textContent = 'PIN incorrecto';
+      okBtn.disabled = false;
+      return;
+    }
+
+    // 2) PATCH apertura: cerrado_at + auditoría
+    // Usamos los 4 campos de auditoría — si no existen en la tabla, el primer PATCH
+    // falla y reintentamos sin ellos para no bloquear la operación.
+    const apId = state.aperturaActiva.id;
+    const ahora = new Date().toISOString();
+    const auditPayload = {
+      cerrado_at: ahora,
+      liberada_at: ahora,
+      liberada_por_id: state.empleado_id || null,
+      liberada_por_nombre: state.empleado || null,
+      liberada_motivo: motivo || null,
+    };
+    let liberado = false;
+    try {
+      await sbFetch(`aperturas_turno?id=eq.${encodeURIComponent(apId)}`, {
+        method: 'PATCH',
+        body: JSON.stringify(auditPayload),
+      });
+      liberado = true;
+    } catch(e) {
+      console.warn('[turno] PATCH con auditoría falló, reintento sin columnas nuevas:', e);
+      try {
+        await sbFetch(`aperturas_turno?id=eq.${encodeURIComponent(apId)}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ cerrado_at: ahora }),
+        });
+        liberado = true;
+      } catch(e2) {
+        console.error('[turno] No se pudo liberar apertura:', e2);
+      }
+    }
+
+    if (!liberado) {
+      errEl.textContent = 'Error al liberar el turno. Reintentá.';
+      okBtn.disabled = false;
+      return;
+    }
+
+    // 3) Limpiar borrador local del turno liberado para que no contamine la próxima apertura
+    try {
+      const hoy = new Date().toISOString().split('T')[0];
+      localStorage.removeItem(`break_turno_state_${state.local}_${state.turno}_${hoy}`);
+    } catch(_) {}
+
+    // 4) Liberar lock de pestaña (si lo tenemos) y recargar para reentrar al flujo
+    try { if (typeof _ptLiberarLockPestana === 'function') _ptLiberarLockPestana(); } catch(_) {}
+
+    showToast('Turno liberado ✓', 'success');
+    ptCerrarLiberarModal();
+    setTimeout(() => { window.location.reload(); }, 600);
+
+  } catch(e) {
+    console.error('[turno] ptConfirmarLiberar error:', e);
+    errEl.textContent = 'Error inesperado. Reintentá.';
+    okBtn.disabled = false;
+  }
+}
+
+// ═══════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════
 // El módulo arranca siempre esperando el postMessage del hub.
@@ -3261,5 +3525,28 @@ async function _ptCheckTabDuplicada(ctx) {
 }
 
 </script>
+
+<!-- v42 — Modal "Liberar turno" (PIN admin, PRD §3 Cambio futuro) -->
+<div class="pt-lib-modal-bg" id="pt-lib-modal-bg" onclick="ptCerrarLiberarModalBG(event)">
+  <div class="pt-lib-modal" onclick="event.stopPropagation()">
+    <h3>Liberar turno</h3>
+    <div class="pt-lib-sub">
+      Esta acción libera el turno actual sin guardar cierre contable. El siguiente empleado podrá aperturar normalmente.
+    </div>
+    <div class="pt-lib-warn" id="pt-lib-warn">
+      Turno actualmente abierto por <strong id="pt-lib-dueno">—</strong>. Solo el administrador puede liberar.
+    </div>
+    <label for="pt-lib-pin">PIN de administrador</label>
+    <input type="password" id="pt-lib-pin" inputmode="numeric" maxlength="8" autocomplete="off">
+    <label for="pt-lib-motivo">Motivo (opcional)</label>
+    <textarea id="pt-lib-motivo" placeholder="Ej: apertura por error, cambio de empleado, turno colgado…" maxlength="200"></textarea>
+    <div class="pt-lib-err" id="pt-lib-err"></div>
+    <div class="pt-lib-actions">
+      <button type="button" class="pt-lib-cancel" onclick="ptCerrarLiberarModal()">Cancelar</button>
+      <button type="button" class="pt-lib-ok" id="pt-lib-ok-btn" onclick="ptConfirmarLiberar()">Liberar</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

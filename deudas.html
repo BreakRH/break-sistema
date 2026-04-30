@@ -690,12 +690,33 @@ function entryHTML(e) {
   </div>`;
 }
 
+// ═══════════════════════════════════════
+// v42 — Guard de local para escrituras en `entradas`.
+// Si currentLocal está vacío (admin con 'Todas las tiendas'), bloquear
+// la operación. El bug del 2026-04 mostró que store=null contamina saldos
+// en los 4 locales por el fallback legacy de filtrarEntradasPorLocal.
+// ═══════════════════════════════════════
+function _requerirLocalSeleccionado(accion) {
+  if (currentLocal && currentLocal !== '') return true;
+  const msg = `Para ${accion || 'operar'} hay que seleccionar una tienda específica. ` +
+              `No se puede operar con "Todas las tiendas" — los movimientos quedarían ` +
+              `replicados en los 4 locales.`;
+  showToast(msg, true);
+  return false;
+}
+
 async function submitDeuda() {
   const desc  = document.getElementById('inp-desc').value.trim();
   const monto = parseFloat(document.getElementById('inp-monto').value);
   const turno = currentRole === 'gasto' ? '' : document.getElementById('inp-turno').value;
   if (!desc)            { showToast('Completá la descripción', true); return; }
   if (!monto || monto <= 0) { showToast('El monto debe ser mayor a 0', true); return; }
+
+  // 🔴 v42 — Defensivo: bloquear cualquier carga sin local específico.
+  // En el flujo normal del hub esto nunca debería pasar (currentLocal viene por
+  // postMessage), pero blindamos para que ninguna entrada quede con store=null.
+  if (!_requerirLocalSeleccionado('registrar deuda')) return;
+
   showLoading();
   // Guardar store = currentLocal para identificar de qué tienda es el cargo
   const entrada = {
@@ -903,6 +924,12 @@ function renderModalBody() {
 
   const localActualLabel = currentLocal ? (LOCAL_NAMES[currentLocal] || currentLocal) : 'Todas las tiendas';
 
+  // v42 — Si no hay local seleccionado, el form de ajuste se DESHABILITA
+  // (el admin igual puede ver historiales y totales, pero no puede crear
+  // movimientos sin asignar tienda).
+  const sinLocal = !currentLocal || currentLocal === '';
+  const ajusteDisabled = sinLocal ? 'disabled' : '';
+
   document.getElementById('modal-title').innerHTML =
     `${c.nombre} <span style="font-size:12px;font-weight:400;color:var(--muted);font-family:var(--mono)">— ${fmt(sLocal)}</span>`;
 
@@ -910,19 +937,22 @@ function renderModalBody() {
     ${hayOtros ? `<div style="background:rgba(232,200,122,0.08);border:0.5px solid rgba(232,200,122,0.2);border-radius:var(--radius);padding:10px 14px;margin-bottom:14px;font-size:12px;font-family:var(--mono);color:var(--accent)">
       💡 Deuda en ${localActualLabel}: <strong>${fmt(sLocal)}</strong> &nbsp;·&nbsp; Total todos los locales: <strong>${fmt(sTotal)}</strong>
     </div>` : ''}
+    ${sinLocal ? `<div style="background:rgba(231,90,90,0.10);border:0.5px solid rgba(231,90,90,0.45);border-radius:var(--radius);padding:10px 14px;margin-bottom:14px;font-size:12px;font-family:var(--mono);color:var(--red);line-height:1.5">
+      ⚠ <strong>No se pueden registrar ajustes con "Todas las tiendas".</strong> Para hacer un descuento o cargo, volvé al hub y abrí el módulo desde una tienda específica (Palermo, Belgrano, B. Chino o San Telmo). Los movimientos sin tienda asignada se replicarían en los 4 locales.
+    </div>` : ''}
     <div style="margin-bottom:1.3rem">
       <div class="card-title" style="margin-bottom:10px">Ajuste de cuenta — solo administración</div>
-      <div class="ajuste-form">
-        <div class="field-group"><div class="field-label">Concepto</div><input type="text" id="m-desc" placeholder="ej: Descuento sueldo, Factura..." /></div>
-        <div class="field-group"><div class="field-label">Monto (ARS)</div><input type="number" id="m-monto" placeholder="0" min="0" /></div>
+      <div class="ajuste-form" ${sinLocal ? 'style="opacity:0.5;pointer-events:none"' : ''}>
+        <div class="field-group"><div class="field-label">Concepto</div><input type="text" id="m-desc" placeholder="ej: Descuento sueldo, Factura..." ${ajusteDisabled} /></div>
+        <div class="field-group"><div class="field-label">Monto (ARS)</div><input type="number" id="m-monto" placeholder="0" min="0" ${ajusteDisabled} /></div>
         <div class="field-group full">
           <div class="field-label">Tipo de movimiento</div>
           <div class="signo-row">
-            <button id="btn-pos" class="signo-btn on-pos" onclick="setSigno(1)">+ Cargo / deuda</button>
-            <button id="btn-neg" class="signo-btn" onclick="setSigno(-1)">− Descuento / pago</button>
+            <button id="btn-pos" class="signo-btn on-pos" onclick="setSigno(1)" ${ajusteDisabled}>+ Cargo / deuda</button>
+            <button id="btn-neg" class="signo-btn" onclick="setSigno(-1)" ${ajusteDisabled}>− Descuento / pago</button>
           </div>
         </div>
-        <div class="full"><button class="btn btn-primary" onclick="submitAjuste()">Aplicar ajuste →</button></div>
+        <div class="full"><button class="btn btn-primary" onclick="submitAjuste()" ${ajusteDisabled}>Aplicar ajuste →</button></div>
       </div>
     </div>
     <div class="card-title" style="margin-bottom:8px">Historial — ${adminVerTodo ? 'todos los locales' : localActualLabel}</div>
@@ -940,6 +970,13 @@ async function submitAjuste() {
   const monto = parseFloat(document.getElementById('m-monto').value);
   if (!desc)            { showToast('Completá el concepto', true); return; }
   if (!monto || monto <= 0) { showToast('Monto inválido', true); return; }
+
+  // 🔴 v42 — Bug crítico: si currentLocal está vacío ('Todas las tiendas'),
+  // store quedaría en null y por el fallback legacy de filtrarEntradasPorLocal
+  // la entrada aparecería en TODOS los locales (afectando saldos cruzados).
+  // BLOQUEAR el ajuste y forzar que el admin seleccione una tienda específica.
+  if (!_requerirLocalSeleccionado('ajustar deuda')) return;
+
   showLoading();
   const entrada = {
     cid: modalId,

@@ -1023,8 +1023,10 @@ window.addEventListener('message', e => {
     localKey = e.data.local || '';
     localName = e.data.localName || localKey;
     rolActual = e.data.rol || 'empleado';
-    // Mostrar "Cuenta Corriente" solo a admin/encargado/supervisor
-    const puedeVerCtaCte = (rolActual === 'admin' || rolActual === 'encargado' || rolActual === 'supervisor');
+    // v42 — cuenta corriente disponible para TODOS los roles (incluye empleado).
+    // Empleados que cargan papelería/hielo a cuenta corriente necesitan poder
+    // filtrar y ver esas OTs después.
+    const puedeVerCtaCte = true;
     const ctaOpt = document.getElementById('f-estado-pago-cta');
     if (ctaOpt) ctaOpt.style.display = puedeVerCtaCte ? '' : 'none';
     empleadoNombre = e.data.empleado || '';
@@ -1102,8 +1104,8 @@ async function loadOrdenes() {
 function renderStats() {
   const total = ordenes.length;
   const ctaCte = ordenes.filter(o => o.estado_pago === 'cuenta_corriente');
-  const totalCtaCte = ctaCte.reduce((s,o) => s + (parseFloat(o.total)||0), 0);
-  const incompletas = ordenes.filter(o => !isComplete(o)).length;
+  // PRD §4.0 CP5: cuenta_corriente NO cuenta como "Incompleta" — su confirmación vive en pagos.html
+  const incompletas = ordenes.filter(o => o.estado_pago !== 'cuenta_corriente' && !isComplete(o)).length;
 
   document.getElementById('stats-bar').innerHTML = `
     <div class="stat-card">
@@ -1113,10 +1115,6 @@ function renderStats() {
     <div class="stat-card">
       <div class="stat-label">Cta. Corriente</div>
       <div class="stat-value red">${ctaCte.length}</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Monto Cta. Cte.</div>
-      <div class="stat-value yellow">${formatMoney(totalCtaCte)}</div>
     </div>
     <div class="stat-card">
       <div class="stat-label">Incompletas</div>
@@ -1143,7 +1141,8 @@ function renderTabla() {
   if (filtroActivo === 'cuenta_corriente') {
     data = data.filter(o => o.estado_pago === 'cuenta_corriente');
   } else if (filtroActivo === 'pendiente') {
-    data = data.filter(o => !isComplete(o));
+    // PRD §4.0 CP5: cuenta_corriente NO cuenta como "Incompleta" — tiene su pestaña dedicada y se confirma en pagos.html
+    data = data.filter(o => o.estado_pago !== 'cuenta_corriente' && !isComplete(o));
   } else if (filtroActivo === 'por_recibir') {
     data = data.filter(o => !o.registrado);
   } else {
@@ -1438,6 +1437,24 @@ function buildPagoSection(o) {
   // Recibido por: usar el registrado en la OT, o el empleado logueado como fallback
   const recepcionActual = o.recepcion || empleadoNombre || '';
 
+  // PRD §4.0 CP5: si es cuenta_corriente, NO se confirma desde acá — solo lectura informativa.
+  // La confirmación de pago vive exclusivamente en pagos.html (Cuentas por Pagar).
+  if (esPendiente) {
+    return `
+      <div class="detail-section" style="border:1px solid ${borderColor};border-radius:var(--r2);padding:16px 20px;background:${bgColor};">
+        <div class="detail-section-title" style="color:${titleColor};">${titleText}</div>
+        ${planLabel}
+        ${vencLabel}
+        <div style="display:flex;align-items:flex-start;gap:10px;padding:12px 14px;background:rgba(0,0,0,0.25);border:1px dashed var(--border);border-radius:var(--r);">
+          <span style="font-size:18px;line-height:1;">💳</span>
+          <div style="font-size:12px;color:var(--text2);line-height:1.5;">
+            Esta OT figura en <strong style="color:var(--yellow);">Cuentas por Pagar</strong>.<br>
+            La confirmación del pago se registra ahí cuando se abone la factura — no desde esta pantalla.
+          </div>
+        </div>
+      </div>`;
+  }
+
   return `
     <div class="detail-section" style="border:1px solid ${borderColor};border-radius:var(--r2);padding:16px 20px;background:${bgColor};">
       <div class="detail-section-title" style="color:${titleColor};">${titleText}</div>
@@ -1450,7 +1467,7 @@ function buildPagoSection(o) {
             <option value="">Seleccionar...</option>
             <option value="efectivo" ${metodoActual==='efectivo'?'selected':''}>Efectivo</option>
             <option value="transf_qr" ${metodoActual==='transf_qr'?'selected':''}>Transferencia / QR</option>
-            ${(rolActual==='admin'||rolActual==='encargado'||rolActual==='supervisor') ? `<option value="cuenta_corriente" ${metodoActual==='cuenta_corriente'?'selected':''}>Cuenta Corriente</option>` : ''}
+            <option value="cuenta_corriente" ${metodoActual==='cuenta_corriente'?'selected':''}>Cuenta Corriente</option>
           </select>
         </div>
         <div>
@@ -1469,8 +1486,8 @@ function buildPagoSection(o) {
           style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:8px 10px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box;">
       </div>
       <button onclick="confirmarPago('${o.id}')"
-        style="width:100%;padding:10px;background:${esPendiente?'var(--green)':'var(--surface)'};color:${esPendiente?'#0a0a0a':'var(--text)'};border:${esPendiente?'none':'1px solid var(--border)'};border-radius:var(--r);font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
-        ${esPendiente ? '✓ Confirmar pago' : '↻ Actualizar pago'}
+        style="width:100%;padding:10px;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:var(--r);font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
+        ↻ Actualizar pago
       </button>
     </div>`;
 }
@@ -2126,9 +2143,10 @@ function abrirModalConversion(id) {
   document.getElementById('conv-pago').value        = o.estado_pago || 'efectivo';
   document.getElementById('conv-recepcion').value   = empleadoNombre || '';
   document.getElementById('conv-obs').value         = '';
-  // Permiso cta cte: ocultar opción a empleado (PRD §4.4)
+  // v42 — cuenta corriente disponible para TODOS los roles (incluye empleado).
+  // Empleados pueden registrar OTs de papelería/hielo a cuenta corriente.
   const ctaOpt = document.getElementById('conv-pago-cta');
-  if (ctaOpt) ctaOpt.style.display = (rolActual === 'empleado') ? 'none' : '';
+  if (ctaOpt) ctaOpt.style.display = '';
   // Resumen
   document.getElementById('conv-resumen').innerHTML =
     `<strong style="color:var(--text);">${o.proveedor || '—'}</strong> · ` +
