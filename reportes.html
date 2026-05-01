@@ -988,11 +988,19 @@ function updatePedResp(resp) {
 // ═══════════════════════════════════════
 // SUBMIT
 // ═══════════════════════════════════════
-async function submitForm(tipo) {
-  if (!ctx.local) {
-    showToast('No se detectó el local. Ingresá desde el hub principal.', 'error');
-    return;
+
+// AR5 — guard cross-local: prohibir escrituras sin local en contexto
+function _requerirLocalSeleccionado(accion){
+  if(!ctx.local){
+    showToast(`No se puede ${accion} sin contexto de tienda. Ingresá desde el hub principal.`, 'error');
+    return false;
   }
+  return true;
+}
+
+async function submitForm(tipo) {
+  // AR5 — guard cross-local antes de cualquier escritura
+  if (!_requerirLocalSeleccionado('enviar el reporte')) return;
   const btnId = { falla_tienda:'btn-ft', edilicio:'btn-ed', rotos_vencidos:'btn-rv', pedido:'btn-ped', ticket:'btn-tk' }[tipo];
   const btn = document.getElementById(btnId);
   btn.classList.add('loading'); btn.disabled = true;
@@ -1005,7 +1013,7 @@ async function submitForm(tipo) {
     }
     const reporte = {
       tipo,
-      local:          ctx.local || null,
+      local:          ctx.local,
       empleado_id:    ctx.empleado_id,
       turno:          ctx.turno,
       foto_url:       fotoUrl,

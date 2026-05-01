@@ -661,6 +661,17 @@ function renderFormNueva(containerId){
     const sel = document.getElementById(`n-origen-${containerId}`);
     if (sel) sel.value = origenPreselecc;
   }
+  // AR5 — guard cross-local: si el rol es una tienda específica (empleado/encargado),
+  // bloquear el select de origen para que no puedan crear remitos desde otra tienda
+  if (currentRol !== 'admin' && currentRol !== 'repartidor') {
+    const sel = document.getElementById(`n-origen-${containerId}`);
+    if (sel) {
+      sel.disabled = true;
+      sel.title = 'El origen está fijado a tu tienda';
+      sel.style.opacity = '0.6';
+      sel.style.cursor = 'not-allowed';
+    }
+  }
 }
 
 function agregarLineaNueva(containerId){
@@ -681,6 +692,14 @@ async function crearOrden(containerId){
   if(!origen)  {showToast('Seleccioná la tienda origen.',true);return;}
   if(!destino) {showToast('Seleccioná la tienda destino.',true);return;}
   if(origen===destino){showToast('Origen y destino no pueden ser la misma tienda.',true);return;}
+  // AR5 — guard cross-local: si el rol es una tienda específica, el origen DEBE coincidir con su tienda
+  if (currentRol !== 'admin' && currentRol !== 'repartidor') {
+    const tiendaPropia = hubLocal || currentRol;
+    if (origen !== tiendaPropia) {
+      showToast('Solo podés crear remitos desde tu tienda como origen.', true);
+      return;
+    }
+  }
   const productosValidos=lineasNueva.filter(l=>l.nombre.trim());
   if(!productosValidos.length){showToast('Agregá al menos un producto.',true);return;}
 

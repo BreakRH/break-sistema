@@ -1437,10 +1437,23 @@ function renderDivision(){
 // ══════════════════════════════════════════
 // START CONTEO
 // ══════════════════════════════════════════
+// AR5 — guard cross-local: prohibir escrituras sin local seleccionado
+function _requerirLocalSeleccionado(accion){
+  const localEl = document.getElementById('setup-local');
+  const localVal = localEl ? localEl.value : '';
+  if(!localVal){
+    showToast(`No se puede ${accion} sin seleccionar una tienda.`,'error');
+    return false;
+  }
+  return true;
+}
+
 function iniciarConteo(){
   if(!Object.keys(items).length){ showToast('Primero cargá el archivo de artículos','error'); return; }
+  // AR5 — guard: abortar si no hay tienda seleccionada (no permitir fallback 'sin_local')
+  if(!_requerirLocalSeleccionado('iniciar el inventario')) return;
   // Setear sessionKey con local + fecha
-  const local = document.getElementById('setup-local').value || 'sin_local';
+  const local = document.getElementById('setup-local').value;
   const fecha = document.getElementById('setup-fecha').value || new Date().toISOString().split('T')[0];
   sessionKey = `${local}_${fecha}`;
   // Apply division to items

@@ -1982,6 +1982,14 @@ function closeEnvModal() {
 async function confirmarEnvio() {
   if (!_envPending) return;
   const { pk, prov: provFull, tienda } = _envPending;
+  // AR5 — guard cross-local: empleado/encargado solo puede confirmar pedidos de su tienda
+  if (typeof hubRol !== 'undefined' && (hubRol === 'empleado' || hubRol === 'encargado')) {
+    const miTk = (typeof hubLocal !== 'undefined' && hubLocal) ? LOCAL_MAP[hubLocal] : null;
+    if (miTk && tienda !== miTk) {
+      showToast('Solo podés confirmar pedidos de tu tienda', 'error');
+      return;
+    }
+  }
   const fechaLlegada = document.getElementById('env-fecha').value;
   const pago = document.getElementById('env-pago').value;
   const montoRaw = document.getElementById('env-monto').value;
@@ -3003,6 +3011,19 @@ function aplicarModoEmpleado() {
   // Ocultar botón de proveedores
   var provBtn = document.querySelector('[onclick="openProvDB()"]');
   if (provBtn) provBtn.style.display = 'none';
+
+  // AR5 — bloquear botones de tienda ≠ hubLocal: empleado/encargado solo opera en su tienda
+  var miTk = hubLocal ? LOCAL_MAP[hubLocal] : null;
+  if (miTk) {
+    document.querySelectorAll('[data-tienda]').forEach(function(b) {
+      if (b.dataset.tienda !== miTk) {
+        b.disabled = true;
+        b.style.opacity = '0.35';
+        b.style.cursor = 'not-allowed';
+        b.title = 'Solo podés operar en tu tienda';
+      }
+    });
+  }
 
   // Ir a tab "En proceso" y filtrar por local del hub
   switchTab('proceso');
