@@ -997,6 +997,15 @@
           <textarea id="pt-obs-cierre" style="margin-bottom:14px;min-height:70px" placeholder="Novedad del turno, faltantes, incidentes..."></textarea>
 
           <button class="pt-cerrar-btn" id="pt-btn-cerrar" onclick="ptCerrar()">🔒 Cerrar turno</button>
+          <!-- v43.1 — Anular turno (admin con PIN). Útil para limpiar aperturas de prueba
+               o aperturas hechas por error. Reusa la lógica de Liberar turno (Fix #1 v43)
+               pero accesible desde el flujo normal del dueño del turno (no solo en read-only). -->
+          <button type="button" id="pt-btn-anular" onclick="ptAbrirAnularModal()"
+            style="margin-top:10px;width:100%;padding:9px 12px;background:transparent;color:var(--text3);border:1px dashed var(--border2);border-radius:6px;font-size:11px;font-family:var(--mono);cursor:pointer;letter-spacing:0.04em;transition:all 0.12s"
+            onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'"
+            onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text3)'">
+            🗑 Anular turno sin cerrar (admin)
+          </button>
         </div>
       </div>
     </div>
@@ -2428,10 +2437,11 @@ const PT_PILLS_LABELS = {
   remitos:    'Remitos',
   inventario: 'Inventario',
   reportes:   'Reportes',
+  tareas:     'Definir Tareas',
 };
 const PT_PILLS_BY_ROL = {
   empleado:   ['ordenes', 'deudas', 'remitos', 'reportes'],
-  encargado:  ['ordenes', 'deudas', 'remitos', 'reportes'],
+  encargado:  ['ordenes', 'deudas', 'remitos', 'reportes', 'tareas'],
   admin:      ['ordenes', 'pagos', 'deudas', 'pedidos', 'remitos', 'inventario', 'reportes'],
   supervisor: ['ordenes', 'pagos', 'deudas', 'pedidos', 'remitos', 'inventario', 'reportes'],
 };
@@ -2461,6 +2471,14 @@ function ptPillClick(mod) {
   // setea contexto, abre el módulo en iframe, y al cerrar vuelve a turno.html
   // (porque _returnToTurno + rol empleado/encargado dispara redirigirATurnoEmpleado).
   if (document.body.classList.contains('pt-fullscreen')) {
+    // Cambio 1 Parte 4 (PRD §3.5): "Definir Tareas" abre el modal LOCAL pt-modal-def.
+    // El ABM de tareas vive 100% en turno.html (ptOpenDefModal/ptSaveDef). admin.html
+    // tiene stubs que redirigen acá, así que no tiene sentido viajar a admin.html.
+    // Esta pill es un atajo siempre visible al modal de creación de tareas para encargado.
+    if (mod === 'tareas') {
+      try { ptOpenDefModal(); } catch(e) { console.warn('[turno] ptOpenDefModal falló:', e); }
+      return;
+    }
     const params = new URLSearchParams({
       abrir:       mod,
       local:       state.local       || '',
@@ -3194,8 +3212,45 @@ function ptAbrirLiberarModal() {
     return;
   }
   const dueno = state.aperturaActiva.empleado_nombre || ('Emp. ' + (state.aperturaActiva.empleado_id || '—'));
-  const lbl = document.getElementById('pt-lib-dueno');
-  if (lbl) lbl.textContent = dueno;
+  const titulo = document.getElementById('pt-lib-titulo');
+  const sub    = document.getElementById('pt-lib-sub');
+  const warn   = document.getElementById('pt-lib-warn');
+  const okBtn  = document.getElementById('pt-lib-ok-btn');
+  if (titulo) titulo.textContent = 'Liberar turno';
+  if (sub)    sub.textContent    = 'Esta acción libera el turno actual sin guardar cierre contable. El siguiente empleado podrá aperturar normalmente.';
+  if (warn)   warn.innerHTML     = 'Turno actualmente abierto por <strong id="pt-lib-dueno">' + dueno + '</strong>. Solo el administrador puede liberar.';
+  if (okBtn)  okBtn.textContent  = 'Liberar';
+
+  const pin = document.getElementById('pt-lib-pin');
+  const mot = document.getElementById('pt-lib-motivo');
+  const err = document.getElementById('pt-lib-err');
+  if (pin) pin.value = '';
+  if (mot) mot.value = '';
+  if (err) err.textContent = '';
+
+  const bg = document.getElementById('pt-lib-modal-bg');
+  if (bg) bg.classList.add('show');
+  setTimeout(() => { try { pin && pin.focus(); } catch(_) {} }, 50);
+}
+
+// v43.1 — Anular turno (admin con PIN). Reusa el mismo modal y la misma función
+// ptConfirmarLiberar — el PATCH cerrado_at + auditoría es idéntico. Cambia solo el copy
+// para reflejar que el admin está anulando su PROPIO turno (típicamente apertura de prueba
+// o por error), no liberando uno ajeno.
+function ptAbrirAnularModal() {
+  if (!state.aperturaActiva || !state.aperturaActiva.id) {
+    showToast('No hay apertura activa para anular', 'error');
+    return;
+  }
+  const dueno = state.aperturaActiva.empleado_nombre || ('Emp. ' + (state.aperturaActiva.empleado_id || '—'));
+  const titulo = document.getElementById('pt-lib-titulo');
+  const sub    = document.getElementById('pt-lib-sub');
+  const warn   = document.getElementById('pt-lib-warn');
+  const okBtn  = document.getElementById('pt-lib-ok-btn');
+  if (titulo) titulo.textContent = 'Anular turno';
+  if (sub)    sub.textContent    = 'Anula la apertura del turno SIN generar cierre contable. Útil para apertura de prueba o por error. Esta acción no se puede deshacer.';
+  if (warn)   warn.innerHTML     = 'Turno apertura por <strong>' + dueno + '</strong>. Requiere PIN de administrador.';
+  if (okBtn)  okBtn.textContent  = 'Anular turno';
 
   const pin = document.getElementById('pt-lib-pin');
   const mot = document.getElementById('pt-lib-motivo');
@@ -3527,10 +3582,12 @@ async function _ptCheckTabDuplicada(ctx) {
 </script>
 
 <!-- v42 — Modal "Liberar turno" (PIN admin, PRD §3 Cambio futuro) -->
+<!-- v43.1 — Reutilizado también para "Anular turno" (admin con PIN sobre su propia apertura).
+     IDs en title/sub/warn permiten ajustar el copy según el modo. -->
 <div class="pt-lib-modal-bg" id="pt-lib-modal-bg" onclick="ptCerrarLiberarModalBG(event)">
   <div class="pt-lib-modal" onclick="event.stopPropagation()">
-    <h3>Liberar turno</h3>
-    <div class="pt-lib-sub">
+    <h3 id="pt-lib-titulo">Liberar turno</h3>
+    <div class="pt-lib-sub" id="pt-lib-sub">
       Esta acción libera el turno actual sin guardar cierre contable. El siguiente empleado podrá aperturar normalmente.
     </div>
     <div class="pt-lib-warn" id="pt-lib-warn">

@@ -1731,6 +1731,20 @@ function showToast(msg, type = '') {
 // ── Navegación ──
 // admin.html es standalone iframe — nunca usa goTo() del hub
 function goBack() {
+  // Cambio 1 Parte 4 (PRD §3.5): si vino por bootstrap URL (encargado en navegación
+  // full desde la pill "Definir Tareas"), no hay parent. Volver a turno.html con URL params.
+  if (_adminBootstrapURL) {
+    const params = new URLSearchParams({
+      local:       state.local       || '',
+      localName:   state.localName   || '',
+      rol:         state.rol         || '',
+      empleado:    state.empleado    || '',
+      empleado_id: state.empleado_id || '',
+      turno:       state.turno       || '',
+    });
+    window.location.href = 'turno.html?' + params.toString();
+    return;
+  }
   if (_hubOrigin) {
     window.parent.postMessage({ tipo: 'admin-back' }, _hubOrigin);
   }
@@ -1743,6 +1757,7 @@ let state = {
   reportes: [], adminFilter: '',
 };
 let _hubOrigin = null;
+let _adminBootstrapURL = false; // Cambio 1 Parte 4: true si admin.html arrancó con URL params (encargado full)
 
 // ── Contrato postMessage con index.html (PRD §5.3) ──
 window.addEventListener('message', (e) => {
@@ -1765,6 +1780,12 @@ window.addEventListener('message', (e) => {
   if (state.rol === 'admin') {
     showScreen('admin');
     admInit();
+  } else if (_adminBootstrapURL && state.rol === 'encargado') {
+    // Cambio 1 Parte 4 (PRD §3.5): encargado entra DIRECTO desde la pill "Definir Tareas"
+    // de turno.html. Salta PIN y aplica guard que oculta tabs no permitidas.
+    showScreen('admin');
+    admInit();
+    admAplicarGuardEncargado();
   } else {
     // Otros roles con acceso al admin (encargado con permisos) → mostrar PIN
     showScreen('admin-pin');
@@ -1775,6 +1796,22 @@ function showScreen(name) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   const el = document.getElementById('screen-' + name);
   if (el) { el.classList.add('active'); el.scrollTop = 0; }
+}
+
+// ═══════════════════════════════════════
+// Cambio 1 Parte 4 (PRD §3.5): guard para encargado.
+// Cuando entra desde la pill "Definir Tareas" de turno.html, solo puede ver
+// la tab Tareas. Ocultamos resumen/cierres/reportes/empleados/liquidacion/accesos
+// y forzamos admTab('tareas') (que sobrescribe el admTab('resumen') que admInit
+// dispara síncronamente al inicio).
+// ═══════════════════════════════════════
+function admAplicarGuardEncargado() {
+  const tabsOcultas = ['resumen', 'cierres', 'reportes', 'empleados', 'liquidacion', 'accesos'];
+  tabsOcultas.forEach(t => {
+    const el = document.getElementById('adm-tab-' + t);
+    if (el) el.style.display = 'none';
+  });
+  admTab('tareas');
 }
 
 // ── admData — estado del panel ──
@@ -3820,6 +3857,36 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (cfg['admin_pin']) adminPinValue = cfg['admin_pin'];
   } catch(e) { console.warn('[admin] init config:', e); }
 });
+
+// ═══════════════════════════════════════
+// Cambio 1 Parte 4 (PRD §3.5): bootstrap desde URL params.
+// Cuando admin.html se carga como navegación full desde turno.html (pill "Definir
+// Tareas" del encargado), no hay parent ni iframe. El contexto viene en URL:
+// ?local=...&rol=encargado&empleado=...&tab=tareas
+// Detectamos los params, marcamos flag _adminBootstrapURL=true, y disparamos
+// postMessage sintético al propio window para reusar el handler 'message' existente.
+// El handler detecta la flag y, si rol=encargado, salta PIN y aplica guardEncargado.
+// Si no hay URL params, queda el flujo iframe original (espera postMessage del hub).
+// ═══════════════════════════════════════
+(function admBootstrapDesdeURL() {
+  try {
+    const qs = new URLSearchParams(window.location.search);
+    if (!qs.get('rol')) return; // no hay params → flujo iframe normal
+    _adminBootstrapURL = true;
+    const ctx = {
+      type:        'break-context',
+      local:       qs.get('local')       || '',
+      localName:   qs.get('localName')   || '',
+      rol:         qs.get('rol')         || '',
+      empleado:    qs.get('empleado')    || '',
+      empleado_id: qs.get('empleado_id') || '',
+      turno:       qs.get('turno')       || '',
+    };
+    setTimeout(() => {
+      try { window.postMessage(ctx, window.location.origin); } catch(_) {}
+    }, 0);
+  } catch(e) { console.warn('[admin] bootstrap URL falló:', e); }
+})();
 
 // Funciones console para administracion de dispositivos (acceso desde consola del browser)
 window.breakEnroll = async function() {
