@@ -3094,6 +3094,40 @@ async function ptCerrar() {
   const btn = document.getElementById('pt-btn-cerrar');
   btn.disabled = true; btn.textContent = 'Guardando...';
   try {
+    // ═══════════════════════════════════════
+    // C1 — GUARD ANTI-DOBLE-CIERRE CROSS-DEVICE
+    // ═══════════════════════════════════════
+    // Re-consulta aperturas_turno justo antes del POST.
+    // Si otro device del mismo empleado ya cerró este turno, abortamos
+    // para evitar duplicados en cierres_turno.
+    try {
+      const recheckUrl = `aperturas_turno?local=eq.${encodeURIComponent(state.local)}`
+                       + `&turno=eq.${encodeURIComponent(state.turno)}`
+                       + `&fecha=eq.${payload.fecha}`
+                       + `&cerrado_at=is.null`
+                       + `&select=id,empleado_id,empleado_nombre`;
+      const recheckRes = await sbFetch(recheckUrl);
+      if (!recheckRes || !recheckRes.length) {
+        // La apertura ya está cerrada (cerrado_at != null) o no existe
+        showToast('Este turno ya fue cerrado desde otra sesión. Recargá la página para refrescar.', 'error');
+        btn.disabled = false; btn.textContent = '🔒 Cerrar turno';
+        return;
+      }
+      const filaApertura = recheckRes[0];
+      if (String(filaApertura.empleado_id || '') !== String(state.empleado_id || '')) {
+        // El owner cambió (improbable, pero defendemos)
+        const otroEmp = filaApertura.empleado_nombre || `Emp. ${filaApertura.empleado_id || '—'}`;
+        showToast(`Este turno está abierto por ${otroEmp}. No podés cerrarlo.`, 'error');
+        btn.disabled = false; btn.textContent = '🔒 Cerrar turno';
+        return;
+      }
+    } catch(eRecheck) {
+      // Si el re-check falla por red, NO bloqueamos el cierre (priorizamos
+      // que el empleado pueda cerrar sin internet ocasional). El UNIQUE de DB
+      // (cuando se agregue) será la red de seguridad final.
+      console.warn('[turno] C1 re-check falló, continuando con cierre:', eRecheck);
+    }
+
     await sbFetch('cierres_turno', { method:'POST', body: JSON.stringify([payload]) });
 
     // Guardar hielos individuales
