@@ -3095,9 +3095,9 @@ async function ptCerrar() {
   btn.disabled = true; btn.textContent = 'Guardando...';
   try {
     // ═══════════════════════════════════════
-    // C1 — GUARD ANTI-DOBLE-CIERRE CROSS-DEVICE
+    // C1 — GUARD ANTI-DOBLE-CIERRE CROSS-DEVICE (defensa #1)
     // ═══════════════════════════════════════
-    // Re-consulta aperturas_turno justo antes del POST.
+    // Re-consulta aperturas_turno justo antes del PATCH atómico.
     // Si otro device del mismo empleado ya cerró este turno, abortamos
     // para evitar duplicados en cierres_turno.
     try {
@@ -3122,13 +3122,82 @@ async function ptCerrar() {
         return;
       }
     } catch(eRecheck) {
-      // Si el re-check falla por red, NO bloqueamos el cierre (priorizamos
-      // que el empleado pueda cerrar sin internet ocasional). El UNIQUE de DB
-      // (cuando se agregue) será la red de seguridad final.
-      console.warn('[turno] C1 re-check falló, continuando con cierre:', eRecheck);
+      // Si el re-check falla por red, NO bloqueamos el cierre acá:
+      // el PATCH atómico de C2 (a continuación) es la defensa #2 con
+      // garantía DB. El UNIQUE de C3 es la defensa final.
+      console.warn('[turno] C1 re-check falló, continuando con PATCH atómico:', eRecheck);
     }
 
-    await sbFetch('cierres_turno', { method:'POST', body: JSON.stringify([payload]) });
+    // ═══════════════════════════════════════
+    // C2 — PATCH ATÓMICO (defensa #2)
+    // ═══════════════════════════════════════
+    // Cerramos la apertura PRIMERO con guard &cerrado_at=is.null.
+    // Postgres serializa: si dos sesiones llegan acá, solo UNA afecta filas.
+    // La que pierde recibe array vacío y aborta. Garantía atómica de DB.
+    let aperturaResp = null;
+    try {
+      const patchUrl = `aperturas_turno?local=eq.${encodeURIComponent(state.local)}`
+                     + `&turno=eq.${encodeURIComponent(state.turno)}`
+                     + `&fecha=eq.${payload.fecha}`
+                     + `&cerrado_at=is.null`
+                     + `&select=id`;
+      aperturaResp = await sbFetch(patchUrl, {
+        method: 'PATCH',
+        body: JSON.stringify({ cerrado_at: new Date().toISOString() })
+      });
+    } catch(ePatch) {
+      // Red caída ANTES de tomar el lock: abortamos sin riesgo.
+      // El usuario reintenta cuando vuelva la conexión.
+      console.error('[turno] C2 PATCH atómico falló:', ePatch);
+      showToast('Error de conexión al cerrar el turno. Reintentá.', 'error');
+      btn.disabled = false; btn.textContent = '🔒 Cerrar turno';
+      return;
+    }
+    if (!Array.isArray(aperturaResp) || aperturaResp.length === 0) {
+      // Otra sesión ganó la carrera atómica: cerrado_at ya estaba seteado.
+      showToast('Este turno ya fue cerrado desde otra sesión. Recargá la página para refrescar.', 'error');
+      btn.disabled = false; btn.textContent = '🔒 Cerrar turno';
+      return;
+    }
+    const aperturaIdCerrada = aperturaResp[0]?.id || null;
+    state.aperturaActiva = null;
+
+    // ═══════════════════════════════════════
+    // POST cierres_turno + manejo UNIQUE 23505 (defensa #3)
+    // ═══════════════════════════════════════
+    try {
+      await sbFetch('cierres_turno', { method:'POST', body: JSON.stringify([payload]) });
+    } catch(ePost) {
+      const msg = String(ePost?.message || ePost || '');
+      const esUnique = msg.includes('23505') || msg.includes('cierres_turno_unico') || msg.includes('duplicate key');
+      if (esUnique) {
+        // C3 UNIQUE rechazó: ya existe fila para (empleado, local, turno, fecha).
+        // No revertimos el PATCH: la apertura quedó cerrada coherentemente.
+        console.warn('[turno] UNIQUE violation en cierres_turno, refrescar:', msg);
+        showToast('Este turno ya estaba cerrado en el sistema. Refrescá la página.', 'error');
+        btn.disabled = false; btn.textContent = '🔒 Cerrar turno';
+        return;
+      }
+      // Error de red post-PATCH: la apertura quedaría cerrada sin cierre asociado.
+      // Intentamos revertir el PATCH para no dejar inconsistencia.
+      console.error('[turno] POST cierres_turno falló post-PATCH, revirtiendo apertura:', ePost);
+      try {
+        if (aperturaIdCerrada) {
+          await sbFetch(`aperturas_turno?id=eq.${encodeURIComponent(aperturaIdCerrada)}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ cerrado_at: null })
+          });
+          showToast('Error guardando cierre. Reintentá. (Apertura liberada)', 'error');
+        } else {
+          showToast('Error guardando cierre. Reintentá.', 'error');
+        }
+      } catch(eRevert) {
+        console.error('[turno] Revert apertura falló:', eRevert);
+        showToast('Error guardando cierre. Avisá a admin para liberar el turno.', 'error');
+      }
+      btn.disabled = false; btn.textContent = '🔒 Cerrar turno';
+      return;
+    }
 
     // Guardar hielos individuales
     const cierreRes = await sbFetch(`cierres_turno?empleado_id=eq.${state.empleado_id}&local=eq.${state.local}&turno=eq.${state.turno}&fecha=eq.${payload.fecha}&order=created_at.desc&limit=1&select=id`);
@@ -3143,21 +3212,8 @@ async function ptCerrar() {
     try { localStorage.removeItem(`break_turno_state_${state.local}_${state.turno}_${new Date().toISOString().split('T')[0]}`); } catch(e){}
     ptLimpiarBorrador().catch(() => {});
 
-    // v40 — Cerrar la apertura asociada en aperturas_turno.
-    // Buscamos por (local, fecha, turno) con cerrado_at IS NULL para evitar depender
-    // de state.aperturaActiva (puede no haberse hidratado en sesiones de admin/supervisor).
-    try {
-      const hoy = payload.fecha;
-      const patchUrl = `aperturas_turno?local=eq.${encodeURIComponent(state.local)}`
-                     + `&turno=eq.${encodeURIComponent(state.turno)}`
-                     + `&fecha=eq.${hoy}`
-                     + `&cerrado_at=is.null`;
-      await sbFetch(patchUrl, {
-        method: 'PATCH',
-        body: JSON.stringify({ cerrado_at: new Date().toISOString() })
-      });
-      state.aperturaActiva = null;
-    } catch(e) { console.warn('[turno] No se pudo cerrar apertura:', e); }
+    // v45 (C2): el PATCH a aperturas_turno se hace ARRIBA del POST (defensa #2 atómica).
+    // Ya no necesitamos cerrar la apertura acá — solo dejar el state limpio.
 
     document.getElementById('pt-cierre-form').style.display = 'none';
     document.getElementById('pt-confirmado').style.display = 'block';
