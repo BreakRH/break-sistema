@@ -481,6 +481,7 @@
     td, th { padding: 8px 10px; }
   }
 </style>
+  <script src="testmode-banner.js"></script>
 </head>
 <body>
 
@@ -1006,6 +1007,50 @@ async function sbFetch(path, opts = {}) {
   return text ? JSON.parse(text) : null;
 }
 
+// ─── Helper: clasificar errores Supabase/PostgREST (lección v47) ─
+// Distingue 23505 / 23502 / 23503 / PGRST204 / red para mensajes accionables
+// y deja un console.error con payload + body crudo para diagnóstico en F12.
+// No relanza — el caller decide qué hacer con el resultado.
+function _clasificarErrorSupabase(e, contexto) {
+  const msg = (e && e.message) ? e.message : String(e);
+  let codigo = '';
+  let categoria = 'desconocido';
+  let mensajeUI = msg;
+  let detalle = msg;
+  // 1) Errores de red — fetch falló antes de llegar al servidor
+  if (e instanceof TypeError || /failed to fetch|networkerror|load failed/i.test(msg)) {
+    categoria = 'red';
+    mensajeUI = 'Sin conexión con el servidor — revisá internet';
+  } else {
+    // 2) PostgREST devuelve JSON: { code, message, details, hint }
+    try {
+      const j = JSON.parse(msg);
+      codigo = j.code || '';
+      detalle = j.message || j.details || msg;
+      if (codigo === '23505')        { categoria = 'duplicado';         mensajeUI = 'Registro duplicado: ' + detalle; }
+      else if (codigo === '23502')   { categoria = 'campo_obligatorio'; mensajeUI = 'Falta campo obligatorio: ' + detalle; }
+      else if (codigo === '23503')   { categoria = 'fk_invalida';       mensajeUI = 'Referencia inválida: ' + detalle; }
+      else if (codigo === '23514')   { categoria = 'check_violation';   mensajeUI = 'Valor no permitido: ' + detalle; }
+      else if (codigo === 'PGRST204'){ categoria = 'schema_mismatch';   mensajeUI = 'Schema desactualizado (PGRST204): ' + detalle; }
+      else if (codigo === 'PGRST301'){ categoria = 'rls_o_no_filas';    mensajeUI = 'Sin permisos o fila inexistente: ' + detalle; }
+      else if (codigo === '42501')   { categoria = 'permiso_denegado';  mensajeUI = 'Permiso denegado por RLS: ' + detalle; }
+      else if (j.code)               { categoria = 'pg_otro';           mensajeUI = '[' + j.code + '] ' + detalle; }
+      else                           { categoria = 'json_sin_code';     mensajeUI = detalle; }
+    } catch(_) {
+      // 3) No era JSON (HTML 500, texto plano, vacío)
+      categoria = 'http_no_json';
+      mensajeUI = msg.length > 140 ? (msg.slice(0,140) + '…') : msg;
+    }
+  }
+  console.error('[BREAK][error-supabase][' + (contexto||'sin_contexto') + ']', {
+    categoria: categoria,
+    codigo: codigo,
+    detalle: detalle,
+    raw: msg
+  });
+  return { categoria: categoria, codigo: codigo, mensajeUI: mensajeUI, detalle: detalle };
+}
+
 // ─── STATE ───────────────────────────────────────────────────
 let localKey = '';
 let localName = '';
@@ -1273,15 +1318,17 @@ function isPagadoInmediato(o) {
   return ['efectivo','transf_qr'].includes(o.estado_pago);
 }
 
-// Una OT pasa al historial cuando (PRD v38 sección 4.5):
+// Una OT pasa al historial cuando (actualizado v48 — todos los roles igual):
 // - tipo_ot='aviso' (cualquier estado_llegada): NUNCA — debe convertirse primero
-// - cuenta_corriente + pagado_confirmado=true: SI (archivado desde pagos.html)
-// - cuenta_corriente + pagado_confirmado=false: NO (queda en lista y en pagos.html)
+// - cuenta_corriente (cualquier estado): SI — la confirmación de pago vive 100% en pagos.html.
+//                                         Apenas se convierte aviso→completa con cuenta_corriente,
+//                                         la OT pasa al historial de ordenes.html.
+//                                         Cambio v48: antes requería pagado_confirmado=true.
 // - efectivo/transf_qr + todos los checks + pagado_confirmado=true: SI
 // - efectivo/transf_qr + checks incompletos o sin pagado_confirmado: NO
 function isPasadaAHistorial(o) {
   if (o.tipo_ot === 'aviso') return false;
-  if (o.estado_pago === 'cuenta_corriente') return !!o.pagado_confirmado;
+  if (o.estado_pago === 'cuenta_corriente') return true;
   if (isPagadoInmediato(o)) return isComplete(o); // isComplete ya exige pagado_confirmado
   return isComplete(o);
 }
@@ -1853,23 +1900,33 @@ async function submitOT() {
 
   try {
     if (editingId) {
-      await sbFetch(`ordenes_trabajo?id=eq.${editingId}`, {
+      console.log('[BREAK][submitOT] PATCH ordenes_trabajo id=' + editingId, payload);
+      const resp = await sbFetch(`ordenes_trabajo?id=eq.${editingId}`, {
         method: 'PATCH',
         body: JSON.stringify(payload)
       });
+      console.log('[BREAK][submitOT] respuesta PATCH:', resp);
+      if (Array.isArray(resp) && resp.length === 0) {
+        showToast('No se actualizó — verificá permisos o que la OT siga existiendo', 'error');
+        console.error('[BREAK][submitOT] PATCH 0 filas. editingId=' + editingId);
+        return;
+      }
       showToast('Orden actualizada', 'success');
     } else {
       payload.created_at = new Date().toISOString();
-      await sbFetch('ordenes_trabajo', {
+      console.log('[BREAK][submitOT] POST ordenes_trabajo', payload);
+      const resp = await sbFetch('ordenes_trabajo', {
         method: 'POST',
         body: JSON.stringify(payload)
       });
+      console.log('[BREAK][submitOT] respuesta POST:', resp);
       showToast('Orden creada', 'success');
     }
     cancelEdit();
     loadOrdenes();
   } catch(e) {
-    showToast('Error al guardar: ' + e.message, 'error');
+    const info = _clasificarErrorSupabase(e, editingId ? 'submitOT-PATCH' : 'submitOT-POST');
+    showToast('Error al guardar: ' + info.mensajeUI, 'error');
   }
 }
 
@@ -2073,7 +2130,9 @@ async function submitSupervisorOT() {
   };
 
   try {
-    await sbFetch('ordenes_trabajo', { method: 'POST', body: JSON.stringify(payload) });
+    console.log('[BREAK][submitSupervisorOT] POST ordenes_trabajo (aviso)', payload);
+    const resp = await sbFetch('ordenes_trabajo', { method: 'POST', body: JSON.stringify(payload) });
+    console.log('[BREAK][submitSupervisorOT] respuesta:', resp);
     showToast('Aviso de llegada creado', 'success');
     // Reset form
     document.getElementById('sv-local').value     = '';
@@ -2086,7 +2145,8 @@ async function submitSupervisorOT() {
     switchTab('lista');
     loadOrdenes();
   } catch(e) {
-    showToast('Error al crear: ' + e.message, 'error');
+    const info = _clasificarErrorSupabase(e, 'submitSupervisorOT');
+    showToast('Error al crear: ' + info.mensajeUI, 'error');
   }
 }
 
@@ -2112,13 +2172,21 @@ function notificarAvisosNoLlego() {
 async function marcarNoLlego(id) {
   if (!confirm('¿Marcar este aviso como NO LLEGÓ?\nSe notificará al hub.')) return;
   try {
-    await sbFetch(`ordenes_trabajo?id=eq.${id}`, {
+    const payload = {
+      estado_llegada: 'no_llego',
+      updated_at: new Date().toISOString()
+    };
+    console.log('[BREAK][marcarNoLlego] PATCH id=' + id, payload);
+    const resp = await sbFetch(`ordenes_trabajo?id=eq.${id}`, {
       method: 'PATCH',
-      body: JSON.stringify({
-        estado_llegada: 'no_llego',
-        updated_at: new Date().toISOString()
-      })
+      body: JSON.stringify(payload)
     });
+    console.log('[BREAK][marcarNoLlego] respuesta:', resp);
+    if (Array.isArray(resp) && resp.length === 0) {
+      showToast('No se pudo marcar el aviso — verificá permisos', 'error');
+      console.error('[BREAK][marcarNoLlego] PATCH 0 filas. ID=' + id);
+      return;
+    }
     showToast('Aviso marcado como NO llegó', 'warn');
     // Update local + re-render (renderTabla llamará notificarAvisosNoLlego)
     const idx = ordenes.findIndex(o => o.id === id);
@@ -2126,7 +2194,8 @@ async function marcarNoLlego(id) {
     renderTabla();
     renderStats();
   } catch(e) {
-    showToast('Error: ' + e.message, 'error');
+    const info = _clasificarErrorSupabase(e, 'marcarNoLlego');
+    showToast('Error: ' + info.mensajeUI, 'error');
   }
 }
 
@@ -2199,15 +2268,25 @@ async function confirmarConversion() {
   }
 
   try {
-    await sbFetch(`ordenes_trabajo?id=eq.${_convOrdenId}`, {
+    console.log('[BREAK][confirmarConversion] PATCH ordenes_trabajo id=' + _convOrdenId, payload);
+    const resp = await sbFetch(`ordenes_trabajo?id=eq.${_convOrdenId}`, {
       method: 'PATCH',
       body: JSON.stringify(payload)
     });
+    console.log('[BREAK][confirmarConversion] respuesta PostgREST:', resp);
+    // Defensa: PostgREST con Prefer:return=representation devuelve [] si UPDATE afectó 0 filas
+    // (caso típico: RLS bloquea, o el id no existe). Sin esto, el toast diría "success" engañoso.
+    if (Array.isArray(resp) && resp.length === 0) {
+      showToast('La OT no se actualizó — verificá permisos o que el aviso siga existiendo', 'error');
+      console.error('[BREAK][confirmarConversion] PATCH devolvió 0 filas. Posibles causas: RLS, id inexistente, o WHERE no matchea. ID=' + _convOrdenId);
+      return;
+    }
     showToast('OT completada — aviso convertido', 'success');
     closeModalConversion();
     await loadOrdenes(); // reload + renderTabla → notifica hub (count baja)
   } catch(e) {
-    showToast('Error al confirmar: ' + e.message, 'error');
+    const info = _clasificarErrorSupabase(e, 'confirmarConversion');
+    showToast('Error al confirmar: ' + info.mensajeUI, 'error');
   }
 }
 
@@ -2352,13 +2431,14 @@ function otFotoHtml(url) {
 let historialOT = [];
 async function loadHistorialOT() {
   try {
-    // Cargar solo OT con pago inmediato Y pagado_confirmado=true (excluir cuenta_corriente)
-    let q = 'ordenes_trabajo?order=fecha.desc,created_at.desc&limit=300';
+    // v48 — Cargar todas las OTs convertidas (tipo_ot=completa).
+    // El filtro fino (¿qué cuenta como historial?) lo hace isPasadaAHistorial() en JS.
+    // Esto incluye:
+    //   - efectivo/transf_qr con pagado_confirmado=true
+    //   - cuenta_corriente (con o sin pagado_confirmado — la gestión de pago vive en pagos.html)
+    let q = 'ordenes_trabajo?tipo_ot=eq.completa&order=fecha.desc,created_at.desc&limit=300';
     if (localKey) q += '&local=eq.'+localKey;
-    q += '&estado_pago=in.(efectivo,transf_qr)';
-    q += '&pagado_confirmado=eq.true';
     const data = await sbFetch(q) || [];
-    // Doble filtro en JS: isComplete garantiza checks operativos completos
     historialOT = data.filter(o => isPasadaAHistorial(o));
     renderHistorialOT();
   } catch(e) { showToast('Error al cargar historial','error'); }
@@ -2372,7 +2452,14 @@ function renderHistorialOT() {
   if (!data.length) { tbody.innerHTML='<tr><td colspan="7"><div class="empty"><div class="empty-icon">📋</div><div class="empty-text">Sin OT en historial</div></div></td></tr>'; return; }
   tbody.innerHTML = data.map(o=>{
     const checks=checkCount(o);
-    return '<tr><td>'+formatDateDisplay(o.fecha)+'</td><td style="color:var(--text2);font-size:11px;">'+(o.proveedor||'—')+'</td><td style="color:var(--text2);font-size:11px;">'+(o.nro_factura||'—')+'</td><td style="font-size:11px;">'+(o.recepcion||'—')+'</td><td style="color:var(--accent);font-weight:500;">'+formatMoney(o.total)+'</td><td>'+badgePago(o.estado_pago)+'</td><td><div style="display:flex;align-items:center;gap:4px;">'+buildDots(o)+'<span style="font-size:10px;color:var(--green);">✓ Pagado</span></div></td></tr>';
+    // v48 — Estado de pago real: cuenta_corriente puede estar pendiente todavía (gestionado en pagos.html)
+    let estadoPagoTxt;
+    if (o.estado_pago === 'cuenta_corriente' && !o.pagado_confirmado) {
+      estadoPagoTxt = '<span style="font-size:10px;color:var(--yellow);">⏳ Pendiente pago</span>';
+    } else {
+      estadoPagoTxt = '<span style="font-size:10px;color:var(--green);">✓ Pagado</span>';
+    }
+    return '<tr style="cursor:pointer;" onclick="openDetalle(\''+o.id+'\')"><td>'+formatDateDisplay(o.fecha)+'</td><td style="color:var(--text2);font-size:11px;">'+(o.proveedor||'—')+'</td><td style="color:var(--text2);font-size:11px;">'+(o.nro_factura||'—')+'</td><td style="font-size:11px;">'+(o.recepcion||'—')+'</td><td style="color:var(--accent);font-weight:500;">'+formatMoney(o.total)+'</td><td>'+badgePago(o.estado_pago)+'</td><td><div style="display:flex;align-items:center;gap:4px;">'+buildDots(o)+estadoPagoTxt+'</div></td></tr>';
   }).join('');
 }
 
