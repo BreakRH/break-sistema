@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// BREAK · testmode-banner.js · v48
+// BREAK · testmode-banner.js · v50 (S6 — modo testing operativo)
 // ───────────────────────────────────────────────────────────────────────────
 // Banner naranja persistente cuando config.test_mode_activo='true'.
 // Se importa en TODOS los módulos con:
@@ -11,6 +11,15 @@
 //   - Si desactivado → remueve banner + restaura padding original del body
 //   - Idempotente: si se importa 2 veces no se inicializa 2 veces
 //   - Falla silencioso ante errores de red (no rompe el módulo host)
+//
+// API expuesta a módulos host (v50):
+//   - window._testModeActivo  → boolean (default false durante el primer fetch)
+//   - evento 'testmode:change' en window con detail={ activo: boolean }
+//     dispatcheado SOLO cuando cambia el estado (no en cada poll).
+//
+// Default seguro: si un módulo lee window._testModeActivo antes del primer
+// check, recibe `false` (modo normal) — evita que data real entre por error
+// a tablas con test_mode=true durante el gap inicial de hasta 60s.
 // ═══════════════════════════════════════════════════════════════════════════
 
 (function () {
@@ -19,6 +28,13 @@
   // ── Idempotencia ─────────────────────────────────────────────────────────
   if (window._testModeBannerLoaded) return;
   window._testModeBannerLoaded = true;
+
+  // ── API expuesta — default seguro (v50) ──────────────────────────────────
+  // Inicializamos en false ANTES del primer fetch. Los módulos que consulten
+  // _testModeActivo durante el gap inicial reciben modo normal (más seguro).
+  if (typeof window._testModeActivo !== 'boolean') {
+    window._testModeActivo = false;
+  }
 
   // ── Constantes ───────────────────────────────────────────────────────────
   const SUPABASE_URL = 'https://oiuualqixcccfhtpcist.supabase.co';
@@ -51,6 +67,14 @@
       // Solo actuar si cambió (evita parpadeo y trabajo innecesario)
       if (activo === _activoActual) return;
       _activoActual = activo;
+
+      // v50 — Sincronizar API expuesta + notificar a módulos host
+      window._testModeActivo = activo;
+      try {
+        window.dispatchEvent(new CustomEvent('testmode:change', { detail: { activo } }));
+      } catch (e) {
+        // Algunos navegadores muy viejos no soportan CustomEvent — silencioso
+      }
 
       if (activo) showBanner();
       else hideBanner();

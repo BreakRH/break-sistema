@@ -1121,6 +1121,33 @@ async function sbFetch(path, opts = {}) {
 }
 
 // ═══════════════════════════════════════
+// MODO TESTING (v50 · S6) — helpers
+// ───────────────────────────────────────
+// window._testModeActivo es expuesto por testmode-banner.js. Default false
+// durante el primer fetch del banner (gap de hasta 60s) — patrón seguro:
+// si el banner no respondió todavía, asumimos modo normal.
+//
+// _isTestMode()    → boolean. Usar para INSERTs:
+//                    body: JSON.stringify({ ...payload, test_mode: _isTestMode() })
+// _testModeQS()    → '&test_mode=eq.false' o '&test_mode=eq.true'.
+//                    Append a queries con `?` previo (caso normal en turno.html).
+//
+// Aislamiento total: en modo normal SOLO lee/escribe registros con test_mode=false;
+// en modo testing SOLO lee/escribe registros con test_mode=true. Sin mezcla.
+//
+// Limitación conocida v50: si el modo cambia mientras un turno está abierto en
+// otra pestaña, los datos en memoria quedan stale. El usuario debe refrescar.
+// El evento window 'testmode:change' está expuesto por si se quiere reaccionar
+// (no usado en S6 — preferimos refresh manual para no perder estado).
+// ═══════════════════════════════════════
+function _isTestMode() {
+  return window._testModeActivo === true;
+}
+function _testModeQS() {
+  return _isTestMode() ? '&test_mode=eq.true' : '&test_mode=eq.false';
+}
+
+// ═══════════════════════════════════════
 // TOAST
 // ═══════════════════════════════════════
 let toastTimer;
@@ -1226,6 +1253,7 @@ async function ptSyncSupabase() {
       empleado_id:  state.empleado_id || null,
       borrador_json: snap,
       updated_at:   new Date().toISOString(),
+      test_mode:    _isTestMode(),
     };
     await sbFetch('turnos_borrador?on_conflict=local,fecha,turno', {
       method: 'POST',
@@ -1470,6 +1498,7 @@ async function ptBuscarAperturaActiva(turno) {
               + `&turno=eq.${encodeURIComponent(turno)}`
               + `&fecha=eq.${hoy}`
               + `&cerrado_at=is.null`
+              + _testModeQS()
               + `&order=apertura_at.desc&limit=1`;
     const rows = await sbFetch(url);
     return rows?.[0] || null;
@@ -1503,7 +1532,7 @@ async function ptShowApertura() {
   document.getElementById('ap-loading').style.display = 'none';
 
   try {
-    const cierres = await sbFetch(`cierres_turno?local=eq.${state.local}&order=created_at.desc&limit=1`);
+    const cierres = await sbFetch(`cierres_turno?local=eq.${state.local}&order=created_at.desc&limit=1${_testModeQS()}`);
     const ultimo = cierres?.[0];
     if (ultimo) {
       const fechaCierre = ultimo.fecha || '—';
@@ -1575,6 +1604,7 @@ async function ptConfirmarApertura() {
         local: state.local, turno: state.turno,
         empleado_id: state.empleado_id, empleado_nombre: state.empleado || null,
         fecha: new Date().toISOString().split('T')[0], apertura_at: new Date().toISOString(),
+        test_mode: _isTestMode(),
       }])
     });
     insertOk = true;
@@ -1822,7 +1852,7 @@ function ptInitCore() {
   (async () => {
     try {
       if (state.turno && state.local) {
-        const cierres = await sbFetch(`cierres_turno?local=eq.${state.local}&turno=eq.${state.turno}&order=fecha.desc&limit=1&select=checks_json`);
+        const cierres = await sbFetch(`cierres_turno?local=eq.${state.local}&turno=eq.${state.turno}&order=fecha.desc&limit=1&select=checks_json${_testModeQS()}`);
         if (cierres?.[0]?.checks_json) {
           const checks = typeof cierres[0].checks_json === 'string' ? JSON.parse(cierres[0].checks_json) : cierres[0].checks_json;
           const stockAnt = checks.recargas?.stock_actual ?? null;
@@ -1895,11 +1925,11 @@ async function ptLoadTareas() {
   document.getElementById('pt-tareas-empty').style.display = 'none';
   try {
     const localFilter = state.local ? `,local.eq.${state.local}` : '';
-    const defs = await sbFetch(`tareas_definicion?or=(local.is.null${localFilter})&activa=eq.true`);
+    const defs = await sbFetch(`tareas_definicion?or=(local.is.null${localFilter})&activa=eq.true${_testModeQS()}`);
     ptData.definiciones = defs || [];
     const hoy = new Date().toISOString().split('T')[0];
     const localClause = state.local ? `&local=eq.${state.local}` : '';
-    const inst = await sbFetch(`tareas_instancia?turno=eq.${state.turno}&fecha=eq.${hoy}${localClause}`);
+    const inst = await sbFetch(`tareas_instancia?turno=eq.${state.turno}&fecha=eq.${hoy}${localClause}${_testModeQS()}`);
     const existIds = (inst||[]).map(i => i.tarea_id);
     const nuevas = [];
     for (const def of ptData.definiciones) {
@@ -1907,7 +1937,7 @@ async function ptLoadTareas() {
       if (!ptDefAplicaHoy(def)) continue;
       if (def.frecuencia === 'cada_n_horas') continue;
       if (existIds.includes(def.id)) continue;
-      nuevas.push({ tarea_id: def.id, empleado_id: state.empleado_id, local: state.local, turno: state.turno, fecha: hoy, hora_asignacion: new Date().toISOString(), estado: 'pendiente' });
+      nuevas.push({ tarea_id: def.id, empleado_id: state.empleado_id, local: state.local, turno: state.turno, fecha: hoy, hora_asignacion: new Date().toISOString(), estado: 'pendiente', test_mode: _isTestMode() });
     }
     let insertadas = [];
     if (nuevas.length > 0) {
@@ -1944,10 +1974,10 @@ function ptDefAplicaHoy(def) {
 
 async function ptCargarReasignadas(hoy) {
   try {
-    const reasig = await sbFetch(`tareas_instancia?local=eq.${state.local}&turno=eq.${state.turno}&estado=eq.reasignada&fecha=lt.${hoy}`);
+    const reasig = await sbFetch(`tareas_instancia?local=eq.${state.local}&turno=eq.${state.turno}&estado=eq.reasignada&fecha=lt.${hoy}${_testModeQS()}`);
     if (!reasig || reasig.length === 0) return;
     const idsOrigen = reasig.map(r=>r.id);
-    const yaCreadas = await sbFetch(`tareas_instancia?origen_instancia_id=in.(${idsOrigen.join(',')})&fecha=eq.${hoy}&select=origen_instancia_id`);
+    const yaCreadas = await sbFetch(`tareas_instancia?origen_instancia_id=in.(${idsOrigen.join(',')})&fecha=eq.${hoy}&select=origen_instancia_id${_testModeQS()}`);
     const yaIds = (yaCreadas||[]).map(r=>r.origen_instancia_id);
     const pendientes = reasig.filter(r => !yaIds.includes(r.id));
     for (const r of pendientes) {
@@ -1957,7 +1987,7 @@ async function ptCargarReasignadas(hoy) {
         if (def.turnos && !def.turnos.includes(state.turno)) continue;
         if (!ptDefAplicaHoy(def)) continue;
       }
-      const res = await sbFetch('tareas_instancia', { method:'POST', body: JSON.stringify([{ tarea_id: r.tarea_id, empleado_id: state.empleado_id, local: state.local, turno: state.turno, fecha: hoy, hora_asignacion: new Date().toISOString(), estado: 'pendiente', origen_instancia_id: r.id }]) });
+      const res = await sbFetch('tareas_instancia', { method:'POST', body: JSON.stringify([{ tarea_id: r.tarea_id, empleado_id: state.empleado_id, local: state.local, turno: state.turno, fecha: hoy, hora_asignacion: new Date().toISOString(), estado: 'pendiente', origen_instancia_id: r.id, test_mode: _isTestMode() }]) });
       if (res?.[0]) ptData.instancias.push(res[0]);
     }
   } catch(e) {}
@@ -1966,7 +1996,7 @@ async function ptCargarReasignadas(hoy) {
 async function ptGenCadaN(def) {
   const hoy = new Date().toISOString().split('T')[0];
   try {
-    const res = await sbFetch('tareas_instancia', { method:'POST', body: JSON.stringify([{ tarea_id: def.id, empleado_id: state.empleado_id, local: state.local, turno: state.turno, fecha: hoy, hora_asignacion: new Date().toISOString(), estado: 'pendiente' }]) });
+    const res = await sbFetch('tareas_instancia', { method:'POST', body: JSON.stringify([{ tarea_id: def.id, empleado_id: state.empleado_id, local: state.local, turno: state.turno, fecha: hoy, hora_asignacion: new Date().toISOString(), estado: 'pendiente', test_mode: _isTestMode() }]) });
     if (res?.[0]) { ptData.instancias.push(res[0]); ptRenderTareas(); showToast(`Nueva tarea: ${def.nombre}`, ''); }
   } catch(e) {}
 }
@@ -2055,7 +2085,7 @@ async function ptCompletarObs() {
   if (!instId) return;
   try {
     const upd = { estado:'completada', completada_at: new Date().toISOString(), observaciones: obs||null };
-    if (!instId.startsWith('d')) { await sbFetch(`tareas_instancia?id=eq.${instId}`, { method:'PATCH', body: JSON.stringify(upd) }); }
+    if (!instId.startsWith('d')) { await sbFetch(`tareas_instancia?id=eq.${instId}${_testModeQS()}`, { method:'PATCH', body: JSON.stringify(upd) }); }
     const i = ptData.instancias.find(x=>x.id===instId);
     if (i) Object.assign(i, upd);
     ptCloseModal('pt-modal-obs');
@@ -2067,7 +2097,7 @@ async function ptCompletarObs() {
 async function ptReasignar(instId) {
   if (!confirm('¿Reasignar esta tarea al próximo turno?')) return;
   try {
-    if (!instId.startsWith('d')) { await sbFetch(`tareas_instancia?id=eq.${instId}`, { method:'PATCH', body: JSON.stringify({estado:'reasignada'}) }); }
+    if (!instId.startsWith('d')) { await sbFetch(`tareas_instancia?id=eq.${instId}${_testModeQS()}`, { method:'PATCH', body: JSON.stringify({estado:'reasignada'}) }); }
     ptData.instancias = ptData.instancias.filter(i=>i.id!==instId);
     ptRenderTareas();
     showToast('Reasignada al siguiente turno', '');
@@ -2078,7 +2108,7 @@ async function ptEliminarInst(instId) {
   if (state.rol !== 'encargado' && state.rol !== 'admin') return;
   if (!confirm('¿Eliminar esta tarea del turno?')) return;
   try {
-    if (!instId.startsWith('d')) { await sbFetch(`tareas_instancia?id=eq.${instId}`, { method:'DELETE' }); }
+    if (!instId.startsWith('d')) { await sbFetch(`tareas_instancia?id=eq.${instId}${_testModeQS()}`, { method:'DELETE' }); }
     ptData.instancias = ptData.instancias.filter(i=>i.id!==instId);
     ptRenderTareas();
     showToast('Tarea eliminada', '');
@@ -2091,11 +2121,11 @@ async function ptAddAdhoc() {
   if (!nombre) return;
   try {
     const hoy = new Date().toISOString().split('T')[0];
-    const defRes = await sbFetch('tareas_definicion', { method:'POST', body: JSON.stringify([{ nombre, frecuencia:'diaria', turnos:[state.turno], local:state.local, activa:true }]) });
+    const defRes = await sbFetch('tareas_definicion', { method:'POST', body: JSON.stringify([{ nombre, frecuencia:'diaria', turnos:[state.turno], local:state.local, activa:true, test_mode: _isTestMode() }]) });
     const def = defRes?.[0];
     if (def) {
       ptData.definiciones.push(def);
-      const instRes = await sbFetch('tareas_instancia', { method:'POST', body: JSON.stringify([{ tarea_id: def.id, empleado_id: state.empleado_id, local: state.local, turno: state.turno, fecha: hoy, hora_asignacion: new Date().toISOString(), estado: 'pendiente' }]) });
+      const instRes = await sbFetch('tareas_instancia', { method:'POST', body: JSON.stringify([{ tarea_id: def.id, empleado_id: state.empleado_id, local: state.local, turno: state.turno, fecha: hoy, hora_asignacion: new Date().toISOString(), estado: 'pendiente', test_mode: _isTestMode() }]) });
       if (instRes?.[0]) ptData.instancias.push(instRes[0]);
     }
     document.getElementById('pt-adhoc-nombre').value = '';
@@ -2193,11 +2223,11 @@ async function ptSaveDef() {
   const payload = { nombre, frecuencia: frec, dias_semana: frec==='semanal' ? [...ptDiasCtrl] : null, hora_inicio: frec!=='cada_n_horas' ? hora : null, intervalo_horas: frec==='cada_n_horas' ? intv : null, turnos: ptTurnosCtrl, local: localFinal, activa: true };
   try {
     if (editId) {
-      await sbFetch(`tareas_definicion?id=eq.${editId}`, { method:'PATCH', body: JSON.stringify(payload) });
+      await sbFetch(`tareas_definicion?id=eq.${editId}${_testModeQS()}`, { method:'PATCH', body: JSON.stringify(payload) });
       const idx = ptData.definiciones.findIndex(d=>d.id===editId);
       if (idx>=0) ptData.definiciones[idx] = { ...ptData.definiciones[idx], ...payload };
     } else {
-      const res = await sbFetch('tareas_definicion', { method:'POST', body: JSON.stringify([payload]) });
+      const res = await sbFetch('tareas_definicion', { method:'POST', body: JSON.stringify([{ ...payload, test_mode: _isTestMode() }]) });
       if (res?.[0]) ptData.definiciones.push(res[0]);
     }
     ptCloseModal('pt-modal-def');
@@ -2761,10 +2791,10 @@ async function ptRefreshDeudas(opts) {
     // limit=10000 para evitar el truncado por defecto de 1000 que causa desfase (bug 1)
     const LIMIT = '&limit=10000';
     const [entradasLocal, entradasNull, entradasVacio, cuentas] = await Promise.all([
-      sbFetch(`entradas?store=eq.${localKey}&select=cid,monto,store${LIMIT}`),
-      sbFetch(`entradas?store=is.null&select=cid,monto,store${LIMIT}`),
-      sbFetch(`entradas?store=eq.&select=cid,monto,store${LIMIT}`),
-      sbFetch(`cuentas?select=id,nombre,tipo${LIMIT}`),
+      sbFetch(`entradas?store=eq.${localKey}&select=cid,monto,store${LIMIT}${_testModeQS()}`),
+      sbFetch(`entradas?store=is.null&select=cid,monto,store${LIMIT}${_testModeQS()}`),
+      sbFetch(`entradas?store=eq.&select=cid,monto,store${LIMIT}${_testModeQS()}`),
+      sbFetch(`cuentas?select=id,nombre,tipo${LIMIT}${_testModeQS()}`),
     ]);
     const todasEntradas = [...(entradasLocal||[]), ...(entradasNull||[]), ...(entradasVacio||[])];
     const total = todasEntradas.reduce((a,e) => a + (e.monto||0), 0);
@@ -2972,7 +3002,8 @@ async function ptRetiroConfirmar() {
     quien_retiro: ptRetiroPendiente.quien,
     notas:        ptRetiroPendiente.notas || null,
     fecha:        hoy,
-    hora:         hora
+    hora:         hora,
+    test_mode:    _isTestMode()
   };
   try {
     await sbFetch('retiros', { method:'POST', body: JSON.stringify(body) });
@@ -2995,7 +3026,7 @@ async function ptCargarRetiros() {
   if (!list) return;
   const hoy = new Date().toISOString().split('T')[0];
   try {
-    const rows = await sbFetch(`retiros?fecha=eq.${hoy}&local=eq.${state.local}&order=created_at.desc`);
+    const rows = await sbFetch(`retiros?fecha=eq.${hoy}&local=eq.${state.local}&order=created_at.desc${_testModeQS()}`);
     if (!rows || rows.length === 0) {
       list.innerHTML = '<div style="font-family:var(--mono);font-size:11px;color:var(--text3);">Sin retiros hoy en este local.</div>';
       if (badge) badge.textContent = '';
@@ -3090,6 +3121,7 @@ async function ptCerrar() {
     diferencia: totalSis ? (cajaNetaFinal - totalSis) : null,
     observaciones: document.getElementById('pt-obs-cierre')?.value.trim()||null,
     checks_json: JSON.stringify(checksJson),
+    test_mode: _isTestMode(),
   };
 
   const btn = document.getElementById('pt-btn-cerrar');
@@ -3106,6 +3138,7 @@ async function ptCerrar() {
                        + `&turno=eq.${encodeURIComponent(state.turno)}`
                        + `&fecha=eq.${payload.fecha}`
                        + `&cerrado_at=is.null`
+                       + _testModeQS()
                        + `&select=id,empleado_id,empleado_nombre`;
       const recheckRes = await sbFetch(recheckUrl);
       if (!recheckRes || !recheckRes.length) {
@@ -3141,6 +3174,7 @@ async function ptCerrar() {
                      + `&turno=eq.${encodeURIComponent(state.turno)}`
                      + `&fecha=eq.${payload.fecha}`
                      + `&cerrado_at=is.null`
+                     + _testModeQS()
                      + `&select=id`;
       aperturaResp = await sbFetch(patchUrl, {
         method: 'PATCH',
@@ -3184,7 +3218,7 @@ async function ptCerrar() {
       console.error('[turno] POST cierres_turno falló post-PATCH, revirtiendo apertura:', ePost);
       try {
         if (aperturaIdCerrada) {
-          await sbFetch(`aperturas_turno?id=eq.${encodeURIComponent(aperturaIdCerrada)}`, {
+          await sbFetch(`aperturas_turno?id=eq.${encodeURIComponent(aperturaIdCerrada)}${_testModeQS()}`, {
             method: 'PATCH',
             body: JSON.stringify({ cerrado_at: null })
           });
@@ -3201,10 +3235,10 @@ async function ptCerrar() {
     }
 
     // Guardar hielos individuales
-    const cierreRes = await sbFetch(`cierres_turno?empleado_id=eq.${state.empleado_id}&local=eq.${state.local}&turno=eq.${state.turno}&fecha=eq.${payload.fecha}&order=created_at.desc&limit=1&select=id`);
+    const cierreRes = await sbFetch(`cierres_turno?empleado_id=eq.${state.empleado_id}&local=eq.${state.local}&turno=eq.${state.turno}&fecha=eq.${payload.fecha}&order=created_at.desc&limit=1&select=id${_testModeQS()}`);
     const cierreId = cierreRes?.[0]?.id;
     if (cierreId && ptData.hielosCiclos.length > 0) {
-      const hielosPayload = ptData.hielosCiclos.map(c => ({ empleado_id: state.empleado_id, local: state.local, turno: state.turno, fecha: payload.fecha, bolsas: c.bolsas || 1, hora: c.hora, cierre_id: cierreId }));
+      const hielosPayload = ptData.hielosCiclos.map(c => ({ empleado_id: state.empleado_id, local: state.local, turno: state.turno, fecha: payload.fecha, bolsas: c.bolsas || 1, hora: c.hora, cierre_id: cierreId, test_mode: _isTestMode() }));
       try { await sbFetch('hielos_ciclos', { method:'POST', body: JSON.stringify(hielosPayload) }); } catch(e) { console.error('Error guardando hielos:', e); }
     }
 
@@ -3422,7 +3456,7 @@ async function ptConfirmarLiberar() {
     };
     let liberado = false;
     try {
-      await sbFetch(`aperturas_turno?id=eq.${encodeURIComponent(apId)}`, {
+      await sbFetch(`aperturas_turno?id=eq.${encodeURIComponent(apId)}${_testModeQS()}`, {
         method: 'PATCH',
         body: JSON.stringify(auditPayload),
       });
@@ -3430,7 +3464,7 @@ async function ptConfirmarLiberar() {
     } catch(e) {
       console.warn('[turno] PATCH con auditoría falló, reintento sin columnas nuevas:', e);
       try {
-        await sbFetch(`aperturas_turno?id=eq.${encodeURIComponent(apId)}`, {
+        await sbFetch(`aperturas_turno?id=eq.${encodeURIComponent(apId)}${_testModeQS()}`, {
           method: 'PATCH',
           body: JSON.stringify({ cerrado_at: ahora }),
         });
